@@ -1,5 +1,7 @@
 #!/usr/bin/env zsh
 
+zmodload zsh/zutil
+
 typeset -gH ZKL_YES="NO"
 typeset -gH ZKL_LOCAL_USER="_local"
 typeset -gH ZKL_DEFAULT_PLUGIN="zkl"
@@ -342,6 +344,41 @@ zekyll() {
     esac
 }
 
-source ~/.zekyllfile
+typeset -A opthash
+zparseopts -E -D -A opthash f: -file: || exit 1
+
+local target="$HOME/.zekyllfile"
+
+if (( ${+opthash[-f]} )); then
+    target="${opthash[-f]}"
+fi
+if (( ${+opthash[--file]} )); then
+    target="${opthash[--file]}"
+fi
+
+echo "Zekyll file is: $target"
+echo
+echo "============================================"
+cat "$target"
+echo "============================================"
+echo
+
+if ! test -f "$target"; then
+    echo "The file doesn't exist, aborting"
+    exit 1
+fi
+
+# Check syntax
+if ! zsh -n "$target"; then
+    echo "Syntax errors in the file, aborting"
+    exit 1
+fi
+
+echo "Press enter to continue..."
+read enter
+
+source "$target"
+
+echo "Generated ~/.zshrc_new"
 
 # vim:ft=zsh
