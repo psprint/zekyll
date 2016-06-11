@@ -29,3 +29,13 @@ else
     git clone https://github.com/psprint/zekyll.git "$ANAME"
 fi
 echo ">>> Done"
+
+if ! test -x "$HOME/$ANAME"; then
+    echo
+    echo "Creating $ANAME binary in $HOME"
+    cp -v "$APATH/zekyll-wrapper" "$HOME/$ANAME"
+    chmod +x "$HOME/$ANAME"
+    ls -l "$HOME/$ANAME"
+    echo ">>> Done"
+fi
+
