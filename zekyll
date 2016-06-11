@@ -297,24 +297,24 @@ zkl() {
 
     # Allow underscores - remove them now
     zekyll="${zekyll//_/}"
-    local -a zekylls fragment
+    local -a zekylls fragment zekyll_file
     local zz
     zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
     for zz in "${zekylls[@]}"; do
         # Skip one letter zekylls - they are allowed though not processed
         [ "${#zz}" -eq 1 ] && continue
 
-        zekyll_file="${ZKL_REPOS_DIR}/${user}---${plugin}/$zz"
-        if [[ ! -f "$zekyll_file" ]]; then
+        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zz}--*(N) )
+        if [[ "${#zekyll_file}" -eq 0 ]]; then
             echo "Zekyll $zz doesn't exist, skipping"
             continue
         fi
 
-        fragment=( "${(@f)"$(<$zekyll_file)"}" )
+        fragment=( "${(@f)"$(<${zekyll_file[1]})"}" )
         ZKL_OUTPUT+=( "${fragment[@]}" )
     done
 
-    print -rl -- "${ZKL_OUTPUT[@]}" > ~/.zshrc
+    print -rl -- "${ZKL_OUTPUT[@]}" > ~/.zshrc_new
 }
 
 zekyll() {
