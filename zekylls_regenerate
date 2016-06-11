@@ -1,0 +1,136 @@
+#!/usr/bin/env zsh
+
+emulate -LR zsh
+
+setopt extendedglob typesetsilent
+
+bindkey -e
+
+autoload colors
+colors
+
+# Helper functions
+pinfo() { print "${fg_bold[green]}$*$reset_color"; }
+pinfon() { print -n "${fg_bold[green]}$*$reset_color"; }
+pinfo2() { print "${fg_bold[yellow]}$*$reset_color"; }
+pinfo2n() { print -n "${fg_bold[yellow]}$*$reset_color"; }
+perror() { print "${fg_bold[red]}$*$reset_color"; }
+perrorn() { print -n "${fg_bold[red]}$*$reset_color"; }
+clearinput() { repeat 10; do read -rs -k 1 -t; done; }
+
+local zekylls_path
+pinfo "Where are zekylls located? (default: current directory \".\"):"
+read zekylls_path\?"Enter path: "
+if [ -z "$zekylls_path" ]; then
+    zekylls_path="."
+fi
+
+if ! test -d "$zekylls_path"; then
+    perror "Path doesn't exist"
+    exit 1
+fi
+
+cd "$zekylls_path"
+
+print
+pinfo2 "Will work on following files:"
+print
+ls -1
+print
+
+local zekylls_string
+pinfo "Enter current zekylls string:"
+read zekylls_string\?"zekylls: "
+
+print
+pinfo2 "Read: $zekylls_string"
+print
+
+integer lena="${#zekylls_string}"
+
+local new_string=""
+while (( 1 )); do
+    pinfo "Enter NEW zekylls string:"
+    vared -cp "zekylls: " new_string
+
+    # Difference in number of zekylls
+    integer zekylls_a=$(( ${#zekylls_string} / 2 ))
+    integer zekylls_b=$(( ${#new_string} / 2 ))
+    integer diff=zekylls_a-zekylls_b
+
+    # Difference in characters
+    integer lenb=${#new_string}
+    integer cdiff=lena-lenb
+    local cabsstr="$cdiff"
+    cabsstr="${cabsstr#-}"
+
+    if [[ "$diff" -eq "0" ]]; then
+        print
+        pinfo2 "Entered string correct: $new_string"
+
+        if [[ "$cdiff" -lt 0 ]]; then
+            pinfo2 "String is longer by $cabsstr character but that's only a remainder"
+            pinfo2 "Remainders (uneven characters) are skipped by zekyll"
+        elif [[ "$cdiff" -gt 0 ]]; then
+            pinfo2 "String is shorter by $cabsstr character but that's only a remainder"
+            pinfo2 "Remainders (uneven characters) are skipped by zekyll"
+        fi
+        
+        print
+
+        break
+    fi
+
+    if [[ "$cdiff" -lt 0 ]]; then
+        # Is the difference allowed?
+        print "The entered string is ${cabsstr} character(s) too long, try again"
+    else
+        print "The entered string is ${cabsstr} character(s) too short, try again"
+    fi
+done
+
+local -a zekylls1 zekylls2
+zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+zekylls2=( ${(@s:_:)${new_string//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+
+integer size1="${#zekylls1}"
+integer size2="${#zekylls2}"
+integer size=size1
+(( size2 < size1 )) && size=size2
+
+#
+# Detect if at git repository
+#
+cmd=( git mv )
+if ! test -d ".git"; then
+    cmd=( mv )
+fi
+
+integer i
+for (( i=1; i<=size; i++ )); do
+    local zz1="${zekylls1[i]}"
+    local zz2="${zekylls2[i]}"
+
+    if [[ "${#zz1}" -eq "1" || "${#zz2}" -eq "1" ]]; then
+        echo "Skipping remainder"
+        continue
+    fi
+
+    local -a zekyll_file1
+    zekyll_file1=( ${zz1}--*(N.) )
+
+    if [ "${#zekyll_file1}" -eq 0 ]; then
+        echo "Skipping not existing zekyll $zz1 (targetted to rename to $zz2)"
+        continue
+    fi
+
+    local file1="${zekyll_file1[1]}"
+    local desc="${file1#${zz1}--}"
+    local file2="${zz2}--$desc"
+
+    if [ "$file1" != "$file2" ]; then
+        echo "${cmd[@]}" "$file1" "$file2"
+    fi
+done
+
+# vim:ft=zsh
