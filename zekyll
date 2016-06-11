@@ -306,12 +306,13 @@ zkl() {
         # Skip one letter zekylls - they are allowed though not processed
         [ "${#zz}" -eq 1 ] && continue
 
-        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zz}--*(N) )
+        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zz}--*(N.) )
         if [[ "${#zekyll_file}" -eq 0 ]]; then
             echo "Zekyll $zz doesn't exist, skipping"
             continue
         fi
 
+        echo "Processing ${zekyll_file[1]:t}"
         fragment=( "${(@f)"$(<${zekyll_file[1]})"}" )
         ZKL_OUTPUT+=( "${fragment[@]}" )
     done
@@ -379,6 +380,7 @@ read enter
 
 source "$target"
 
+echo
 echo "Generated ~/.zshrc_new"
 
 # vim:ft=zsh
