@@ -342,4 +342,6 @@ zekyll() {
     esac
 }
 
+source ~/.zekyllfile
+
 # vim:ft=zsh
