@@ -1,0 +1,345 @@
+#!/usr/bin/env zsh
+
+typeset -gH ZKL_YES="NO"
+typeset -gH ZKL_LOCAL_USER="_local"
+typeset -gH ZKL_DEFAULT_PLUGIN="zkl"
+typeset -gaH ZKL_OUTPUT
+
+# Problematic function_argzero
+if [[ ! -o "functionargzero" ]]; then
+    0="${(%):-%N}" # this gives immunity to functionargzero being unset
+fi
+
+ZKL_NAME="${${0:t}:r}"
+[ -z "$ZKL_DIR" ] && ZKL_DIR="${0:h}"
+
+if [ -z "$ZKL_HOME" ]; then
+    # Ignore ZDOTDIR if user manually put Zekyll to $HOME
+    if [ -d "$HOME/.$ZKL_NAME" ]; then
+        typeset -gH ZKL_HOME="$HOME/.$ZKL_NAME"
+    else
+        typeset -gH ZKL_HOME="${ZDOTDIR:-$HOME}/.$ZKL_NAME"
+    fi
+fi
+
+typeset -gH ZKL_REPOS_DIR="$ZKL_HOME/repos"
+typeset -gH ZPLG_HOME_READY
+typeset -gH ZKL_CUR_USER="$ZKL_LOCAL_USER"
+
+#
+# Init {{{1
+#
+
+zmodload zsh/terminfo 2>/dev/null
+zmodload zsh/termcap 2>/dev/null
+
+if [[ ( -n "${terminfo[colors]}" || -n "${termcap[Co]}" ) && -z "${functions[colors]}" ]]; then
+    builtin autoload -Uz colors
+    colors
+fi
+
+typeset -gAH ZPLG_COL
+ZPLG_COL=(
+    "title" ""
+    "pname" "${fg_bold[yellow]}"
+    "uname" "${fg_bold[magenta]}"
+    "keyword" "${fg_bold[green]}"
+    "error" "${fg_bold[red]}"
+    "p" "${fg_bold[blue]}"
+    "bar" "${fg_bold[magenta]}"
+    "info" "${fg_bold[green]}"
+    "uninst" "${fg_bold[blue]}"
+    "success" "${fg_bold[green]}"
+    "failure" "${fg_bold[red]}"
+    "rst" "$reset_color"
+)
+
+# 1}}}
+
+#
+# Helper functions {{{1
+#
+
+-zkl-error() {
+    echo "$*" >&2
+}
+
+# We want zkl call to be flexible. That's why there are 6 ways
+# to invoke zkl. The function detects which way is used. The 6
+# ways:
+#
+# - user/plugin:zekyll
+# - user/plugin zekyll
+# - user plugin zekyll
+# - user zekyll
+# - user:zekyll
+# - zekyll
+#
+# $1 - user/plugin:zekyll(s), user/plugin, user,               user:zekyll(s), zekyll(s)
+# $2 -                        zekyll(s)    plugin or zekyll(s)
+# $3 -                                     zekyll(s)
+#
+-zkl-any-to-user-plugin-zekyll() {
+    setopt localoptions extendedglob
+
+    local user="_unknown"
+    local plugin="_unknown"
+    local zekyll="_unknown"
+
+    local -a params
+    params=( "$1" "$2" "$3" )
+    [ -z "${params[3]}" ] && params[3]=()
+    [ -z "${params[2]}" ] && params[3]=() && params[2]=()
+    [ -z "${params[1]}" ] && params[3]=() && params[2]=() && params[1]=()
+
+    set "${params[@]}"
+
+    if [[ "$#" -eq "1" ]]; then
+        # user/plugin:zekyll(s)?
+        if [[ "$1" = [a-zA-Z0-9]##[/][a-zA-Z0-9]##[:][a-zA-Z0-9_]## ]]; then
+            user="${1%%/*}"
+            plugin="${${1%%:*}##*/}"
+            zekyll="${1##*:}"
+        # user:zekyll(s)?
+        elif [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9_]## ]]; then
+            user="${1%%:*}"
+            plugin="$ZKL_DEFAULT_PLUGIN"
+            zekyll="${1##*:}"
+        # zekyll?
+        elif [[ "$1" = [a-zA-Z0-9_]## ]]; then
+            user="$ZKL_CUR_USER"
+            plugin="zkl"
+            zekyll="$1"
+        else
+            -zkl-error "Error: improper input"
+        fi
+    elif [[ "$#" -eq "2" ]]; then
+        # user/plugin?
+        if [[ "$1" = [a-zA-Z0-9]##[/][a-zA-Z0-9]## ]]; then
+            # Should be zekyll(s)
+            if [[ "$2" = [a-zA-Z0-9_]## ]]; then
+                user="${1%%/*}"
+                plugin="${1##*/}"
+                zekyll="$2"
+            else
+                -zkl-error "Error: improper input (2)"
+            fi
+        # user?
+        elif [[ "$1" = [a-zA-Z0-9]## ]]; then
+            # Should be zekyll
+            if [[ "$2" = [a-zA-Z0-9_]## ]]; then
+                user="$1"
+                plugin="$ZKL_DEFAULT_PLUGIN"
+                zekyll="$2"
+            else
+                -zkl-error "Error: improper input (3)"
+            fi
+        else
+            -zkl-error "Error: improper input (4)"
+        fi
+    elif [[ "$#" -eq "3" ]]; then
+        integer correct=0
+        # Should be user
+        if [[ "$1" = [a-zA-Z0-9]## ]]; then
+            # Should be plugin
+            if [[ "$2" = [a-zA-Z0-9]## ]]; then
+                # Should be zekyll(s)
+                if [[ "$3" = [a-zA-Z0-9_]## ]]; then
+                    user="$1"
+                    plugin="$2"
+                    zekyll="$3"
+                    correct=1
+                fi
+            fi
+        fi
+
+        if (( correct == 0 )); then
+            -zkl-error "Error: improper input (5)"
+        fi
+    fi
+
+    reply=( "$user" "$plugin" "$zekyll" )
+
+    return 0
+}
+
+# This function is used for repository paths manipulations
+# Basically, every repository path consists of user name and plugin name
+# There are 3 formats:
+# - user--plugin
+# - user/plugin
+# - user plugin
+#
+# And this function understands them all, and returns reply=( "$user" "$plugin" )
+#
+# $1 - user---plugin, user/plugin, user (if $2 given), or plugin (if $2 empty)
+# $2 - plugin (if $1 - user - given)
+#
+-zkl-any-to-user-plugin() {
+    # Two components given?
+    # That's a pretty fast track to call this function this way
+    if [ -n "$2" ]; then
+        # But user name is empty?
+        [ -z "$1" ] && 1="_local"
+
+        reply=( "$1" "$2" )
+        return 0
+    fi
+
+    # Rest is for single component given
+    # It doesn't touch $2
+
+    local user="${1%%/*}" plugin="${1#*/}"
+    if [ "$user" = "$plugin" ]; then
+        # Is it really the same plugin and user name?
+        if [ "$user/$plugin" = "$1" ]; then
+            reply=( "$user" "$plugin" )
+            return 0
+        fi
+
+        user="${1%%---*}"
+        plugin="${1#*---}"
+    fi
+
+    if [ "$user" = "$plugin" ]; then
+        # Is it really the same plugin and user name?
+        if [ "${user}---${plugin}" = "$1" ]; then
+            reply=( "$user" "$plugin" )
+            return 0
+        fi
+        user="_local"
+    fi
+    
+    if [ -z "$user" ]; then
+        user="_local"
+    fi
+
+    if [ -z "$plugin" ]; then
+        plugin="_unknown"
+    fi
+
+    reply=( "$user" "$plugin" )
+    return 0
+}
+
+# Supports all formats as input, outputs "user/plugin"
+-zkl-any-to-uspl2() {
+    -zkl-any-to-user-plugin "$1" "$2"
+    REPLY="${reply[-2]}/${reply[-1]}"
+}
+
+# Will take uspl, uspl2, or just plugin name,
+# and return colored text
+-zkl-any-colorify-as-uspl2() {
+    -zkl-any-to-user-plugin "$1" "$2"
+    local user="${reply[-2]}" plugin="${reply[-1]}"
+    local ucol="${ZPLG_COL[uname]}" pcol="${ZPLG_COL[pname]}"
+    REPLY="${ucol}${user}${ZPLG_COL[rst]}/${pcol}${plugin}${ZPLG_COL[rst]}"
+}
+
+# Prepare readlink command, used e.g. for
+# establishing completion's owner
+-zkl-prepare-readlink() {
+    REPLY=":"
+    if type readlink 2>/dev/null 1>&2; then
+        REPLY="readlink"
+    fi
+}
+
+# 1}}}
+
+#
+# Repository operations {{{1
+#
+
+-zkl-setup-repo-dir() {
+    local user="$1" plugin="$2" github_path="$1/$2"
+    if [ ! -d "$ZKL_REPOS_DIR/${user}---${plugin}" ]; then
+        -zkl-any-colorify-as-uspl2 "$user" "$plugin"
+        print "Downloading $REPLY..."
+
+        # Return with error when any problem
+        git clone --recursive https://github.com/"$github_path" "$ZKL_REPOS_DIR/${user}---${plugin}" || return 1
+    fi
+
+    return 0
+}
+
+-zkl-prepare-home() {
+    [ -n "$ZKL_HOME_READY" ] && return
+    ZKL_HOME_READY="1"
+
+    [ ! -d "$ZKL_HOME" ] && {
+        command mkdir 2>/dev/null "$ZKL_HOME"
+        # For compaudit
+        command chmod go-w "$ZKL_HOME"
+    }
+    [ ! -d "$ZKL_REPOS_DIR" ] && {
+        command mkdir "$ZKL_REPOS_DIR"
+        # For compaudit
+        command chmod go-w "$ZKL_REPOS_DIR"
+    }
+}
+
+# 1}}}
+
+-zkl-end() {
+    # Read ~/.zshrc into memory, find the block with zekyll
+}
+
+zkl() {
+    [ "$ZKL_YES" = "NO" ] && return
+
+    -zkl-prepare-home
+    -zkl-any-to-user-plugin-zekyll "$1" "$2" "$3"
+    local user="${reply[-3]}" plugin="${reply[-2]}" zekyll="${reply[-1]}"
+    -zkl-setup-repo-dir "$user" "$plugin"
+
+    # Allow underscores - remove them now
+    zekyll="${zekyll//_/}"
+    local -a zekylls fragment
+    local zz
+    zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+    for zz in "${zekylls[@]}"; do
+        # Skip one letter zekylls - they are allowed though not processed
+        [ "${#zz}" -eq 1 ] && continue
+
+        zekyll_file="${ZKL_REPOS_DIR}/${user}---${plugin}/$zz"
+        if [[ ! -f "$zekyll_file" ]]; then
+            echo "Zekyll $zz doesn't exist, skipping"
+            continue
+        fi
+
+        fragment=( "${(@f)"$(<$zekyll_file)"}" )
+        ZKL_OUTPUT+=( "${fragment[@]}" )
+    done
+
+    print -rl -- "${ZKL_OUTPUT[@]}" > ~/.zshrc
+}
+
+zekyll() {
+    # Quick exit when not generating
+    [ "$1" = "yes" ] && ZKL_YES="YES" && return
+    [ "$1" = "no" ] && ZKL_YES="NO" && return
+    [ "$ZKL_YES" = "NO" ] && return
+
+    # All functions from now on will not change these values globally
+    local -a match mbegin mend
+    local MATCH; integer MBEGIN MEND
+
+    case "$1" in
+        (help)
+            echo "Help"
+            ;;
+        (user)
+            ZKL_CUR_USER="$2"
+            ;;
+        (end)
+            -zkl-end
+        (local)
+            ZKL_CUR_USER="$ZKL_LOCAL_USER"
+            ;;
+    esac
+}
+
+# vim:ft=zsh
