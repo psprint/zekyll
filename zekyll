@@ -8,6 +8,7 @@ typeset -gH ZKL_DEFAULT_PLUGIN="zkl"
 typeset -gaH ZKL_OUTPUT
 typeset -gH ZKL_OUTPUT_PATH="$HOME/.zshrc_new"
 typeset -gH ZKL_DO_UPDATE="0"
+typeset -gH ZKL_UPDATE_ONLY="0"
 typeset -gAH ZKL_UPDATED_REPOS
 
 # Problematic function_argzero
@@ -401,6 +402,8 @@ zkl() {
 
     -zkl-repo-preamble "$user" "$plugin"
 
+    [ "$ZKL_UPDATE_ONLY" = "1" ] && return
+
     # Allow underscores - remove them now
     zekyll="${zekyll//_/}"
 
@@ -453,6 +456,8 @@ zkllong() {
     fi
 
     -zkl-repo-preamble "$user" "$plugin"
+
+    [ "$ZKL_UPDATE_ONLY" = "1" ] && return
 
     # Obtain zekyll (single one)
     local input="$*"
@@ -516,13 +521,16 @@ zekyll() {
 }
 
 typeset -A opthash
-zparseopts -E -D -A opthash f: -file: o: -output: u -update || exit 1
+zparseopts -E -D -A opthash f: -file: o: -output: u -update -update-only || exit 1
 
 local target="$HOME/.zekyllfile"
 
 # Update
 (( ${+opthash[-u]} )) && ZKL_DO_UPDATE=1
 (( ${+opthash[--update]} )) && ZKL_DO_UPDATE=1
+
+# Update only
+(( ${+opthash[--update-only]} )) && ZKL_UPDATE_ONLY=1 && ZKL_DO_UPDATE=1
 
 # Input
 (( ${+opthash[-f]} )) && target="${opthash[-f]}"
@@ -533,6 +541,7 @@ local target="$HOME/.zekyllfile"
 (( ${+opthash[--output]} )) && ZKL_OUTPUT_PATH="${opthash[--output]}"
 
 echo "Zekyll file is: $target"
+[ "$ZKL_UPDATE_ONLY" = "1" ] && echo "Will only perform update of repositories"
 echo
 echo "============================================"
 cat "$target"
@@ -556,6 +565,8 @@ read enter
 source "$target"
 
 echo
-echo "Generated $ZKL_OUTPUT_PATH"
+if [ "$ZKL_UPDATE_ONLY" = "0" ]; then
+    echo "Generated $ZKL_OUTPUT_PATH"
+fi
 
 # vim:ft=zsh
