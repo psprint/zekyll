@@ -43,15 +43,20 @@ pinfo "Enter current zekylls string:"
 read zekylls_string\?"zekylls: "
 
 print
+zekylls_string="${zekylls_string//_/}"
 pinfo2 "Read: $zekylls_string"
 print
 
 integer lena="${#zekylls_string}"
 
+local new_string_vis=""
 local new_string=""
 while (( 1 )); do
     pinfo "Enter NEW zekylls string:"
-    vared -cp "zekylls: " new_string
+    vared -cp "zekylls: " new_string_vis
+
+    # Private copy with underscores removed
+    new_string="${new_string_vis//_/}"
 
     # Difference in number of zekylls
     integer zekylls_a=$(( ${#zekylls_string} / 2 ))
