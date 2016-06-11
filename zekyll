@@ -286,11 +286,13 @@ ZPLG_COL=(
 
 # 1}}}
 
--zkl-end() {
-    # Read ~/.zshrc into memory, find the block with zekyll
-}
-
+#
+# Second parameter might be description that
+# will override the one from zekyll
+#
 -process-zekyll-file() {
+    local desc="$2"
+
     echo "Processing ${1:t}"
     reply=( "${(@f)"$(<$1)"}" )
 
@@ -298,9 +300,16 @@ ZPLG_COL=(
     reply=( "${(@)reply:#\# #vim:*}" )
 
     # Add description line
-    local line="${1:t}"
-    line="${line//-##/ }"
-    line="${line/(#b)([a-zA-Z0-9][a-zA-Z0-9])/[${match[1]}]}"
+    local line
+    if [ -z "$desc" ]; then
+        line="${1:t}"
+        line="${line//-##/ }"
+        line="${line/(#b)([a-zA-Z0-9][a-zA-Z0-9])/[${match[1]}]}"
+    else
+        line="${1:t}"
+        line="${line//-##/ }"
+        line="${line/(#b)([a-zA-Z0-9][a-zA-Z0-9])*/[${match[1]}] $desc}"
+    fi
     reply=( "# $line" "${reply[@]}" )
 
     # Add separating new line if it's not there
@@ -398,7 +407,7 @@ zkllong() {
         return
     fi
 
-    -process-zekyll-file "${zekyll_file[1]}"
+    -process-zekyll-file "${zekyll_file[1]}" "$desc"
 
     ZKL_OUTPUT+=( "${reply[@]}" )
 }
@@ -425,6 +434,7 @@ zekyll() {
             ;;
         (end)
             -zkl-end
+            ;;
         (local)
             ZKL_CUR_USER="$ZKL_LOCAL_USER"
             ;;
