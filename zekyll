@@ -27,6 +27,7 @@ fi
 typeset -gH ZKL_REPOS_DIR="$ZKL_HOME/repos"
 typeset -gH ZPLG_HOME_READY
 typeset -gH ZKL_CUR_USER="$ZKL_LOCAL_USER"
+typeset -gH ZKL_CUR_PLUGIN="$ZKL_DEFAULT_PLUGIN"
 
 #
 # Init {{{1
@@ -73,9 +74,9 @@ ZPLG_COL=(
 # - user/plugin:zekyll
 # - user/plugin zekyll
 # - user plugin zekyll
-# - user zekyll
-# - user:zekyll
-# - zekyll
+# - user zekyll             / sensitive to "zekyll plugin"
+# - user:zekyll             / sensitive to "zekyll plugin"
+# - zekyll                  / sensitive to "zekyll plugin" and "zekyll user"
 #
 # $1 - user/plugin:zekyll(s), user/plugin, user,               user:zekyll(s), zekyll(s)
 # $2 -                        zekyll(s)    plugin or zekyll(s)
@@ -105,12 +106,12 @@ ZPLG_COL=(
         # user:zekyll(s)?
         elif [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9_]## ]]; then
             user="${1%%:*}"
-            plugin="$ZKL_DEFAULT_PLUGIN"
+            plugin="$ZKL_CUR_PLUGIN"
             zekyll="${1##*:}"
         # zekyll?
         elif [[ "$1" = [a-zA-Z0-9_]## ]]; then
             user="$ZKL_CUR_USER"
-            plugin="zkl"
+            plugin="$ZKL_CUR_PLUGIN"
             zekyll="$1"
         else
             -zkl-error "Error: improper input"
@@ -131,7 +132,7 @@ ZPLG_COL=(
             # Should be zekyll
             if [[ "$2" = [a-zA-Z0-9_]## ]]; then
                 user="$1"
-                plugin="$ZKL_DEFAULT_PLUGIN"
+                plugin="$ZKL_CUR_PLUGIN"
                 zekyll="$2"
             else
                 -zkl-error "Error: improper input (3)"
@@ -361,6 +362,9 @@ zekyll() {
             ;;
         (user)
             ZKL_CUR_USER="$2"
+            ;;
+        (plugin)
+            ZKL_CUR_PLUGIN="$2"
             ;;
         (end)
             -zkl-end
