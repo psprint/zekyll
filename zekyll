@@ -10,6 +10,8 @@ typeset -gH ZKL_OUTPUT_PATH="$HOME/.zshrc_new"
 typeset -gH ZKL_DO_UPDATE="0"
 typeset -gH ZKL_UPDATE_ONLY="0"
 typeset -gAH ZKL_UPDATED_REPOS
+typeset -gH ZKL_CSTR_A="#"
+typeset -gH ZKL_CSTR_B=""
 
 # Problematic function_argzero
 if [[ ! -o "functionargzero" ]]; then
@@ -377,7 +379,11 @@ Options are:
         line="${line//-##/ }"
         line="${line/(#b)([a-zA-Z0-9][a-zA-Z0-9])*/[${match[1]}] $desc}"
     fi
-    reply=( "# $line" "${reply[@]}" )
+    if [ -n "$ZKL_CSTR_B" ]; then
+        reply=( "$ZKL_CSTR_A $line $ZKL_CSTR_B" "${reply[@]}" )
+    else
+        reply=( "$ZKL_CSTR_A $line" "${reply[@]}" )
+    fi
 
     # Add separating new line if it's not there
     line="${reply[-1]}"
@@ -410,6 +416,14 @@ Options are:
     if [[ "$ZKL_DO_UPDATE" = "1" && "$existed" = "1" ]]; then
         -zkl-update-repo-dir-once "$user" "$plugin"
     fi
+}
+
+#
+# Sets character used for added comments
+#
+commentis() {
+    ZKL_CSTR_A="$1"
+    ZKL_CSTR_B="$2"
 }
 
 #
