@@ -255,7 +255,7 @@ ZPLG_COL=(
 # 1}}}
 
 #
-# Repository operations {{{1
+# Repository, file operations {{{1
 #
 
 -zkl-setup-repo-dir() {
@@ -365,6 +365,11 @@ ZPLG_COL=(
     print -rl -- "${ZKL_OUTPUT[@]}" > "$ZKL_OUTPUT_PATH"
 }
 
+#
+# We need to have repos at certain points of time
+# Also need to have them updated. Common code
+#
+
 -zkl-repo-preamble() {
     local user="$1" plugin="$2"
 
@@ -380,6 +385,11 @@ ZPLG_COL=(
     fi
 }
 
+#
+# Short zekyll processing, i.e. zekylls that are two letters
+# long, passed possibly as longer strings, with allowed
+# underscores, e.g. my_zekyll_generates_my_config
+#
 zkl() {
     setopt localoptions extendedglob typesetsilent
 
@@ -470,6 +480,12 @@ zkllong() {
     ZKL_OUTPUT+=( "${reply[@]}" )
 }
 
+#
+# Control function
+# Sets current user or plugin
+# Triggers output generation
+# Outputs help
+#
 zekyll() {
     # Quick exit when not generating
     [ "$1" = "yes" ] && ZKL_YES="YES" && return
