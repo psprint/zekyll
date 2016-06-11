@@ -6,6 +6,7 @@ typeset -gH ZKL_YES="NO"
 typeset -gH ZKL_LOCAL_USER="_local"
 typeset -gH ZKL_DEFAULT_PLUGIN="zkl"
 typeset -gaH ZKL_OUTPUT
+typeset -gH ZKL_OUTPUT_PATH="$HOME/.zshrc_new"
 
 # Problematic function_argzero
 if [[ ! -o "functionargzero" ]]; then
@@ -322,7 +323,7 @@ ZPLG_COL=(
 #
 
 -zkl-end() {
-    print -rl -- "${ZKL_OUTPUT[@]}" > ~/.zshrc_new
+    print -rl -- "${ZKL_OUTPUT[@]}" > "$ZKL_OUTPUT_PATH"
 }
 
 zkl() {
@@ -442,15 +443,24 @@ zekyll() {
 }
 
 typeset -A opthash
-zparseopts -E -D -A opthash f: -file: || exit 1
+zparseopts -E -D -A opthash f: -file: o: -output: || exit 1
 
 local target="$HOME/.zekyllfile"
 
+# Input
 if (( ${+opthash[-f]} )); then
     target="${opthash[-f]}"
 fi
 if (( ${+opthash[--file]} )); then
     target="${opthash[--file]}"
+fi
+
+# Output
+if (( ${+opthash[-o]} )); then
+    ZKL_OUTPUT_PATH="${opthash[-o]}"
+fi
+if (( ${+opthash[--output]} )); then
+    ZKL_OUTPUT_PATH="${opthash[--output]}"
 fi
 
 echo "Zekyll file is: $target"
@@ -477,6 +487,6 @@ read enter
 source "$target"
 
 echo
-echo "Generated ~/.zshrc_new"
+echo "Generated $ZKL_OUTPUT_PATH"
 
 # vim:ft=zsh
