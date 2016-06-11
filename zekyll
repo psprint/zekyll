@@ -308,6 +308,14 @@ ZPLG_COL=(
     [ -n "$line" ] && reply+=( "" )
 }
 
+#
+# Does output
+#
+
+-zkl-end() {
+    print -rl -- "${ZKL_OUTPUT[@]}" > ~/.zshrc_new
+}
+
 zkl() {
     setopt localoptions extendedglob typesetsilent
 
@@ -327,7 +335,7 @@ zkl() {
     # Generate two-character bits
     zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-    echo "Processing for user $user, plugin $plugin"
+    echo "\nProcessing for user $user, plugin $plugin\n"
 
     # Iterate over the bits
     for zz in "${zekylls[@]}"; do
@@ -344,8 +352,55 @@ zkl() {
 
         ZKL_OUTPUT+=( "${reply[@]}" )
     done
+}
 
-    print -rl -- "${ZKL_OUTPUT[@]}" > ~/.zshrc_new
+#
+# This function takes:
+# zkllong [:alnum:][:alnum:] Some text here (a description, comment)
+#
+# Thus, user has to be set
+#
+zkllong() {
+    setopt localoptions extendedglob typesetsilent
+
+    [ "$ZKL_YES" = "NO" ] && return
+
+    -zkl-prepare-home
+
+    local user="$ZKL_CUR_USER"
+    if [ "$user" = "_unknown" ]; then
+        -zkl-error "Error: unknown user"
+    fi
+
+    local plugin="$ZKL_CUR_PLUGIN"
+    if [ "$plugin" = "_unknown" ]; then
+        -zkl-error "Error: unknown plugin"
+    fi
+
+    # Obtain zekyll (single one)
+    local input="$*"
+    local desc
+    desc="${input//(#b)[a-zA-Z0-9] #[a-zA-Z0-9](*)/${match[1]}}"
+    desc="${desc## ##}"
+    local zekyll
+    zekyll="${input//(#b)([a-zA-Z0-9]) #([a-zA-Z0-9])*/${match[1]}${match[2]}}"
+
+    echo "\nProcessing (long) for user $user, plugin $plugin\n"
+
+    if [ "${#zekyll}" -eq 1 ]; then
+        echo "Skipping single letter zekyll $zekyll"
+        return
+    fi
+
+    zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zekyll}--*(N.) )
+    if [[ "${#zekyll_file}" -eq 0 ]]; then
+        echo "Zekyll $zz doesn't exist, skipping"
+        return
+    fi
+
+    -process-zekyll-file "${zekyll_file[1]}"
+
+    ZKL_OUTPUT+=( "${reply[@]}" )
 }
 
 zekyll() {
