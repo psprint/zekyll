@@ -289,6 +289,24 @@ ZPLG_COL=(
     # Read ~/.zshrc into memory, find the block with zekyll
 }
 
+-process-zekyll-file() {
+    echo "Processing ${1:t}"
+    reply=( "${(@f)"$(<$1)"}" )
+
+    # Remove vim mode lines
+    reply=( "${(@)reply:#\# #vim:*}" )
+
+    # Add description line
+    local line="${1:t}"
+    line="${line//-##/ }"
+    line="${line/(#b)([a-zA-Z0-9][a-zA-Z0-9])/[${match[1]}]}"
+    reply=( "# $line" "${reply[@]}" )
+
+    # Add separating new line if it's not there
+    line="${reply[-1]}"
+    [ -n "$line" ] && reply+=( "" )
+}
+
 zkl() {
     setopt localoptions extendedglob typesetsilent
 
@@ -319,23 +337,9 @@ zkl() {
             continue
         fi
 
-        echo "Processing ${zekyll_file[1]:t}"
-        fragment=( "${(@f)"$(<${zekyll_file[1]})"}" )
+        -process-zekyll-file "${zekyll_file[1]}"
 
-        # Remove vim mode lines
-        fragment=( "${(@)fragment:#\# #vim:*}" )
-
-        # Add description line
-        line="${zekyll_file[1]:t}"
-        line="${line//-##/ }"
-        line="${line/(#b)([a-zA-Z0-9][a-zA-Z0-9])/[${match[1]}]}"
-        fragment=( "# $line" "${fragment[@]}" )
-
-        # Add separating new line if it's not there
-        line="${fragment[-1]}"
-        [ -n "$line" ] && fragment+=( "" )
-
-        ZKL_OUTPUT+=( "${fragment[@]}" )
+        ZKL_OUTPUT+=( "${reply[@]}" )
     done
 
     print -rl -- "${ZKL_OUTPUT[@]}" > ~/.zshrc_new
