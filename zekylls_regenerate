@@ -18,6 +18,26 @@ perror() { print "${fg_bold[red]}$*$reset_color"; }
 perrorn() { print -n "${fg_bold[red]}$*$reset_color"; }
 clearinput() { repeat 10; do read -rs -k 1 -t; done; }
 
+
+# Detects duplicates in given array
+detect_duplicates() {
+    local -a sorted
+    sorted=( "${(on)@}" )
+
+    integer dups=0
+
+    local prev="" i
+    for i in "${sorted[@]}"; do
+        if [ "$prev" = "$i" ]; then
+            echo "Duplicate zekyll found: $i"
+            dups=1
+        fi
+        prev="$i"
+    done
+
+    return $dups
+}
+
 local zekylls_path
 pinfo "Where are zekylls located? (default: current directory \".\"):"
 read zekylls_path\?"Enter path: "
@@ -96,7 +116,16 @@ done
 
 local -a zekylls1 zekylls2
 zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+
+pinfo "Checking current zekyll for duplicates.."
+detect_duplicates "${zekylls1[@]}" || { echo "Duplicates found, aborting"; exit 1 }
+
 zekylls2=( ${(@s:_:)${new_string//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+
+pinfo "Checking new zekyll for duplicates.."
+detect_duplicates "${zekylls2[@]}" || { echo "Duplicates found, aborting"; exit 1 }
+
+print
 
 integer size1="${#zekylls1}"
 integer size2="${#zekylls2}"
