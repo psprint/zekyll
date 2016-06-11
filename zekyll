@@ -290,6 +290,8 @@ ZPLG_COL=(
 }
 
 zkl() {
+    setopt localoptions extendedglob typesetsilent
+
     [ "$ZKL_YES" = "NO" ] && return
 
     -zkl-prepare-home
@@ -299,9 +301,14 @@ zkl() {
 
     # Allow underscores - remove them now
     zekyll="${zekyll//_/}"
+
     local -a zekylls fragment zekyll_file
-    local zz
+    local zz line
+
+    # Generate two-character bits
     zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+
+    # Iterate over the bits
     for zz in "${zekylls[@]}"; do
         # Skip one letter zekylls - they are allowed though not processed
         [ "${#zz}" -eq 1 ] && continue
@@ -314,6 +321,20 @@ zkl() {
 
         echo "Processing ${zekyll_file[1]:t}"
         fragment=( "${(@f)"$(<${zekyll_file[1]})"}" )
+
+        # Remove vim mode lines
+        fragment=( "${(@)fragment:#\# #vim:*}" )
+
+        # Add description line
+        line="${zekyll_file[1]:t}"
+        line="${line//-##/ }"
+        line="${line/(#b)([a-zA-Z0-9][a-zA-Z0-9])/[${match[1]}]}"
+        fragment=( "# $line" "${fragment[@]}" )
+
+        # Add separating new line if it's not there
+        line="${fragment[-1]}"
+        [ -n "$line" ] && fragment+=( "" )
+
         ZKL_OUTPUT+=( "${fragment[@]}" )
     done
 
