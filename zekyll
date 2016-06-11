@@ -7,6 +7,8 @@ typeset -gH ZKL_LOCAL_USER="_local"
 typeset -gH ZKL_DEFAULT_PLUGIN="zkl"
 typeset -gaH ZKL_OUTPUT
 typeset -gH ZKL_OUTPUT_PATH="$HOME/.zshrc_new"
+typeset -gH ZKL_DO_UPDATE="0"
+typeset -gAH ZKL_UPDATED_REPOS
 
 # Problematic function_argzero
 if [[ ! -o "functionargzero" ]]; then
@@ -269,6 +271,43 @@ ZPLG_COL=(
     return 0
 }
 
+#
+# Pulls changes from origin to given repository
+#
+-zkl-update-repo-dir() {
+    local user="$1" plugin="$2"
+
+    -zkl-any-colorify-as-uspl2 "$user" "$plugin"
+    uspl2col="$REPLY"
+
+    if [ -d "$ZKL_REPOS_DIR/${user}---${plugin}" ]; then
+        print "Updating $uspl2col..."
+
+        (
+            cd "$ZKL_REPOS_DIR/${user}---${plugin}"
+            git pull
+            return
+        )
+    else
+        -zkl-error "The repository $uspl2col doesn't exist"
+    fi
+
+    return 1
+}
+
+#
+# Pulls changes from origin to given repository
+# Guards to do it only once per plugin during session
+#
+-zkl-update-repo-dir-once() {
+    local user="$1" plugin="$2" github_path="$1/$2"
+    (( ${+ZKL_UPDATED_REPOS[$github_path]} )) && return 1
+    ZKL_UPDATED_REPOS[$github_path]="1"
+
+    -zkl-update-repo-dir "$user" "$plugin"
+    return
+}
+
 -zkl-prepare-home() {
     [ -n "$ZKL_HOME_READY" ] && return
     ZKL_HOME_READY="1"
@@ -326,6 +365,21 @@ ZPLG_COL=(
     print -rl -- "${ZKL_OUTPUT[@]}" > "$ZKL_OUTPUT_PATH"
 }
 
+-zkl-repo-preamble() {
+    local user="$1" plugin="$2"
+
+    integer existed=0
+    [ -d "$ZKL_REPOS_DIR/${user}---${plugin}" ] && existed=1
+
+    # Possible clone
+    -zkl-setup-repo-dir "$user" "$plugin"
+
+    # Update?
+    if [[ "$ZKL_DO_UPDATE" = "1" && "$existed" = "1" ]]; then
+        -zkl-update-repo-dir-once "$user" "$plugin"
+    fi
+}
+
 zkl() {
     setopt localoptions extendedglob typesetsilent
 
@@ -334,7 +388,8 @@ zkl() {
     -zkl-prepare-home
     -zkl-any-to-user-plugin-zekyll "$1" "$2" "$3"
     local user="${reply[-3]}" plugin="${reply[-2]}" zekyll="${reply[-1]}"
-    -zkl-setup-repo-dir "$user" "$plugin"
+
+    -zkl-repo-preamble "$user" "$plugin"
 
     # Allow underscores - remove them now
     zekyll="${zekyll//_/}"
@@ -386,6 +441,8 @@ zkllong() {
     if [ "$plugin" = "_unknown" ]; then
         -zkl-error "Error: unknown plugin"
     fi
+
+    -zkl-repo-preamble "$user" "$plugin"
 
     # Obtain zekyll (single one)
     local input="$*"
@@ -443,25 +500,21 @@ zekyll() {
 }
 
 typeset -A opthash
-zparseopts -E -D -A opthash f: -file: o: -output: || exit 1
+zparseopts -E -D -A opthash f: -file: o: -output: u -update || exit 1
 
 local target="$HOME/.zekyllfile"
 
+# Update
+(( ${+opthash[-u]} )) && ZKL_DO_UPDATE=1
+(( ${+opthash[--update]} )) && ZKL_DO_UPDATE=1
+
 # Input
-if (( ${+opthash[-f]} )); then
-    target="${opthash[-f]}"
-fi
-if (( ${+opthash[--file]} )); then
-    target="${opthash[--file]}"
-fi
+(( ${+opthash[-f]} )) && target="${opthash[-f]}"
+(( ${+opthash[--file]} )) && target="${opthash[--file]}"
 
 # Output
-if (( ${+opthash[-o]} )); then
-    ZKL_OUTPUT_PATH="${opthash[-o]}"
-fi
-if (( ${+opthash[--output]} )); then
-    ZKL_OUTPUT_PATH="${opthash[--output]}"
-fi
+(( ${+opthash[-o]} )) && ZKL_OUTPUT_PATH="${opthash[-o]}"
+(( ${+opthash[--output]} )) && ZKL_OUTPUT_PATH="${opthash[--output]}"
 
 echo "Zekyll file is: $target"
 echo
