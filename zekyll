@@ -327,6 +327,8 @@ zkl() {
     # Generate two-character bits
     zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
+    echo "Processing for user $user, plugin $plugin"
+
     # Iterate over the bits
     for zz in "${zekylls[@]}"; do
         # Skip one letter zekylls - they are allowed though not processed
