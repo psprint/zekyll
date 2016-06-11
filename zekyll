@@ -327,6 +327,32 @@ ZPLG_COL=(
 
 # 1}}}
 
+-zkl-help() {
+    echo "Create file ~/.zekyllfile, and put there e.g.:
+    zekyll yes
+    zekyll user psprint
+    zkl andromeda_software_zsh_linux_z3kyl
+    zkllong ek Completion settings
+    zekyll end
+
+To generate the default file ~/.zshrc_new from zekylls 'an', 'dr', 'om',
+'ed', 'as', 'of', 'tw', 'ar', 'ez', 'sh', 'li', 'nu', 'xz', '3k', 'yl' and
+then from the last one, 'ek'.
+
+The default repository used (if unspecified) is 'zkl'. Thus, with user
+'psprint', the git url is https://github.com/psprint/zkl
+
+'zekyll no' supresses any generation
+
+Options are:
+-h,--help       -- this help
+-f,--file       -- zekyllfile to use (default ~/.zekyllfile)
+-o,--output     -- output file to write (default ~/.zshrc_new)
+-u,--update     -- update plugins before using them
+--update-only   -- only update plugins, don't do generation
+"
+}
+
 #
 # Second parameter might be description that
 # will override the one from zekyll
@@ -489,7 +515,8 @@ zkllong() {
 # Control function
 # Sets current user or plugin
 # Triggers output generation
-# Outputs help
+# Can also output help (somone would like to see
+# help triggered from zekyllfile?)
 #
 zekyll() {
     # Quick exit when not generating
@@ -503,7 +530,7 @@ zekyll() {
 
     case "$1" in
         (help)
-            echo "Help"
+            -zkl-help
             ;;
         (user)
             ZKL_CUR_USER="$2"
@@ -521,9 +548,15 @@ zekyll() {
 }
 
 typeset -A opthash
-zparseopts -E -D -A opthash f: -file: o: -output: u -update -update-only || exit 1
+zparseopts -E -D -A opthash f: -file: o: -output: u -update -update-only h -help || exit 1
 
 local target="$HOME/.zekyllfile"
+
+# HELP
+if (( ${+opthash[-h]} + ${+opthash[--help]} )); then
+    -zkl-help
+    return 0
+fi
 
 # Update
 (( ${+opthash[-u]} )) && ZKL_DO_UPDATE=1
