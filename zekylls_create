@@ -105,7 +105,7 @@ for zekyll in "${zekylls1[@]}"; do
         echo "Will create zekyll ${zekyll}--... ($count/$all), enter description"
         vared -cp "description: " desc
 
-        if [[ "$desc" != [a-zA-Z0-9_-]## ]]; then
+        if [[ "$desc" != [a-zA-Z0-9_-]# ]]; then
             perror "Allowed characters are letters, digits, underscore and hyphen, try again"
         else
             break
