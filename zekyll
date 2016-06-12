@@ -396,6 +396,7 @@ Options are:
 
 -zkl-end() {
     print -rl -- "${ZKL_OUTPUT[@]}" > "$ZKL_OUTPUT_PATH"
+    ZKL_OUTPUT=( )
 }
 
 #
