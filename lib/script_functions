@@ -71,7 +71,10 @@ cd_will_work_on() {
     pinfo2 "Will work on following files:"
     print
 
-    ls -1
+    local -a listing
+    listing=( "${(@f)"$( ls -1 | pr -3 -e8 -f -l 1000 -t)"}" )
+    listing=( "${listing[@]:#*$'\C-L'*}" )
+    print -rl -- "${listing[@]}"
 
     print
 }
