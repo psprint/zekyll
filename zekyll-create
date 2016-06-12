@@ -95,8 +95,18 @@ while (( 1 )); do
 done
 
 #
+# Clear incomplete zekylls
+#
+
+if [ "${#${zekylls1[-1]}}" = "1" ]; then
+    echo "Removed incomplete zekyll ${zekylls1[-1]}"
+    zekylls1[-1]=()
+fi
+
+#
 # Generate the template files
 #
+
 integer count=0
 integer all=${#zekylls1}
 local zekyll
@@ -131,8 +141,5 @@ for zekyll in "${zekylls1[@]}"; do
     fi
 done
 
-if [ "${#${zekylls1[-1]}}" = "1" ]; then
-    zekylls1[-1]=()
-fi
 echo "Your EDITOR string would be: ${EDITOR:-vim} ~/.vimrc" $^zekylls1"--*"
 
