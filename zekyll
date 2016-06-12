@@ -47,8 +47,8 @@ if [[ ( -n "${terminfo[colors]}" || -n "${termcap[Co]}" ) && -z "${functions[col
     colors
 fi
 
-typeset -gAH ZPLG_COL
-ZPLG_COL=(
+typeset -gAH ZKLCOL
+ZKLCOL=(
     "title" ""
     "pname" "${fg_bold[yellow]}"
     "uname" "${fg_bold[magenta]}"
@@ -70,7 +70,7 @@ ZPLG_COL=(
 #
 
 -zkl-error() { echo "$*" >&2 }
--zkl-ierror() { echo "$*" >&2 }
+-zkl-ierror() { echo "${ZKLCOL[error]}ERROR: $*${ZKLCOL[rst]}" >&2 }
 
 # We want zkl call to be flexible. That's why there are 6 ways
 # to invoke zkl. The function detects which way is used. The 6
@@ -241,8 +241,8 @@ ZPLG_COL=(
 -zkl-any-colorify-as-uspl2() {
     -zkl-any-to-user-plugin "$1" "$2"
     local user="${reply[-2]}" plugin="${reply[-1]}"
-    local ucol="${ZPLG_COL[uname]}" pcol="${ZPLG_COL[pname]}"
-    REPLY="${ucol}${user}${ZPLG_COL[rst]}/${pcol}${plugin}${ZPLG_COL[rst]}"
+    local ucol="${ZKLCOL[uname]}" pcol="${ZKLCOL[pname]}"
+    REPLY="${ucol}${user}${ZKLCOL[rst]}/${pcol}${plugin}${ZKLCOL[rst]}"
 }
 
 # Prepare readlink command, used e.g. for
