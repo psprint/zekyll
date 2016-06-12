@@ -294,7 +294,7 @@ ZKLCOL=(
             return
         )
     else
-        -zkl-error "The repository $uspl2col doesn't exist"
+        -zkl-error "Error: The repository $uspl2col doesn't exist"
     fi
 
     return 1
