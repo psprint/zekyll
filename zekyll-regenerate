@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
-0="${(%):-%N}"
-REPO_DIR="${0%/*}"
+ZERO="${(%):-%N}"
+REPO_DIR="${ZERO%/*}"
 source "$REPO_DIR/lib/script_preamble"
 source "$REPO_DIR/lib/script_functions"
 
