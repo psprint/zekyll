@@ -69,9 +69,8 @@ ZPLG_COL=(
 # Helper functions {{{1
 #
 
--zkl-error() {
-    echo "$*" >&2
-}
+-zkl-error() { echo "$*" >&2 }
+-zkl-ierror() { echo "$*" >&2 }
 
 # We want zkl call to be flexible. That's why there are 6 ways
 # to invoke zkl. The function detects which way is used. The 6
@@ -394,9 +393,13 @@ Options are:
 # Does output
 #
 
--zkl-end() {
+-zkl-emit() {
     print -rl -- "${ZKL_OUTPUT[@]}" > "$ZKL_OUTPUT_PATH"
     ZKL_OUTPUT=( )
+
+    if [ "$ZKL_UPDATE_ONLY" = "0" ]; then
+        echo "Generated $ZKL_OUTPUT_PATH"
+    fi
 }
 
 #
@@ -420,11 +423,16 @@ Options are:
 }
 
 #
-# Sets character used for added comments
+##
+### Template calls
+##
 #
-commentis() {
-    ZKL_CSTR_A="$1"
-    ZKL_CSTR_B="$2"
+
+#
+# Shows help
+#
+help() {
+    -zkl-help
 }
 
 #
@@ -527,45 +535,103 @@ zkllong() {
 }
 
 #
-# Control function
-# Sets current user or plugin
-# Triggers output generation
-# Can also output help (somone would like to see
-# help triggered from zekyllfile?)
-# Sets output target file
-# etc.
+# Enables output
 #
-zekyll() {
-    # Quick exit when not generating
-    [ "$1" = "yes" ] && ZKL_YES="YES" && return
+yes() {
     [ "$1" = "no" ] && ZKL_YES="NO" && return
+    ZKL_YES="YES"
+}
+
+#
+# Disables output
+#
+no() {
+    [ "$1" = "yes" ] && ZKL_YES="YES" && return
+    ZKL_YES="NO"
+}
+
+#
+# Sets user to local
+#
+local_user() {
+    # Quick exit when not generating
     [ "$ZKL_YES" = "NO" ] && return
 
-    # All functions from now on will not change these values globally
-    local -a match mbegin mend
-    local MATCH; integer MBEGIN MEND
-
-    case "$1" in
-        (help)
-            -zkl-help
-            ;;
-        (user)
-            ZKL_CUR_USER="$2"
-            ;;
-        (plugin)
-            ZKL_CUR_PLUGIN="$2"
-            ;;
-        (output)
-            ZKL_OUTPUT_PATH="$2"
-            ;;
-        (end)
-            -zkl-end
-            ;;
-        (local)
-            ZKL_CUR_USER="$ZKL_LOCAL_USER"
-            ;;
-    esac
+    [[ "$#" -ne "0" ]] && -zkl-ierror "$0 takes no argument"
+    ZKL_CUR_USER="$ZKL_LOCAL_USER"
 }
+
+#
+# Sets default plugin
+#
+default_plugin() {
+    # Quick exit when not generating
+    [ "$ZKL_YES" = "NO" ] && return
+
+    [[ "$#" -ne "0" ]] && -zkl-ierror "$0 takes no argument"
+    ZKL_CUR_PLUGIN="$ZKL_DEFAULT_PLUGIN"
+}
+
+#
+# Sets current user
+#
+user() {
+    # Quick exit when not generating
+    [ "$ZKL_YES" = "NO" ] && return
+
+    [[ "$#" -ne "1" ]] && -zkl-ierror "$0 takes argument" && local_user && return
+    ZKL_CUR_USER="$1"
+}
+
+#
+# Sets current plugin
+#
+plugin() {
+    # Quick exit when not generating
+    [ "$ZKL_YES" = "NO" ] && return
+
+    [[ "$#" -ne "1" ]] && -zkl-ierror "$0 takes argument" && default_plugin && return
+    ZKL_CUR_PLUGIN="$1"
+}
+
+#
+# Sets character used for added comments
+#
+commentis() {
+    [ "$ZKL_YES" = "NO" ] && return
+
+    [[ "$#" -eq "0" || "$#" -gt "2" ]] && -zkl-ierror "$0 takes one or two arguments" && return
+    ZKL_CSTR_A="$1"
+    ZKL_CSTR_B="$2"
+}
+
+#
+# Sets current output path
+#
+path() {
+    # Quick exit when not generating
+    [ "$ZKL_YES" = "NO" ] && return
+
+    [[ "$#" -ne "1" ]] && -zkl-ierror "$0 takes argument" && return
+    ZKL_OUTPUT_PATH="$1"
+}
+
+#
+# Emits output file
+#
+emit() {
+    # Quick exit when not generating
+    [ "$ZKL_YES" = "NO" ] && return
+
+    [[ "$#" -ne "0" ]] && -zkl-ierror "$0 takes no argument"
+    -zkl-emit
+}
+
+#
+##
+### Main code
+##
+#
 
 typeset -A opthash
 zparseopts -E -D -A opthash f: -file: o: -output: u -update -update-only h -help || exit 1
@@ -618,8 +684,5 @@ read enter
 source "$target"
 
 echo
-if [ "$ZKL_UPDATE_ONLY" = "0" ]; then
-    echo "Generated $ZKL_OUTPUT_PATH"
-fi
 
 # vim:ft=zsh
