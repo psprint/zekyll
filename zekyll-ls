@@ -6,6 +6,22 @@ source "$REPO_DIR/lib/script_preamble"
 source "$REPO_DIR/lib/script_functions"
 
 #
+# Zparseopts
+#
+
+ZKL_HELP="0"
+zparseopts -E -D -A opthash h -help || exit 1
+
+(( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+
+if [ "$ZKL_HELP" = "1" ]; then
+    pinfo "Usage: zekyll-ls"
+    print "Asks for zekylls, and lists associated files in the same order as found in zekylls"
+
+    exit 0
+fi
+
+#
 # Read destination path
 #
 

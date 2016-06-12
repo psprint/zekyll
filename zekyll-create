@@ -11,11 +11,28 @@ source "$REPO_DIR/lib/script_functions"
 
 ZKL_PERFORM_WRITE="0"
 ZKL_ADD_GIT="0"
-zparseopts -E -D -A opthash w -write g -git || exit 1
+ZKL_HELP="0"
+zparseopts -E -D -A opthash w -write g -git h -help || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-g]} + ${+opthash[--git]} )) && ZKL_ADD_GIT="1"
+(( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+
+if [ "$ZKL_HELP" = "1" ]; then
+    pinfo "Usage: zekyll-create [options]"
+    print "Creates files for given zekylls. If you give zekylls: abcd, it"
+    print "will create two files ab--*, cd--*, asking you for a description"
+    print "for each of them (they can be given empty). Also, will check for"
+    print "correctness of zekylls (no duplicates) and for collisions with"
+    print "existing files."
+    print
+    help-opts
+    help-dry
+    help-git
+
+    exit 0
+fi
 
 dry-mode-msg
 

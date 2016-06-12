@@ -12,12 +12,28 @@ source "$REPO_DIR/lib/script_functions"
 ZKL_PERFORM_WRITE="0"
 ZKL_GIT="0"
 ZKL_CD="0"
-zparseopts -E -D -A opthash w -write g -git c -cd || exit 1
+ZKL_HELP="0"
+zparseopts -E -D -A opthash w -write g -git c -cd h -help || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-g]} + ${+opthash[--git]} )) && ZKL_GIT="1"
 (( ${+opthash[-c]} + ${+opthash[--cd]} )) && ZKL_CD="1"
+(( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+
+if [ "$ZKL_HELP" = "1" ]; then
+    pinfo "Usage: zekyll-mv [options] {src zekyll} {dst zekyll}"
+    print "Takes two zekylls, e.g. ab cd, and moves associated file"
+    print "ab--* to cd--*, preserving description, and checking for"
+    print "a collision with already existing cd--* file."
+    print
+    help-opts
+    help-dry
+    help-git
+    help-cd
+
+    exit 0
+fi
 
 dry-mode-msg
 

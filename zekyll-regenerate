@@ -10,10 +10,25 @@ source "$REPO_DIR/lib/script_functions"
 #
 
 ZKL_PERFORM_WRITE="0"
-zparseopts -E -D -A opthash w -write || exit 1
+ZKL_HELP="0"
+zparseopts -E -D -A opthash w -write h -help || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
+(( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+
+if [ "$ZKL_HELP" = "1" ]; then
+    pinfo "Usage: zekyll-regenerate [options]"
+    print "Translates files from given source zekylls to given destination zekylls."
+    print "Moves the files. If you ask to translate zekylls \"abcd\" to \"efgh\", it"
+    print "will move ab -> ef and cd -> gh, preserving descriptions of files."
+    print
+    help-opts
+    help-dry
+    print "Git mode is deterimed from existence of .git directory"
+
+    exit 0
+fi
 
 dry-mode-msg
 
