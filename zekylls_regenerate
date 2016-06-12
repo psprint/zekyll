@@ -2,12 +2,21 @@
 
 emulate -LR zsh
 
+zmodload zsh/zutil
+
 setopt extendedglob typesetsilent
 
 bindkey -e
 
 autoload colors
 colors
+
+ZKL_PERFORM_WRITE="0"
+
+zparseopts -E -D -A opthash w -write || exit 1
+
+# No dry run
+(( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 
 # Helper functions
 pinfo() { print "${fg_bold[green]}$*$reset_color"; }
@@ -201,7 +210,12 @@ for (( i=1; i<=size; i++ )); do
     local file2="${zz2}--$desc"
 
     if [ "$file1" != "$file2" ]; then
-        echo "${cmd[@]}" "$file1" "$file2"
+        # Dry run?
+        if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+            "${cmd[@]}" "$file1" "$file2"
+        else
+            echo "${cmd[@]}" "$file1" "$file2"
+        fi
     fi
 done
 
