@@ -455,6 +455,8 @@ help() {
 # long, passed possibly as longer strings, with allowed
 # underscores, e.g. my_zekyll_generates_my_config
 #
+# This function takes parametes as -zkl-any-to-user-plugin-zekyll
+#
 zkl() {
     setopt localoptions extendedglob typesetsilent
 
@@ -498,9 +500,9 @@ zkl() {
 
 #
 # This function takes:
-# zkllong [:alnum:][:alnum:] Some text here (a description, comment)
-#
-# Thus, user has to be set
+# zkllong               [:alnum:][:alnum:] Some text here (a description, comment)
+# zkllong {user}:       [:alnum:][:alnum:] Some text here (a description, comment)
+# zkllong {user}/plugin:[:alnum:][:alnum:] Some text here (a description, comment)
 #
 zkllong() {
     setopt localoptions extendedglob typesetsilent
@@ -517,6 +519,16 @@ zkllong() {
     local plugin="$ZKL_CUR_PLUGIN"
     if [ "$plugin" = "_unknown" ]; then
         -zkl-error "Error: unknown plugin"
+    fi
+
+    if [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
+        user="${1%:*}"
+        1="${1#*:}"
+    elif [[ "$1" = [a-zA-Z0-9]##/[a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
+        user="${1%/*}"
+        plugin="${1#*/}"
+        plugin="${plugin%:*}"
+        1="${1#*:}"
     fi
 
     -zkl-repo-preamble "$user" "$plugin"
