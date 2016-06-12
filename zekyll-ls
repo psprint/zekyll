@@ -31,6 +31,11 @@ fi
 # Read destination path
 #
 
+# Take path from first argument if not given via -p/--path
+if [[ -z "$ZKL_PATH" && -n "$1" ]]; then
+    ZKL_PATH="$1"
+fi
+
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && { read_destination_path || exit 1 }
 cd_will_work_on "$REPLY"
