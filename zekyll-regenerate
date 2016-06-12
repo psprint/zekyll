@@ -111,7 +111,7 @@ if [[ "$#all_zekylls" -eq 0 ]]; then
     exit 1
 fi
 
-# Here we will have them fully extracted, without paths
+# Here we will have them fully extracted, without descriptions
 all_zekylls=( "${all_zekylls[@]//(#b)([a-zA-Z0-9])([a-zA-Z0-9])--*/${match[1]}${match[2]}}" )
 
 # Now substract zekylls1 from all_zekylls
