@@ -517,7 +517,7 @@ zkllong() {
 
     zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zekyll}--*(N.) )
     if [[ "${#zekyll_file}" -eq 0 ]]; then
-        echo "Zekyll $zz doesn't exist, skipping"
+        echo "Zekyll $zekyll ($desc) doesn't exist, skipping"
         return
     fi
 
