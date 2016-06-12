@@ -10,13 +10,19 @@ source "$REPO_DIR/lib/script_functions"
 #
 
 ZKL_HELP="0"
-zparseopts -E -D -A opthash h -help || exit 1
+ZKL_PATH=""
+zparseopts -E -D -A opthash h -help p: -path: || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+(( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
+(( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zekyll-view-zekylls"
     print "Asks for zekylls, and displays selection list with them, launching \$EDITOR at each selection"
+    print
+    help-opts
+    help-path
 
     exit 0
 fi
@@ -25,7 +31,8 @@ fi
 # Read destination path
 #
 
-read_destination_path || exit 1
+REPLY="$ZKL_PATH"
+[ "$REPLY" = "" ] && { read_destination_path || exit 1 }
 cd_will_work_on "$REPLY"
 
 #
