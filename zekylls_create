@@ -1,0 +1,164 @@
+#!/usr/bin/env zsh
+
+emulate -LR zsh
+
+zmodload zsh/zutil
+
+setopt extendedglob typesetsilent
+
+bindkey -e
+
+autoload colors
+colors
+
+ZKL_PERFORM_WRITE="0"
+ZKL_ADD_GIT="0"
+
+zparseopts -E -D -A opthash w -write g -git || exit 1
+
+# No dry run
+(( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
+(( ${+opthash[-g]} + ${+opthash[--git]} )) && ZKL_ADD_GIT="1"
+
+# Helper functions
+pinfo() { print "${fg_bold[green]}$*$reset_color"; }
+pinfon() { print -n "${fg_bold[green]}$*$reset_color"; }
+pinfo2() { print "${fg_bold[yellow]}$*$reset_color"; }
+pinfo2n() { print -n "${fg_bold[yellow]}$*$reset_color"; }
+perror() { print "${fg_bold[red]}$*$reset_color"; }
+perrorn() { print -n "${fg_bold[red]}$*$reset_color"; }
+clearinput() { repeat 10; do read -rs -k 1 -t; done; }
+
+
+# Detects duplicates in given array
+detect_duplicates() {
+    local -a sorted
+    sorted=( "${(on)@}" )
+
+    integer dups=0
+
+    local prev="" i
+    for i in "${sorted[@]}"; do
+        if [ "$prev" = "$i" ]; then
+            echo "Duplicate zekyll found: $i"
+            dups=1
+        fi
+        prev="$i"
+    done
+
+    return $dups
+}
+
+#
+# Read destination path
+#
+
+local zekylls_path
+pinfo "Where are zekylls located? (default: current directory \".\"):"
+read zekylls_path\?"Enter path: "
+if [ -z "$zekylls_path" ]; then
+    zekylls_path="."
+fi
+
+if ! test -d "$zekylls_path"; then
+    perror "Path doesn't exist"
+    exit 1
+fi
+
+cd "$zekylls_path"
+
+print
+pinfo2 "Will work on following files:"
+print
+ls -1
+print
+
+#
+# Read and examine new zekylls string
+#
+local zekylls_string_vis=""
+while (( 1 )); do
+    pinfo "Enter NEW zekylls string:"
+    vared -cp "zekylls: " zekylls_string_vis
+
+    print
+    zekylls_string="${zekylls_string_vis//_/}"
+    pinfo2 "Read: $zekylls_string"
+    print
+
+    local -a zekylls1
+    zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+
+    pinfo "Checking current zekyll for duplicates..."
+    if ! detect_duplicates "${zekylls1[@]}"; then
+        perror "Duplicates found, restaring"
+        continue
+    fi
+
+    print
+
+    #
+    # Check for collisions with remaining (uncovered) files
+    #
+
+    pinfo "Checking for collisions with remaining files..."
+
+    # Get list of zekylls that are not in zekylls1 list, but exist on filesystem
+    # First get all zekylls
+    local -a all_zekylls
+    all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9]--*(N.) )
+
+    # Here we will have them fully extracted, without paths
+    all_zekylls=( "${all_zekylls[@]//(#b)([a-zA-Z0-9])([a-zA-Z0-9])--*/${match[1]}${match[2]}}" )
+
+    # Now check if target zekylls1 have something in common with current files
+    local -a common 
+    common=( ${all_zekylls:*zekylls1} )
+
+    if [[ "${#common}" -gt 0 ]]; then
+        perror "Collisions detected: ${common[@]}, you would create duplicate zekylls, restarting"
+        continue
+    fi
+
+    break
+done
+
+#
+# Generate the template files
+#
+integer count=0
+integer all=${#zekylls1}
+local zekyll
+for zekyll in "${zekylls1[@]}"; do
+    count=count+1
+
+    local desc=""
+    while (( 1 )); do
+        echo "Will create zekyll ${zekyll}--... ($count/$all), enter description"
+        vared -cp "description: " desc
+
+        if [[ "$desc" != [a-zA-Z0-9_-]## ]]; then
+            perror "Allowed characters are letters, digits, underscore and hyphen, try again"
+        else
+            break
+        fi
+    done
+
+    zekyll_file="${zekyll}--${desc}"
+    if [ "$ZKL_ADD_GIT" = "1" ]; then
+        if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+            touch $zekyll_file; git add $zekyll_file
+        else
+            echo "touch $zekyll_file; git add $zekyll_file"
+        fi
+    else
+        if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+            touch $zekyll_file
+        else
+            echo "touch $zekyll_file"
+        fi
+    fi
+done
+
+echo "Your EDITOR string would be: ${EDITOR:-vim} ~/.vimrc" $^zekylls1"--*"
+
