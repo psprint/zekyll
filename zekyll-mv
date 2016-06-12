@@ -12,14 +12,17 @@ source "$REPO_DIR/lib/script_functions"
 ZKL_PERFORM_WRITE="0"
 ZKL_GIT="0"
 ZKL_CD="0"
+ZKL_PATH=""
 ZKL_HELP="0"
-zparseopts -E -D -A opthash w -write g -git c -cd h -help || exit 1
+zparseopts -E -D -A opthash w -write g -git c -cd h -help p: -path: || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-g]} + ${+opthash[--git]} )) && ZKL_GIT="1"
 (( ${+opthash[-c]} + ${+opthash[--cd]} )) && ZKL_CD="1"
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+(( ${+opthash[-p]} )) && ZKL_CD="1" && ZKL_PATH="${opthash[-p]}"
+(( ${+opthash[--path]} )) && ZKL_CD="1" && ZKL_PATH="${opthash[--path]}"
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zekyll-mv [options] {src zekyll} {dst zekyll}"
@@ -31,6 +34,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-dry
     help-git
     help-cd
+    help-path
 
     exit 0
 fi
@@ -42,7 +46,8 @@ dry-mode-msg
 #
 
 if [ "$ZKL_CD" = "1" ]; then
-    read_destination_path || exit 1
+    REPLY="$ZKL_PATH"
+    [ "$REPLY" = "" ] && { read_destination_path || exit 1 }
 else
     REPLY="."
 fi

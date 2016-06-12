@@ -12,12 +12,15 @@ source "$REPO_DIR/lib/script_functions"
 ZKL_PERFORM_WRITE="0"
 ZKL_ADD_GIT="0"
 ZKL_HELP="0"
-zparseopts -E -D -A opthash w -write g -git h -help || exit 1
+ZKL_PATH=""
+zparseopts -E -D -A opthash w -write g -git h -help p: -path: || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-g]} + ${+opthash[--git]} )) && ZKL_ADD_GIT="1"
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+(( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
+(( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zekyll-create [options]"
@@ -30,6 +33,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-opts
     help-dry
     help-git
+    help-path
 
     exit 0
 fi
@@ -40,7 +44,8 @@ dry-mode-msg
 # Read destination path
 #
 
-read_destination_path || exit 1
+REPLY="$ZKL_PATH"
+[ "$REPLY" = "" ] && { read_destination_path || exit 1 }
 cd_will_work_on "$REPLY"
 
 #
