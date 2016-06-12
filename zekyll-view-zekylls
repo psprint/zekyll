@@ -94,9 +94,9 @@ files=( ${^existing}--*(N.) )
 
 while (( 1 )); do
     local selection=""
-    selection=$( "$REPO_DIR/zsh-select-zekyll" "${files[@]}" )
+    selection=$( "$REPO_DIR/zsh-select-zekyll" "${files[@]}" "END SELECTION" )
 
-    [ "$selection" = "" ] && break
+    [[ "$selection" = "" || "$selection" = "END SELECTION" ]] && print && break
 
     "${EDITOR:-vim}" "$selection"
 done
