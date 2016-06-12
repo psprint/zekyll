@@ -1,0 +1,30 @@
+# Helper functions
+pinfo() { print "${fg_bold[green]}$*$reset_color"; }
+pinfon() { print -n "${fg_bold[green]}$*$reset_color"; }
+pinfo2() { print "${fg_bold[yellow]}$*$reset_color"; }
+pinfo2n() { print -n "${fg_bold[yellow]}$*$reset_color"; }
+perror() { print "${fg_bold[red]}$*$reset_color"; }
+perrorn() { print -n "${fg_bold[red]}$*$reset_color"; }
+clearinput() { repeat 10; do read -rs -k 1 -t; done; }
+
+
+# Detects duplicates in given array
+detect_duplicates() {
+    local -a sorted
+    sorted=( "${(on)@}" )
+
+    integer dups=0
+
+    local prev="" i
+    for i in "${sorted[@]}"; do
+        if [ "$prev" = "$i" ]; then
+            echo "Duplicate zekyll found: $i"
+            dups=1
+        fi
+        prev="$i"
+    done
+
+    return $dups
+}
+
+# vim:ft=zsh
