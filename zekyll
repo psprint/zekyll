@@ -641,6 +641,45 @@ path() {
 }
 
 #
+# Loads given zekyll file
+# Can take user or user/plugin, i.e. user:zekyllfile, user/plugin:zekyllfile
+#
+file() {
+    # Quick exit when not generating
+    [ "$ZKL_YES" = "NO" ] && return
+
+    -zkl-prepare-home
+
+    local user="$ZKL_CUR_USER"
+    [ "$user" = "_unknown" ] && -zkl-error "Error: unknown user" && return
+
+    local plugin="$ZKL_CUR_PLUGIN"
+    [ "$plugin" = "_unknown" ] && -zkl-error "Error: unknown plugin" && return
+
+    local zekyllfile="$1"
+    if [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
+        user="${1%:*}"
+        zekyllfile="${1#*:}"
+    elif [[ "$1" = [a-zA-Z0-9]##/[a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
+        user="${1%/*}"
+        plugin="${1#*/}"
+        plugin="${plugin%:*}"
+        zekyllfile="${1#*:}"
+    fi
+
+    -zkl-repo-preamble "$user" "$plugin"
+
+    [ "$ZKL_UPDATE_ONLY" = "1" ] && return
+
+    # Now CD into given "$user" "$plugin" and source zekyllfile
+    [ ! -d "$ZKL_REPOS_DIR/${user}---${plugin}" ] && -zkl-error "Repository ${user}/${plugin} doesn't exist" && return 1
+
+    cd "$ZKL_REPOS_DIR/${user}---${plugin}"
+
+    source "$zekyllfile"
+}
+
+#
 # Emits output file
 #
 emit() {
