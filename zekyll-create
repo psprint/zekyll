@@ -112,5 +112,8 @@ for zekyll in "${zekylls1[@]}"; do
     fi
 done
 
+if [ "${#${zekylls1[-1]}}" = "1" ]; then
+    zekylls1[-1]=()
+fi
 echo "Your EDITOR string would be: ${EDITOR:-vim} ~/.vimrc" $^zekylls1"--*"
 
