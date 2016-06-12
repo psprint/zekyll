@@ -1,0 +1,94 @@
+#!/usr/bin/env zsh
+
+0="${(%):-%N}"
+REPO_DIR="${0%/*}"
+source "$REPO_DIR/lib/script_preamble"
+source "$REPO_DIR/lib/script_functions"
+
+#
+# Zparseopts
+#
+
+ZKL_PERFORM_WRITE="0"
+ZKL_GIT="0"
+ZKL_CD="0"
+zparseopts -E -D -A opthash w -write g -git c -cd || exit 1
+
+# No dry run
+(( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
+(( ${+opthash[-g]} + ${+opthash[--git]} )) && ZKL_GIT="1"
+(( ${+opthash[-c]} + ${+opthash[--cd]} )) && ZKL_CD="1"
+
+#
+# Read destination path?
+#
+
+if [ "$ZKL_CD" = "1" ]; then
+    read_destination_path || exit 1
+else
+    REPLY="."
+fi
+
+#
+# Will work on
+#
+
+cd_will_work_on "$REPLY"
+
+#
+# Examine parameters
+#
+
+if [[ -z "$1" || -z "$2" ]]; then
+    perror "Two arguments needed, source zekyll and destination zekyll"
+    exit 1
+fi
+
+#
+# Examine files
+#
+
+local src_zekyll="$1"
+local dst_zekyll="$2"
+
+local -a src_file
+src_file=( ${src_zekyll}--*(N.) )
+
+local -a dst_file
+dst_file=( ${dst_zekyll}--*(N) )
+
+if [[ "${#src_file}" -eq 0 ]]; then
+    perror "Source file doesn't exist (for zekyll $src_zekyll)"
+    exit 1
+fi
+
+if [[ "${#dst_file}" -ne 0 ]]; then
+    perror "Destination file already exists: ${dst_file[1]}"
+    exit 1
+fi
+
+#
+# Compute destination zekyll
+#
+
+src="${src_file[1]}"
+dst="${src#[a-zA-Z0-9][a-zA-Z0-9]}"
+dst="${dst_zekyll}${dst}"
+
+#
+# Disk operations, dry or actual
+#
+
+if [ "$ZKL_GIT" = "1" ]; then
+    if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+        git mv -v "$src" "$dst"
+    else
+        echo "git mv \"$src\" \"$dst\""
+    fi
+else
+    if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+        mv -v "$src" "$dst"
+    else
+        echo "mv \"$src\" \"$dst\""
+    fi
+fi
