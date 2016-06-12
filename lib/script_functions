@@ -8,6 +8,10 @@ perrorn() { print -n "${fg_bold[red]}$*$reset_color"; }
 clearinput() { repeat 10; do read -rs -k 1 -t; done; }
 
 #
+# Standard outputs
+#
+
+dry-mode-msg() { [ "$ZKL_PERFORM_WRITE" = "0" ] && pinfo2 "= Dry mode =" || perror "= Actual mode (not-dry) ="; }
 # Detects duplicates in given array
 #
 

@@ -15,6 +15,8 @@ zparseopts -E -D -A opthash w -write || exit 1
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 
+dry-mode-msg
+
 #
 # Read destination path
 #

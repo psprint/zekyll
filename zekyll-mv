@@ -19,6 +19,8 @@ zparseopts -E -D -A opthash w -write g -git c -cd || exit 1
 (( ${+opthash[-g]} + ${+opthash[--git]} )) && ZKL_GIT="1"
 (( ${+opthash[-c]} + ${+opthash[--cd]} )) && ZKL_CD="1"
 
+dry-mode-msg
+
 #
 # Read destination path?
 #
