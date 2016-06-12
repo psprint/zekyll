@@ -7,8 +7,10 @@ perror() { print "${fg_bold[red]}$*$reset_color"; }
 perrorn() { print -n "${fg_bold[red]}$*$reset_color"; }
 clearinput() { repeat 10; do read -rs -k 1 -t; done; }
 
-
+#
 # Detects duplicates in given array
+#
+
 detect_duplicates() {
     local -a sorted
     sorted=( "${(on)@}" )
@@ -25,6 +27,42 @@ detect_duplicates() {
     done
 
     return $dups
+}
+
+#
+# Read destination path
+#
+
+read_destination_path() {
+    local zekylls_path
+    pinfo "Where are zekylls located? (default: current directory \".\"):"
+    read zekylls_path\?"Enter path: "
+    if [ -z "$zekylls_path" ]; then
+        zekylls_path="."
+    fi
+
+    if ! test -d "$zekylls_path"; then
+        perror "Path doesn't exist"
+        return 1
+    fi
+
+    REPLY="$zekylls_path"
+    return 0
+}
+
+#
+# CD to path and show files there
+#
+cd_will_work_on() {
+    cd "$1"
+
+    print
+    pinfo2 "Will work on following files:"
+    print
+
+    ls -1
+
+    print
 }
 
 # vim:ft=zsh

@@ -19,25 +19,12 @@ zparseopts -E -D -A opthash w -write || exit 1
 # Read destination path
 #
 
-local zekylls_path
-pinfo "Where are zekylls located? (default: current directory \".\"):"
-read zekylls_path\?"Enter path: "
-if [ -z "$zekylls_path" ]; then
-    zekylls_path="."
-fi
+read_destination_path || exit 1
+cd_will_work_on "$REPLY"
 
-if ! test -d "$zekylls_path"; then
-    perror "Path doesn't exist"
-    exit 1
-fi
-
-cd "$zekylls_path"
-
-print
-pinfo2 "Will work on following files:"
-print
-ls -1
-print
+#
+# Read zekylls
+#
 
 local zekylls_string
 pinfo "Enter current zekylls string:"

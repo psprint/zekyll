@@ -21,29 +21,13 @@ zparseopts -E -D -A opthash w -write g -git || exit 1
 # Read destination path
 #
 
-local zekylls_path
-pinfo "Where are zekylls located? (default: current directory \".\"):"
-read zekylls_path\?"Enter path: "
-if [ -z "$zekylls_path" ]; then
-    zekylls_path="."
-fi
-
-if ! test -d "$zekylls_path"; then
-    perror "Path doesn't exist"
-    exit 1
-fi
-
-cd "$zekylls_path"
-
-print
-pinfo2 "Will work on following files:"
-print
-ls -1
-print
+read_destination_path || exit 1
+cd_will_work_on "$REPLY"
 
 #
 # Read and examine new zekylls string
 #
+
 local zekylls_string_vis=""
 while (( 1 )); do
     pinfo "Enter NEW zekylls string:"
