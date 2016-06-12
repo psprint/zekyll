@@ -56,7 +56,8 @@ ZKLCOL=(
     "error" "${fg_bold[red]}"
     "p" "${fg_bold[blue]}"
     "bar" "${fg_bold[magenta]}"
-    "info" "${fg_bold[green]}"
+    "info1" "${fg_bold[green]}"
+    "info2" "${fg_bold[yellow]}"
     "uninst" "${fg_bold[blue]}"
     "success" "${fg_bold[green]}"
     "failure" "${fg_bold[red]}"
@@ -69,7 +70,9 @@ ZKLCOL=(
 # Helper functions {{{1
 #
 
--zkl-error() { echo "$*" >&2; return 0; }
+-zkl-pinfo()  { echo "${ZKLCOL[info1]}$*${ZKLCOL[rst]}" >&2; return 0; }
+-zkl-pinfo2() { echo "${ZKLCOL[info2]}$*${ZKLCOL[rst]}" >&2; return 0; }
+-zkl-error()  { echo "${ZKLCOL[error]}ERROR: $*${ZKLCOL[rst]}" >&2; return 0; }
 -zkl-ierror() { echo "${ZKLCOL[error]}ERROR: $*${ZKLCOL[rst]}" >&2; return 0; }
 
 # We want zkl call to be flexible. That's why there are 6 ways
@@ -479,7 +482,7 @@ zkl() {
     # Generate two-character bits
     zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-    echo "\nProcessing for user $user, plugin $plugin\n"
+    -zkl-pinfo2 "\nProcessing for user $user, plugin $plugin\n"
 
     # Iterate over the bits
     for zz in "${zekylls[@]}"; do
@@ -539,7 +542,7 @@ zkllong() {
     local zekyll
     zekyll="${input//(#b)([a-zA-Z0-9]) #([a-zA-Z0-9])*/${match[1]}${match[2]}}"
 
-    echo "\nProcessing (long) for user $user, plugin $plugin\n"
+    -zkl-pinfo2 "\nProcessing (long) for user $user, plugin $plugin\n"
 
     if [ "${#zekyll}" -eq 1 ]; then
         echo "Skipping single letter zekyll $zekyll"
