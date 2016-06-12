@@ -69,8 +69,8 @@ ZKLCOL=(
 # Helper functions {{{1
 #
 
--zkl-error() { echo "$*" >&2 }
--zkl-ierror() { echo "${ZKLCOL[error]}ERROR: $*${ZKLCOL[rst]}" >&2 }
+-zkl-error() { echo "$*" >&2; return 0; }
+-zkl-ierror() { echo "${ZKLCOL[error]}ERROR: $*${ZKLCOL[rst]}" >&2; return 0; }
 
 # We want zkl call to be flexible. That's why there are 6 ways
 # to invoke zkl. The function detects which way is used. The 6
@@ -512,14 +512,10 @@ zkllong() {
     -zkl-prepare-home
 
     local user="$ZKL_CUR_USER"
-    if [ "$user" = "_unknown" ]; then
-        -zkl-error "Error: unknown user"
-    fi
+    [ "$user" = "_unknown" ] && -zkl-error "Error: unknown user" && return
 
     local plugin="$ZKL_CUR_PLUGIN"
-    if [ "$plugin" = "_unknown" ]; then
-        -zkl-error "Error: unknown plugin"
-    fi
+    [ "$plugin" = "_unknown" ] && -zkl-error "Error: unknown plugin" && return
 
     if [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
         user="${1%:*}"
