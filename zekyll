@@ -532,6 +532,8 @@ zkllong() {
 # Triggers output generation
 # Can also output help (somone would like to see
 # help triggered from zekyllfile?)
+# Sets output target file
+# etc.
 #
 zekyll() {
     # Quick exit when not generating
@@ -552,6 +554,9 @@ zekyll() {
             ;;
         (plugin)
             ZKL_CUR_PLUGIN="$2"
+            ;;
+        (output)
+            ZKL_OUTPUT_PATH="$2"
             ;;
         (end)
             -zkl-end
