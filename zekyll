@@ -364,8 +364,23 @@ Options are:
     echo "Processing ${1:t}"
     reply=( "${(@f)"$(<$1)"}" )
 
+    #
     # Remove vim mode lines
-    reply=( "${(@)reply:#\# #vim:*}" )
+    #
+
+    local cchar1="$ZKL_CSTR_A"
+    local first="${cchar1[1]}"
+    first="${first//(#m)[][*?|#~^()><\\]/\\$MATCH}"
+    # Collapse comment characters
+    cchar1="${cchar1//$~first##/$first}"
+
+    local cchar2="$ZKL_CSTR_B"
+    if [ -n "$cchar2" ]; then
+        first="${cchar2[1]//(#m)[][*?|#~^()><\\]/\\$MATCH}"
+        cchar2="${cchar2//$~first##/$first}"
+    fi
+
+    reply=( "${(@)reply:#$~cchar1 #vim:*$~cchar2}" )
 
     # Add description line
     local line
@@ -595,7 +610,8 @@ plugin() {
 }
 
 #
-# Sets character used for added comments
+# Sets characters (opening and closing ones) used for added comments
+# Resets closing characters if only opening are given
 #
 commentis() {
     [ "$ZKL_YES" = "NO" ] && return
