@@ -78,6 +78,8 @@ done
 
 print
 
+[[ "${#existing}" -eq 0 ]] && exit 0
+
 #
 # Display list of zekylls and open editor for any selection
 #
