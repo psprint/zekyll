@@ -68,7 +68,7 @@ while (( 1 )); do
     print
 
     local -a zekylls1
-    zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+    zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
     pinfo "Checking current zekyll for duplicates..."
     if ! detect_duplicates "${zekylls1[@]}"; then
@@ -87,10 +87,10 @@ while (( 1 )); do
     # Get list of zekylls that are not in zekylls1 list, but exist on filesystem
     # First get all zekylls
     local -a all_zekylls
-    all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9]--*(N.) )
+    all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]--*(N.) )
 
     # Here we will have them fully extracted, without paths
-    all_zekylls=( "${all_zekylls[@]//(#b)([a-zA-Z0-9])([a-zA-Z0-9])--*/${match[1]}${match[2]}}" )
+    all_zekylls=( "${all_zekylls[@]//(#b)([a-zA-Z0-9])([a-zA-Z0-9])([a-zA-Z0-9])--*/${match[1]}${match[2]}${match[3]}}" )
 
     # Now check if target zekylls1 have something in common with current files
     local -a common 

@@ -108,7 +108,7 @@ fi
 #
 
 src="${src_file[1]}"
-dst="${src#[a-zA-Z0-9][a-zA-Z0-9]}"
+dst="${src#[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]}"
 dst="${dst_zekyll}${dst}"
 
 #

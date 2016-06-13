@@ -74,7 +74,7 @@ if [ "$ZKL_SILENT" = "0" ]; then
 fi
 
 local -a zekylls1
-zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
 if [ "$ZKL_SILENT" = "0" ]; then
     pinfo "Checking current zekyll for duplicates..."
