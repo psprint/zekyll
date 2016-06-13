@@ -13,10 +13,11 @@ clearinput() { repeat 10; do read -rs -k 1 -t; done; }
 
 dry-mode-msg() { [ "$ZKL_PERFORM_WRITE" = "0" ] && pinfo2 "= Dry mode =" || perror "= Actual mode (not-dry) ="; }
 help-opts(){ pinfo "Options are:"; }
-help-cd()  { print -- "-c/--cd           -- ask for working directory, otherwise it's current directory"; }
-help-dry() { print -- "-w/--write        -- actual operation mode - else it is always dry-run mode"; }
-help-git() { print -- "-g/--git          -- perform operations with git (to update repository not just files)"; }
-help-path(){ print -- "-p/--path [path]  -- work in given path (don't ask for it)"; }
+help-cd()  { print -- "-c/--cd             -- ask for working directory, otherwise it's current directory"; }
+help-dry() { print -- "-w/--write          -- actual operation mode - else it is always dry-run mode"; }
+help-git() { print -- "-g/--git            -- perform operations with git (to update repository not just files)"; }
+help-path(){ print -- "-p/--path [path]    -- work in given path (don't ask for it)"; }
+help-zkl() { print -- "-z/--zkl [zekylls]  -- process given zekylls"; }
 
 #
 # Detects duplicates in given array
