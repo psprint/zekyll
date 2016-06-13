@@ -22,8 +22,8 @@ zparseopts -E -D -A opthash w -write g -git c -cd h -help p: -path: || exit 1
 (( ${+opthash[-g]} + ${+opthash[--git]} )) && ZKL_GIT="1"
 (( ${+opthash[-c]} + ${+opthash[--cd]} )) && ZKL_CD="1"
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
-(( ${+opthash[-p]} )) && ZKL_CD="1" && ZKL_PATH="${opthash[-p]}"
-(( ${+opthash[--path]} )) && ZKL_CD="1" && ZKL_PATH="${opthash[--path]}"
+(( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
+(( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-mv [options] {src zekyll} {dst zekyll}"
