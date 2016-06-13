@@ -3,6 +3,7 @@
 ZERO="${(%):-%N}"
 REPO_DIR="${ZERO%/*}"
 source "$REPO_DIR/lib/script_preamble"
+source "$REPO_DIR/lib/script_vars"
 source "$REPO_DIR/lib/script_functions"
 
 #

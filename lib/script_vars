@@ -1,0 +1,6 @@
+typeset -g LIB_DIR="${REPO_DIR/lib}"
+typeset -g ZKL_HOME="$HOME/.zekyll"
+typeset -g ZKL_REPOS_DIR="$ZKL_HOME/repos"
+typeset -g ZKL_DIR="$REPO_DIR"
+
+# vim:ft=zsh
