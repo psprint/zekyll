@@ -537,6 +537,12 @@ Options are:
 
     print -rl -- "${output[@]}" > "$ZKL_OUTPUT_PATH"
 
+    ZKL_EMIT_ZEKYLLS=( )
+    ZKL_EMIT_SECTIONS=( )
+    ZKL_EMIT_REPOS=( )
+    ZKL_EMIT_FILE_NAMES=( )
+    ZKL_EMIT_DESCRIPTIONS=( )
+
     if [ "$ZKL_UPDATE_ONLY" = "0" ]; then
         -zkl-pinfo "Generated $ZKL_OUTPUT_PATH"
     fi
