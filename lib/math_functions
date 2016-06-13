@@ -1,0 +1,121 @@
+setopt typesetsilent
+
+local -a characters
+characters=( a b c d e f g h i j k l m n o p q r s t u v w x y z 0 1 2 3 4 5 6 7 8 9 )
+
+#
+# Converts each character of input string into number 0..35
+#
+letters_to_numbers() {
+    local letters="$1" l
+    integer number
+    reply=( )
+    for l in "${(@s::)letters}"; do
+        number="${characters[(i)$l]}"
+        number=number-1
+        reply+=( "$number" )
+    done
+}
+
+#
+# Converts array of numbers into string [a-z0-9]+
+#
+numbers_to_letters() {
+    REPLY=""
+    integer i
+    for i in "$@"; do
+        REPLY+="${characters[i+1]}"
+    done
+}
+
+#
+# Takes zekyl code, i.e. 1/someletters
+# and decodes it to series of zekylls
+#
+decode_zcode() {
+    local number="${1%/*}"
+    local letters="${1#*/}"
+
+    if [ "$1" = "${1//\//}" ]; then
+        # Improper zcode
+        return 1
+    fi
+
+    # Compute first element of the hundred
+    # pointed to by zcode
+    integer hundred=$(( (number-1)*100 + 1 ))
+
+    # The zcode can have at most 20 digits
+    # This is the 100 bits (100 zekylls)
+    # written in base 36. We have to obtain
+    # the 100 bits. We will implement division
+    # in base 36 and gradually obtain the 100 bits.
+
+    local -a bits
+    local workingvar="$letters"
+    while [ "${workingvar//a/}" != "" ]; do
+        div2 "$workingvar"
+        workingvar="${reply[1]}"
+        bits=( "${reply[2]}" "${bits[@]}" )
+        #echo "After div $workingvar/${reply[2]}"
+    done
+    #echo "Bits of the letters $letters are: ${(j::)bits[@]}"
+}
+
+# $1 - zcode's letters
+# $reply - ( "zcode's letters after division" "remainder 0 or 1" )
+div2() {
+
+    #
+    # First translate the letters to numbers and put them into array
+    #
+
+    local letters="$1"
+    local -a numbers
+    letters_to_numbers "$letters"
+    numbers=( "${reply[@]}" )
+
+    #
+    # Now operate on the array performing long-division
+    #
+
+    integer cur last
+    cur=1
+    last="${#numbers}"
+
+    local -a result
+    result=()
+
+    integer prepared_for_division="${numbers[cur]}"
+    while (( 1 )); do
+        integer quotient=prepared_for_division/2
+
+        result+=( "$quotient" )
+
+        integer recovered=quotient*2
+        integer subtracted=prepared_for_division-recovered
+
+        cur+=1
+        if (( cur > last )); then
+            break
+        fi
+
+        prepared_for_division=36*subtracted+${numbers[cur]}
+    done
+
+    #
+    # Now convert the result to letters
+    #
+
+    numbers_to_letters "${result[@]}"
+
+    #
+    # Return
+    #
+
+    reply=( "$REPLY" "$subtracted" )
+
+    return 0
+}
+
+# vim:ft=zsh
