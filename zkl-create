@@ -48,7 +48,7 @@ dry-mode-msg
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
 ZKL_PATH="$REPLY"
-cd_will_work_on "$REPLY"
+cd_will_work_on "$REPLY" || exit 1
 
 #
 # Read and examine new zekylls string

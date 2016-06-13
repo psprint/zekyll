@@ -62,7 +62,7 @@ fi
 # Will work on
 #
 
-cd_will_work_on "$REPLY"
+cd_will_work_on "$REPLY" || exit 1
 
 #
 # Examine parameters
