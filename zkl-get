@@ -12,11 +12,14 @@ source "$REPO_DIR/lib/script_functions"
 
 ZKL_HELP="0"
 ZKL_PATH=""
-zparseopts -E -D -A opthash h -help p: -path: || exit 1
+ZKL_ZEKYLLS=""
+zparseopts -E -D -A opthash h -help p: -path: z: -zkl: || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
+(( ${+opthash[-z]} )) && ZKL_ZEKYLLS="${opthash[-z]}"
+(( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-get [options]"
@@ -24,6 +27,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     print
     help-opts
     help-path
+    help-zkl
 
     exit 0
 fi
@@ -42,7 +46,12 @@ cd_will_work_on "$REPLY"
 #
 
 local zekylls_string_vis=""
-vared -cp "Enter zekylls: " zekylls_string_vis
+
+if [ "$ZKL_ZEKYLLS" = "" ]; then
+    vared -cp "Enter zekylls: " zekylls_string_vis
+else
+    zekylls_string_vis="$ZKL_ZEKYLLS"
+fi
 
 print
 zekylls_string="${zekylls_string_vis//_/}"
