@@ -26,7 +26,7 @@ zparseopts -E -D -A opthash w -write g -git c -cd h -help p: -path: || exit 1
 (( ${+opthash[--path]} )) && ZKL_CD="1" && ZKL_PATH="${opthash[--path]}"
 
 if [ "$ZKL_HELP" = "1" ]; then
-    pinfo "Usage: zekyll-mv [options] {src zekyll} {dst zekyll}"
+    pinfo "Usage: zkl-mv [options] {src zekyll} {dst zekyll}"
     print "Takes two zekylls, e.g. ab cd, and moves associated file"
     print "ab--* to cd--*, preserving description, and checking for"
     print "a collision with already existing cd--* file."

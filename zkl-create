@@ -24,7 +24,7 @@ zparseopts -E -D -A opthash w -write g -git h -help p: -path: || exit 1
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
 
 if [ "$ZKL_HELP" = "1" ]; then
-    pinfo "Usage: zekyll-create [options]"
+    pinfo "Usage: zkl-create [options]"
     print "Creates files for given zekylls. If you give zekylls: abcd, it"
     print "will create two files ab--*, cd--*, asking you for a description"
     print "for each of them (they can be given empty). Also, will check for"

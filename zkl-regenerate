@@ -22,7 +22,7 @@ zparseopts -E -D -A opthash w -write h -help p: -path: || exit 1
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
 
 if [ "$ZKL_HELP" = "1" ]; then
-    pinfo "Usage: zekyll-regenerate [options]"
+    pinfo "Usage: zkl-regenerate [options]"
     print "Translates files from given source zekylls to given destination zekylls."
     print "Moves the files. If you ask to translate zekylls \"abcd\" to \"efgh\", it"
     print "will move ab -> ef and cd -> gh, preserving descriptions of files."
