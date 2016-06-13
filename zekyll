@@ -270,6 +270,31 @@ ZKLCOL=(
     fi
 }
 
+#
+# Collapses given characters
+#
+-zkl-collapse-chars() {
+    local chars="$1"
+    if [ -n "$chars" ]; then
+        local first="${chars[1]//(#m)[][*?|#~^()><\\]/\\$MATCH}"
+        chars="${chars//$~first##/$first}"
+    fi
+    REPLY="$chars"
+}
+
+#
+# Takes file name (also supports full path) and
+# turns it into human readable description
+#
+-zkl-file-name-to-hreadable-desc() {
+    REPLY="${${1:t}//-##/ }"
+    if [ -z "$2" ]; then
+        REPLY="${REPLY/(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9].[A-Z])/[${match[1]}]}"
+    else
+        REPLY="${REPLY/(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9].[A-Z])*/[${match[1]}] $2}"
+    fi
+}
+
 # 1}}}
 
 #
@@ -384,35 +409,22 @@ Options are:
     # Remove vim mode lines
     #
 
-    local cchar1="$ZKL_CSTR_A"
-    local first="${cchar1[1]}"
-    first="${first//(#m)[][*?|#~^()><\\]/\\$MATCH}"
-    # Collapse comment characters
-    cchar1="${cchar1//$~first##/$first}"
+    -zkl-collapse-chars "$ZKL_CSTR_A"
+    local commentchar1="$REPLY"
+    -zkl-collapse-chars "$ZKL_CSTR_B"
+    local commentchar2="$REPLY"
 
-    local cchar2="$ZKL_CSTR_B"
-    if [ -n "$cchar2" ]; then
-        first="${cchar2[1]//(#m)[][*?|#~^()><\\]/\\$MATCH}"
-        cchar2="${cchar2//$~first##/$first}"
-    fi
+    reply=( "${(@)reply:#$~commentchar1 #vim:*$~commentchar2}" )
 
-    reply=( "${(@)reply:#$~cchar1 #vim:*$~cchar2}" )
-
+    #
     # Add description line
-    local line
-    if [ -z "$desc" ]; then
-        line="${1:t}"
-        line="${line//-##/ }"
-        line="${line/(#b)([a-zA-Z0-9][a-zA-Z0-9])/[${match[1]}]}"
-    else
-        line="${1:t}"
-        line="${line//-##/ }"
-        line="${line/(#b)([a-zA-Z0-9][a-zA-Z0-9])*/[${match[1]}] $desc}"
-    fi
+    #
+
+    -zkl-file-name-to-hreadable-desc "$1"
     if [ -n "$ZKL_CSTR_B" ]; then
-        reply=( "$ZKL_CSTR_A $line $ZKL_CSTR_B" "${reply[@]}" )
+        reply=( "$ZKL_CSTR_A $REPLY $ZKL_CSTR_B" "${reply[@]}" )
     else
-        reply=( "$ZKL_CSTR_A $line" "${reply[@]}" )
+        reply=( "$ZKL_CSTR_A $REPLY " "${reply[@]}" )
     fi
 
     # Add separating new line if it's not there
