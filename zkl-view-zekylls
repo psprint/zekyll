@@ -37,10 +37,7 @@ fi
 #
 
 REPLY="$ZKL_PATH"
-[ "$REPLY" = "" ] && {
-    [ -n "$ZEKYLL_DEFAULT_REPO" ] && { get_path_from_repo "$ZEKYLL_DEFAULT_REPO"; ZKL_PATH="$REPLY"; }
-    read_destination_path "$ZKL_PATH" || exit 1
-}
+[ "$REPLY" = "" ] && resolve_path
 cd_will_work_on "$REPLY"
 
 #

@@ -48,10 +48,7 @@ dry-mode-msg
 
 if [ "$ZKL_CD" = "1" ]; then
     REPLY="$ZKL_PATH"
-    [ "$REPLY" = "" ] && {
-        [ -n "$ZEKYLL_DEFAULT_REPO" ] && { get_path_from_repo "$ZEKYLL_DEFAULT_REPO"; ZKL_PATH="$REPLY"; }
-        read_destination_path "$ZKL_PATH" || exit 1
-    }
+    [ "$REPLY" = "" ] && resolve_path
 else
     REPLY="."
 fi
