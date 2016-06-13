@@ -47,6 +47,7 @@ dry-mode-msg
 
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && { read_destination_path || exit 1 }
+ZKL_PATH="$REPLY"
 cd_will_work_on "$REPLY"
 
 #
@@ -148,4 +149,4 @@ for zekyll in "${zekylls1[@]}"; do
 done
 
 echo "Your EDITOR string would be: ${EDITOR:-vim} ~/.vimrc" $^zekylls1"--*"
-
+echo "Other possibility is: zkl-view-zekylls -p \"$ZKL_PATH\" --zkl $zekylls_string"

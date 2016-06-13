@@ -39,6 +39,7 @@ fi
 
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && { read_destination_path || exit 1 }
+ZKL_PATH="$REPLY"
 cd_will_work_on "$REPLY"
 
 #
@@ -91,3 +92,4 @@ done
 print
 
 echo "Your EDITOR string would be: ${EDITOR:-vim} ~/.vimrc" $^existing"--*"
+echo "Other possibility is: zkl-view-zekylls -p \"$ZKL_PATH\" --zkl $zekylls_string"
