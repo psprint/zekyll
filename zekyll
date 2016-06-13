@@ -477,21 +477,21 @@ zkl() {
     zekyll="${zekyll//_/}"
 
     local -a zekylls fragment zekyll_file
-    local zz line
+    local zzz line
 
-    # Generate two-character bits
-    zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+    # Generate three-character bits
+    zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
     -zkl-pinfo2 "\nProcessing for user $user, plugin $plugin\n"
 
     # Iterate over the bits
-    for zz in "${zekylls[@]}"; do
+    for zzz in "${zekylls[@]}"; do
         # Skip one letter zekylls - they are allowed though not processed
-        [ "${#zz}" -eq 1 ] && continue
+        [ "${#zzz}" -eq 1 ] && continue
 
-        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zz}--*(N.) )
+        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zzz}--*(N.) )
         if [[ "${#zekyll_file}" -eq 0 ]]; then
-            echo "Zekyll $zz doesn't exist, skipping"
+            echo "Zekyll $zzz doesn't exist, skipping"
             continue
         fi
 
@@ -537,10 +537,10 @@ zkllong() {
     # Obtain zekyll (single one)
     local input="$*"
     local desc
-    desc="${input//(#b)[a-zA-Z0-9] #[a-zA-Z0-9](*)/${match[1]}}"
+    desc="${input//(#b)[a-zA-Z0-9] #[a-zA-Z0-9] #[a-zA-Z0-9](*)/${match[1]}}"
     desc="${desc## ##}"
     local zekyll
-    zekyll="${input//(#b)([a-zA-Z0-9]) #([a-zA-Z0-9])*/${match[1]}${match[2]}}"
+    zekyll="${input//(#b)([a-zA-Z0-9]) #([a-zA-Z0-9]) #([a-zA-Z0-9])*/${match[1]}${match[2]}${match[3]}}"
 
     -zkl-pinfo2 "\nProcessing (long) for user $user, plugin $plugin\n"
 
