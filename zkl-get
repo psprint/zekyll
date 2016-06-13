@@ -1,0 +1,93 @@
+#!/usr/bin/env zsh
+
+ZERO="${(%):-%N}"
+REPO_DIR="${ZERO%/*}"
+source "$REPO_DIR/lib/script_preamble"
+source "$REPO_DIR/lib/script_vars"
+source "$REPO_DIR/lib/script_functions"
+
+#
+# Zparseopts
+#
+
+ZKL_HELP="0"
+ZKL_PATH=""
+zparseopts -E -D -A opthash h -help p: -path: || exit 1
+
+(( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+(( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
+(( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
+
+if [ "$ZKL_HELP" = "1" ]; then
+    pinfo "Usage: zkl-get"
+    print "Asks for zekylls and displays contents of associated files, in the same order as found in zekylls"
+    print
+    help-opts
+    help-path
+
+    exit 0
+fi
+
+#
+# Read destination path
+#
+
+REPLY="$ZKL_PATH"
+[ "$REPLY" = "" ] && resolve_path
+ZKL_PATH="$REPLY"
+cd_will_work_on "$REPLY"
+
+#
+# Read and examine new zekylls string
+#
+
+local zekylls_string_vis=""
+vared -cp "Enter zekylls: " zekylls_string_vis
+
+print
+zekylls_string="${zekylls_string_vis//_/}"
+pinfo2 "Read: $zekylls_string"
+print
+
+local -a zekylls1
+zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+
+pinfo "Checking current zekyll for duplicates..."
+if ! detect_duplicates "${zekylls1[@]}"; then
+    perror "Duplicates found, restaring, but continuing to listing the zekylls"
+fi
+
+print
+
+#
+# Skip incomplete zekyll
+#
+
+if [ "${#${zekylls1[-1]}}" = "1" ]; then
+    zekylls1[-1]=()
+fi
+
+#
+# Do the listing
+#
+
+local -a existing
+existing=( )
+local zekyll
+for zekyll in "${zekylls1[@]}"; do
+    zekyll_file=( ${zekyll}--*(N.) )
+    if [[ "$#zekyll_file" -eq 0 ]]; then
+        perror "No such zekyll $zekyll"
+    else
+        existing+=( "$zekyll" )
+    fi
+done
+
+for zekyll in "${existing[@]}"; do
+    zekyll_file=( ${zekyll}--*(N.) )
+    if [[ "$#zekyll_file" -eq 0 ]]; then
+        perror "No such zekyll $zekyll"
+    else
+        cat "${zekyll_file[1]}"
+    fi
+done
