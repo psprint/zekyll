@@ -13,14 +13,17 @@ source "$REPO_DIR/lib/script_functions"
 ZKL_PERFORM_WRITE="0"
 ZKL_HELP="0"
 ZKL_PATH=""
+ZKL_ZEKYLLS=""
 ZKL_DEFAULT="0"
-zparseopts -E -D -A opthash w -write h -help p: -path: d -default || exit 1
+zparseopts -E -D -A opthash w -write h -help p: -path: d -default z: -zkl: || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
+(( ${+opthash[-z]} )) && ZKL_ZEKYLLS="${opthash[-z]}"
+(( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 
 if [ "$ZKL_HELP" = "1" ]; then
@@ -53,8 +56,13 @@ cd_will_work_on "$REPLY" || exit 1
 #
 
 local zekylls_string
-pinfo "Enter current zekylls string:"
-read zekylls_string\?"zekylls: "
+
+if [ "$ZKL_ZEKYLLS" = "" ]; then
+    pinfo "Enter current zekylls string:"
+    vared -cp "zekylls: " zekylls_string
+else
+    zekylls_string="$ZKL_ZEKYLLS"
+fi
 
 print
 zekylls_string="${zekylls_string//_/}"
