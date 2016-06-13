@@ -89,4 +89,27 @@ cd_will_work_on() {
     print
 }
 
+#
+# Returns physicall path for given repo string
+#
+get_path_from_repo() {
+    local user="${1%/*}"
+    local repo="${1#*/}"
+
+    # No repo given? Use "zkl"
+    if [ "${1//\//}" = "$1" ]; then
+        repo="zkl"
+    fi
+
+    REPLY="$ZKL_REPOS_DIR/${user}---${repo}"
+}
+
+#
+# Returns physicall path for given user and repo
+#
+get_path_from_user_repo() {
+    [ "$2" = "" ] && 2="zkl"
+    REPLY="$ZKL_REPOS_DIR/${1}---${2}"
+}
+
 # vim:ft=zsh
