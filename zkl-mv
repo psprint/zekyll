@@ -47,10 +47,15 @@ dry-mode-msg
 #
 
 if [ "$ZKL_CD" = "1" ]; then
-    REPLY="$ZKL_PATH"
-    [ "$REPLY" = "" ] && resolve_path
+    # -p/--path will be used as ZKL_PATH is being used
+    resolve_path
 else
-    REPLY="."
+    # Use -p/--path
+    if [ -n "$ZKL_PATH" ]; then
+        REPLY="$ZKL_PATH"
+    else
+        REPLY="."
+    fi
 fi
 
 #
