@@ -14,13 +14,15 @@ ZKL_HELP="0"
 ZKL_PATH=""
 ZKL_ZEKYLLS=""
 ZKL_SILENT="0"
-zparseopts -E -D -A opthash h -help p: -path: z: -zkl: || exit 1
+ZKL_DEFAULT="0"
+zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
 (( ${+opthash[-z]} )) && ZKL_ZEKYLLS="${opthash[-z]}"
 (( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
+(( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 
 [ -n "$ZKL_ZEKYLLS" ] && ZKL_SILENT="1"
 

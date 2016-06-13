@@ -75,8 +75,21 @@ read_destination_path() {
 # Resolves path according to various rules and sources
 #
 resolve_path() {
+    # If -d/--default is given, then this means: do exactly the
+    # same but without prompting for path, but fallback to this
+    # if ZEKYLL_DEFAULT_REPO is empty (or when ZKL_PATH is set
+    # meaning user provided a path; this is used in zkl-mv where
+    # prompt might be demanded even with path provided, via -c
+    # option; other tools don't call this function when they
+    # already have path)
+
+    integer ask=1
+    [ "$ZKL_DEFAULT" = 1 ] && ask=0
+    [[ -z "$ZEKYLL_DEFAULT_REPO" || -n "$ZKL_PATH" ]] && ask=1
+
     [[ -n "$ZEKYLL_DEFAULT_REPO" && -z "$ZKL_PATH" ]] && { get_path_from_repo "$ZEKYLL_DEFAULT_REPO"; ZKL_PATH="$REPLY"; }
-    read_destination_path "$ZKL_PATH" || exit 1
+
+    (( ask )) && { read_destination_path "$ZKL_PATH" || exit 1 }
 }
 
 #

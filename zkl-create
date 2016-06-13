@@ -14,7 +14,8 @@ ZKL_PERFORM_WRITE="0"
 ZKL_ADD_GIT="0"
 ZKL_HELP="0"
 ZKL_PATH=""
-zparseopts -E -D -A opthash w -write g -git h -help p: -path: || exit 1
+ZKL_DEFAULT="0"
+zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -22,6 +23,7 @@ zparseopts -E -D -A opthash w -write g -git h -help p: -path: || exit 1
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
+(( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-create [options]"
