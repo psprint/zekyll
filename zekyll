@@ -92,22 +92,22 @@ ZKLCOL=(
 # to invoke zkl. The function detects which way is used. The 6
 # ways:
 #
-# - user/plugin:zekyll
-# - user/plugin zekyll
-# - user plugin zekyll
-# - user zekyll             / sensitive to "zekyll plugin"
-# - user:zekyll             / sensitive to "zekyll plugin"
-# - zekyll                  / sensitive to "zekyll plugin" and "zekyll user"
+# - user/repo:zekyll
+# - user/repo zekyll
+# - user repo zekyll
+# - user zekyll             / sensitive to "zekyll repo"
+# - user:zekyll             / sensitive to "zekyll repo"
+# - zekyll                  / sensitive to "zekyll repo" and "zekyll user"
 #
-# $1 - user/plugin:zekyll(s), user/plugin, user,               user:zekyll(s), zekyll(s)
-# $2 -                        zekyll(s)    plugin or zekyll(s)
+# $1 - user/repo:zekyll(s), user/repo, user,               user:zekyll(s), zekyll(s)
+# $2 -                        zekyll(s)    repo or zekyll(s)
 # $3 -                                     zekyll(s)
 #
--zkl-any-to-user-plugin-zekyll() {
+-zkl-any-to-user-repo-zekyll() {
     setopt localoptions extendedglob
 
     local user="_unknown"
-    local plugin="_unknown"
+    local repo="_unknown"
     local zekyll="_unknown"
 
     local -a params
@@ -119,31 +119,31 @@ ZKLCOL=(
     set "${params[@]}"
 
     if [[ "$#" -eq "1" ]]; then
-        # user/plugin:zekyll(s)?
+        # user/repo:zekyll(s)?
         if [[ "$1" = [a-zA-Z0-9]##[/][a-zA-Z0-9]##[:][a-zA-Z0-9_]## ]]; then
             user="${1%%/*}"
-            plugin="${${1%%:*}##*/}"
+            repo="${${1%%:*}##*/}"
             zekyll="${1##*:}"
         # user:zekyll(s)?
         elif [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9_]## ]]; then
             user="${1%%:*}"
-            plugin="$ZKL_CUR_PLUGIN"
+            repo="$ZKL_CUR_PLUGIN"
             zekyll="${1##*:}"
         # zekyll?
         elif [[ "$1" = [a-zA-Z0-9_]## ]]; then
             user="$ZKL_CUR_USER"
-            plugin="$ZKL_CUR_PLUGIN"
+            repo="$ZKL_CUR_PLUGIN"
             zekyll="$1"
         else
             -zkl-error "Error: improper input"
         fi
     elif [[ "$#" -eq "2" ]]; then
-        # user/plugin?
+        # user/repo?
         if [[ "$1" = [a-zA-Z0-9]##[/][a-zA-Z0-9]## ]]; then
             # Should be zekyll(s)
             if [[ "$2" = [a-zA-Z0-9_]## ]]; then
                 user="${1%%/*}"
-                plugin="${1##*/}"
+                repo="${1##*/}"
                 zekyll="$2"
             else
                 -zkl-error "Error: improper input (2)"
@@ -153,7 +153,7 @@ ZKLCOL=(
             # Should be zekyll
             if [[ "$2" = [a-zA-Z0-9_]## ]]; then
                 user="$1"
-                plugin="$ZKL_CUR_PLUGIN"
+                repo="$ZKL_CUR_PLUGIN"
                 zekyll="$2"
             else
                 -zkl-error "Error: improper input (3)"
@@ -165,12 +165,12 @@ ZKLCOL=(
         integer correct=0
         # Should be user
         if [[ "$1" = [a-zA-Z0-9]## ]]; then
-            # Should be plugin
+            # Should be repo
             if [[ "$2" = [a-zA-Z0-9]## ]]; then
                 # Should be zekyll(s)
                 if [[ "$3" = [a-zA-Z0-9_]## ]]; then
                     user="$1"
-                    plugin="$2"
+                    repo="$2"
                     zekyll="$3"
                     correct=1
                 fi
@@ -182,9 +182,9 @@ ZKLCOL=(
         fi
     fi
 
-    reply=( "$user" "$plugin" "$zekyll" )
+    reply=( "$user" "$repo" "$zekyll" )
 
-    [[ "$user" = "_unknown" || "$plugin" = "_unknown" || "$zekyll" = "_unknown" ]] && return 1
+    [[ "$user" = "_unknown" || "$repo" = "_unknown" || "$zekyll" = "_unknown" ]] && return 1
 
     return 0
 }
@@ -199,22 +199,22 @@ ZKLCOL=(
 # Will use $ZKL_CUR_PLUGIN and $ZKL_CUR_USER if the values aren't
 # provided with zekyll
 #
--zkl-any2-to-user-plugin-zekyll-desc() {
-    local user plugin zekyll desc
+-zkl-any2-to-user-repo-zekyll-desc() {
+    local user repo zekyll desc
     if [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
         user="${1%:*}"
         1="${1#*:}"
     elif [[ "$1" = [a-zA-Z0-9]##/[a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
         user="${1%/*}"
-        plugin="${${1#*/}%:*}"
+        repo="${${1#*/}%:*}"
         1="${1#*:}"
     fi
 
     [ -z "$user" ] && user="$ZKL_CUR_USER"
     [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user" && return 1
 
-    [ -z "$plugin" ] && plugin="$ZKL_CUR_PLUGIN"
-    [[ "$plugin" = "_unknown" || -z "$plugin" ]] && -zkl-error "Error: unknown plugin" && return 1
+    [ -z "$repo" ] && repo="$ZKL_CUR_PLUGIN"
+    [[ "$repo" = "_unknown" || -z "$repo" ]] && -zkl-error "Error: unknown repo" && return 1
 
     # Obtain zekyll and desc
     local input="${(j: :)@}"
@@ -226,23 +226,23 @@ ZKLCOL=(
     [ "$zekyll" = "$input" ] && -zkl-error "Error: Improper long input string, cannot determine zekyll" && return 1
     zekyll="${zekyll%?}"
     
-    reply=( "$user" "$plugin" "$zekyll" "$desc" )
+    reply=( "$user" "$repo" "$zekyll" "$desc" )
     return 0
 }
 
 # This function is used for repository paths manipulations
-# Basically, every repository path consists of user name and plugin name
+# Basically, every repository path consists of user name and repo name
 # There are 3 formats:
-# - user--plugin
-# - user/plugin
-# - user plugin
+# - user--repo
+# - user/repo
+# - user repo
 #
-# And this function understands them all, and returns reply=( "$user" "$plugin" )
+# And this function understands them all, and returns reply=( "$user" "$repo" )
 #
-# $1 - user---plugin, user/plugin, user (if $2 given), or plugin (if $2 empty)
-# $2 - plugin (if $1 - user - given)
+# $1 - user---repo, user/repo, user (if $2 given), or repo (if $2 empty)
+# $2 - repo (if $1 - user - given)
 #
--zkl-any-to-user-plugin() {
+-zkl-any-to-user-repo() {
     # Two components given?
     # That's a pretty fast track to call this function this way
     if [ -n "$2" ]; then
@@ -256,22 +256,22 @@ ZKLCOL=(
     # Rest is for single component given
     # It doesn't touch $2
 
-    local user="${1%%/*}" plugin="${1#*/}"
-    if [ "$user" = "$plugin" ]; then
-        # Is it really the same plugin and user name?
-        if [ "$user/$plugin" = "$1" ]; then
-            reply=( "$user" "$plugin" )
+    local user="${1%%/*}" repo="${1#*/}"
+    if [ "$user" = "$repo" ]; then
+        # Is it really the same repo and user name?
+        if [ "$user/$repo" = "$1" ]; then
+            reply=( "$user" "$repo" )
             return 0
         fi
 
         user="${1%%---*}"
-        plugin="${1#*---}"
+        repo="${1#*---}"
     fi
 
-    if [ "$user" = "$plugin" ]; then
-        # Is it really the same plugin and user name?
-        if [ "${user}---${plugin}" = "$1" ]; then
-            reply=( "$user" "$plugin" )
+    if [ "$user" = "$repo" ]; then
+        # Is it really the same repo and user name?
+        if [ "${user}---${repo}" = "$1" ]; then
+            reply=( "$user" "$repo" )
             return 0
         fi
         user="_local"
@@ -281,27 +281,27 @@ ZKLCOL=(
         user="_local"
     fi
 
-    if [ -z "$plugin" ]; then
-        plugin="_unknown"
+    if [ -z "$repo" ]; then
+        repo="_unknown"
     fi
 
-    reply=( "$user" "$plugin" )
+    reply=( "$user" "$repo" )
     return 0
 }
 
-# Supports all formats as input, outputs "user/plugin"
+# Supports all formats as input, outputs "user/repo"
 -zkl-any-to-uspl2() {
-    -zkl-any-to-user-plugin "$1" "$2"
+    -zkl-any-to-user-repo "$1" "$2"
     REPLY="${reply[-2]}/${reply[-1]}"
 }
 
-# Will take uspl, uspl2, or just plugin name,
+# Will take uspl, uspl2, or just repo name,
 # and return colored text
 -zkl-any-colorify-as-uspl2() {
-    -zkl-any-to-user-plugin "$1" "$2"
-    local user="${reply[-2]}" plugin="${reply[-1]}"
+    -zkl-any-to-user-repo "$1" "$2"
+    local user="${reply[-2]}" repo="${reply[-1]}"
     local ucol="${ZKLCOL[uname]}" pcol="${ZKLCOL[pname]}"
-    REPLY="${ucol}${user}${ZKLCOL[rst]}/${pcol}${plugin}${ZKLCOL[rst]}"
+    REPLY="${ucol}${user}${ZKLCOL[rst]}/${pcol}${repo}${ZKLCOL[rst]}"
 }
 
 # Prepare readlink command, used e.g. for
@@ -347,18 +347,18 @@ ZKLCOL=(
 # - signaling inproper input and update mode
 #
 # Has two modes, zkl and zkllong. Input differs for both of them.
-# For the first input, reffer to -zkl-any-to-user-plugin and for
-# the second one to -zkl-any2-to-user-plugin-zekyll-desc.
+# For the first input, reffer to -zkl-any-to-user-repo and for
+# the second one to -zkl-any2-to-user-repo-zekyll-desc.
 #
 -zkl-start-zekyll-input() {
     -zkl-prepare-home
 
     if [ "$1" = "zkl" ]; then
         shift
-        -zkl-any-to-user-plugin-zekyll "$1" "$2" "$3" || return 2
+        -zkl-any-to-user-repo-zekyll "$1" "$2" "$3" || return 2
     elif [ "$1" = "zkllong" ]; then
         shift
-        -zkl-any2-to-user-plugin-zekyll-desc "$@" || return 2
+        -zkl-any2-to-user-repo-zekyll-desc "$@" || return 2
     else
         return 1
     fi
@@ -378,13 +378,13 @@ ZKLCOL=(
 #
 
 -zkl-setup-repo-dir() {
-    local user="$1" plugin="$2" github_path="$1/$2"
-    if [ ! -d "$ZKL_REPOS_DIR/${user}---${plugin}" ]; then
-        -zkl-any-colorify-as-uspl2 "$user" "$plugin"
+    local user="$1" repo="$2" github_path="$1/$2"
+    if [ ! -d "$ZKL_REPOS_DIR/${user}---${repo}" ]; then
+        -zkl-any-colorify-as-uspl2 "$user" "$repo"
         print "Downloading $REPLY..."
 
         # Return with error when any problem
-        git clone --recursive https://github.com/"$github_path" "$ZKL_REPOS_DIR/${user}---${plugin}" || return 1
+        git clone --recursive https://github.com/"$github_path" "$ZKL_REPOS_DIR/${user}---${repo}" || return 1
     fi
 
     return 0
@@ -394,16 +394,16 @@ ZKLCOL=(
 # Pulls changes from origin to given repository
 #
 -zkl-update-repo-dir() {
-    local user="$1" plugin="$2"
+    local user="$1" repo="$2"
 
-    -zkl-any-colorify-as-uspl2 "$user" "$plugin"
+    -zkl-any-colorify-as-uspl2 "$user" "$repo"
     uspl2col="$REPLY"
 
-    if [ -d "$ZKL_REPOS_DIR/${user}---${plugin}" ]; then
+    if [ -d "$ZKL_REPOS_DIR/${user}---${repo}" ]; then
         print "Updating $uspl2col..."
 
         (
-            cd "$ZKL_REPOS_DIR/${user}---${plugin}"
+            cd "$ZKL_REPOS_DIR/${user}---${repo}"
             git pull
             return
         )
@@ -416,14 +416,14 @@ ZKLCOL=(
 
 #
 # Pulls changes from origin to given repository
-# Guards to do it only once per plugin during session
+# Guards to do it only once per repo during session
 #
 -zkl-update-repo-dir-once() {
-    local user="$1" plugin="$2" github_path="$1/$2"
+    local user="$1" repo="$2" github_path="$1/$2"
     (( ${+ZKL_UPDATED_REPOS[$github_path]} )) && return 1
     ZKL_UPDATED_REPOS[$github_path]="1"
 
-    -zkl-update-repo-dir "$user" "$plugin"
+    -zkl-update-repo-dir "$user" "$repo"
     return
 }
 
@@ -466,8 +466,8 @@ Options are:
 -h,--help       -- this help
 -f,--file       -- zekyllfile to use (default ~/.zekyllfile)
 -o,--output     -- output file to write (default ~/.zshrc_new)
--u,--update     -- update plugins before using them
---update-only   -- only update plugins, don't do generation
+-u,--update     -- update repos before using them
+--update-only   -- only update repos, don't do generation
 "
 }
 
@@ -554,17 +554,17 @@ Options are:
 #
 
 -zkl-repo-preamble() {
-    local user="$1" plugin="$2"
+    local user="$1" repo="$2"
 
     integer existed=0
-    [ -d "$ZKL_REPOS_DIR/${user}---${plugin}" ] && existed=1
+    [ -d "$ZKL_REPOS_DIR/${user}---${repo}" ] && existed=1
 
     # Possible clone
-    -zkl-setup-repo-dir "$user" "$plugin"
+    -zkl-setup-repo-dir "$user" "$repo"
 
     # Update?
     if [[ "$ZKL_DO_UPDATE" = "1" && "$existed" = "1" ]]; then
-        -zkl-update-repo-dir-once "$user" "$plugin"
+        -zkl-update-repo-dir-once "$user" "$repo"
     fi
 }
 
@@ -586,7 +586,7 @@ help() {
 # long, passed possibly as longer strings, with allowed
 # underscores, e.g. my_zekyll_generates_my_config
 #
-# This function takes parametes as -zkl-any-to-user-plugin-zekyll
+# This function takes parametes as -zkl-any-to-user-repo-zekyll
 #
 zkl() {
     setopt localoptions extendedglob typesetsilent
@@ -595,7 +595,7 @@ zkl() {
 
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
     -zkl-start-zekyll-input "zkl" "$1" "$2" "$3" || return
-    local user="${reply[-3]}" plugin="${reply[-2]}" zekyll="${reply[-1]}"
+    local user="${reply[-3]}" repo="${reply[-2]}" zekyll="${reply[-1]}"
 
     # Allow underscores - remove them now
     zekyll="${zekyll//_/}"
@@ -606,14 +606,14 @@ zkl() {
     # Generate three-character bits
     zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-    -zkl-pinfo2 "\nProcessing for user $user, plugin $plugin\n"
+    -zkl-pinfo2 "\nProcessing for user $user, repo $repo\n"
 
     # Iterate over the bits
     for zzz in "${zekylls[@]}"; do
         # Skip one or two letter zekylls - they are allowed though not processed
         [[ "${#zzz}" -eq 1 || "${#zzz}" -eq 2 ]] && continue
 
-        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zzz}.[A-Z]--*(N.) )
+        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${repo}/${zzz}.[A-Z]--*(N.) )
         if [[ "${#zekyll_file}" -eq 0 ]]; then
             echo "Zekyll $zzz doesn't exist, skipping"
             continue
@@ -625,7 +625,7 @@ zkl() {
         # Store gathered data
         ZKL_EMIT_ZEKYLLS+=( "$zekyll" )
         ZKL_EMIT_SECTIONS+=( "$section" )
-        ZKL_EMIT_REPOS+=( "${user}---${plugin}" )
+        ZKL_EMIT_REPOS+=( "${user}---${repo}" )
         ZKL_EMIT_FILE_NAMES+=( "$file_name" )
         ZKL_EMIT_DESCRIPTIONS+=( "" )
     done
@@ -635,7 +635,7 @@ zkl() {
 # This function takes:
 # zkllong               [:alnum:][:alnum:] Some text here (a description, comment)
 # zkllong {user}:       [:alnum:][:alnum:] Some text here (a description, comment)
-# zkllong {user}/plugin:[:alnum:][:alnum:] Some text here (a description, comment)
+# zkllong {user}/repo:[:alnum:][:alnum:] Some text here (a description, comment)
 #
 zkllong() {
     setopt localoptions extendedglob typesetsilent
@@ -644,16 +644,16 @@ zkllong() {
 
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
     -zkl-start-zekyll-input "zkllong" "$@" || return
-    local user="${reply[1]}" plugin="${reply[2]}" zekyll="${reply[3]}" desc="${reply[4]}"
+    local user="${reply[1]}" repo="${reply[2]}" zekyll="${reply[3]}" desc="${reply[4]}"
 
-    -zkl-pinfo2 "\nProcessing (long) for user $user, plugin $plugin\n"
+    -zkl-pinfo2 "\nProcessing (long) for user $user, repo $repo\n"
 
     if [ "${#zekyll}" -eq 1 ]; then
         echo "Skipping single letter zekyll $zekyll"
         return
     fi
 
-    zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zekyll}.[A-Z]--*(N.) )
+    zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${repo}/${zekyll}.[A-Z]--*(N.) )
     if [[ "${#zekyll_file}" -eq 0 ]]; then
         echo "Zekyll $zekyll ($desc) doesn't exist, skipping"
         return
@@ -665,7 +665,7 @@ zkllong() {
     # Store gathered data
     ZKL_EMIT_ZEKYLLS+=( "$zekyll" )
     ZKL_EMIT_SECTIONS+=( "$section" )
-    ZKL_EMIT_REPOS+=( "${user}---${plugin}" )
+    ZKL_EMIT_REPOS+=( "${user}---${repo}" )
     ZKL_EMIT_FILE_NAMES+=( "$file_name" )
     ZKL_EMIT_DESCRIPTIONS+=( "$desc" )
 }
@@ -698,9 +698,9 @@ local_user() {
 }
 
 #
-# Sets default plugin
+# Sets default repo
 #
-default_plugin() {
+default_repo() {
     # Quick exit when not generating
     [ "$ZKL_YES" = "NO" ] && return
 
@@ -720,13 +720,13 @@ user() {
 }
 
 #
-# Sets current plugin
+# Sets current repo
 #
-plugin() {
+repo() {
     # Quick exit when not generating
     [ "$ZKL_YES" = "NO" ] && return
 
-    [[ "$#" -ne "1" ]] && -zkl-ierror "$0 takes argument" && default_plugin && return
+    [[ "$#" -ne "1" ]] && -zkl-ierror "$0 takes argument" && default_repo && return
     ZKL_CUR_PLUGIN="$1"
 }
 
@@ -755,7 +755,7 @@ path() {
 
 #
 # Loads given zekyll file
-# Can take user or user/plugin, i.e. user:zekyllfile, user/plugin:zekyllfile
+# Can take user or user/repo, i.e. user:zekyllfile, user/repo:zekyllfile
 #
 file() {
     # Quick exit when not generating
@@ -766,8 +766,8 @@ file() {
     local user="$ZKL_CUR_USER"
     [ "$user" = "_unknown" ] && -zkl-error "Error: unknown user" && return
 
-    local plugin="$ZKL_CUR_PLUGIN"
-    [ "$plugin" = "_unknown" ] && -zkl-error "Error: unknown plugin" && return
+    local repo="$ZKL_CUR_PLUGIN"
+    [ "$repo" = "_unknown" ] && -zkl-error "Error: unknown repo" && return
 
     local zekyllfile="$1"
     if [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
@@ -775,19 +775,19 @@ file() {
         zekyllfile="${1#*:}"
     elif [[ "$1" = [a-zA-Z0-9]##/[a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
         user="${1%/*}"
-        plugin="${1#*/}"
-        plugin="${plugin%:*}"
+        repo="${1#*/}"
+        repo="${repo%:*}"
         zekyllfile="${1#*:}"
     fi
 
-    -zkl-repo-preamble "$user" "$plugin"
+    -zkl-repo-preamble "$user" "$repo"
 
     [ "$ZKL_UPDATE_ONLY" = "1" ] && return
 
-    # Now CD into given "$user" "$plugin" and source zekyllfile
-    [ ! -d "$ZKL_REPOS_DIR/${user}---${plugin}" ] && -zkl-error "Repository ${user}/${plugin} doesn't exist" && return 1
+    # Now CD into given "$user" "$repo" and source zekyllfile
+    [ ! -d "$ZKL_REPOS_DIR/${user}---${repo}" ] && -zkl-error "Repository ${user}/${repo} doesn't exist" && return 1
 
-    cd "$ZKL_REPOS_DIR/${user}---${plugin}"
+    cd "$ZKL_REPOS_DIR/${user}---${repo}"
 
     source "$zekyllfile"
 }
