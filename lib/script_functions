@@ -87,6 +87,9 @@ cd_will_work_on() {
 
     cd "$1"
 
+    # Silent mode
+    [ "$2" = "-s" ] && return 0
+
     print
     pinfo2 "Will work on following files:"
     print
