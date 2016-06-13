@@ -19,7 +19,7 @@ zparseopts -E -D -A opthash h -help p: -path: || exit 1
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
 
 if [ "$ZKL_HELP" = "1" ]; then
-    pinfo "Usage: zekyll-ls"
+    pinfo "Usage: zekyll-ls [path]"
     print "Asks for zekylls, and lists associated files in the same order as found in zekylls"
     print
     help-opts
