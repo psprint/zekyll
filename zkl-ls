@@ -26,6 +26,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     print
     help-opts
     help-path
+    help-dft
 
     exit 0
 fi

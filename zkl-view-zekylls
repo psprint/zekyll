@@ -30,6 +30,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-opts
     help-path
     help-zkl
+    help-dft
 
     exit 0
 fi

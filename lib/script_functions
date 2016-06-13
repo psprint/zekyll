@@ -18,6 +18,7 @@ help-dry() { print -- "-w/--write          -- actual operation mode - else it is
 help-git() { print -- "-g/--git            -- perform operations with git (to update repository not just files)"; }
 help-path(){ print -- "-p/--path [path]    -- work in given path (don't ask for it)"; }
 help-zkl() { print -- "-z/--zkl [zekylls]  -- process given zekylls"; }
+help-dft() { print -- "-d/--default        -- use ZEKYLL_DEFAULT_REPO if available as working directory (don't ask)"; }
 
 #
 # Detects duplicates in given array

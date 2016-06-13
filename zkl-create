@@ -37,6 +37,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-dry
     help-git
     help-path
+    help-dft
 
     exit 0
 fi

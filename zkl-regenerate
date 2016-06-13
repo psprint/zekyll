@@ -32,6 +32,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-opts
     help-dry
     help-path
+    help-dft
     print "Git mode is deterimed from existence of .git directory"
 
     exit 0

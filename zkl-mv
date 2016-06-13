@@ -42,6 +42,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-git
     help-cd
     help-path
+    help-dft
 
     exit 0
 fi
@@ -93,7 +94,7 @@ local -a dst_file
 dst_file=( ${dst_zekyll}--*(N) )
 
 if [[ "${#src_file}" -eq 0 ]]; then
-    perror "Source file doesn't exist (for zekyll $src_zekyll)"
+    perror "Source file doesn't exist (for zekyll: $src_zekyll)"
     exit 1
 fi
 
