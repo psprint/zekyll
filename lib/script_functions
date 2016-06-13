@@ -47,7 +47,11 @@ detect_duplicates() {
 read_destination_path() {
     local zekylls_path
     pinfo "Where are zekylls located? (default: current directory \".\"):"
-    read zekylls_path\?"Enter path: "
+
+    # TODO
+    local compcontext="user:Dirs:(\"$HOME\" \"$ZKL_HOME\" \"$ZKL_DIR\")"
+    vared -cp "Enter path: " zekylls_path
+
     if [ -z "$zekylls_path" ]; then
         zekylls_path="."
     fi
