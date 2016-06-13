@@ -5,13 +5,26 @@ zmodload zsh/zutil
 typeset -gH ZKL_YES="NO"
 typeset -gH ZKL_LOCAL_USER="_local"
 typeset -gH ZKL_DEFAULT_PLUGIN="zkl"
-typeset -gaH ZKL_OUTPUT
 typeset -gH ZKL_OUTPUT_PATH="$HOME/.zshrc_new"
 typeset -gH ZKL_DO_UPDATE="0"
 typeset -gH ZKL_UPDATE_ONLY="0"
 typeset -gAH ZKL_UPDATED_REPOS
 typeset -gH ZKL_CSTR_A="#"
 typeset -gH ZKL_CSTR_B=""
+
+#
+# Data aggregation arrays
+#
+
+typeset -gaH ZKL_EMIT_ZEKYLLS
+typeset -gaH ZKL_EMIT_REPOS
+typeset -gaH ZKL_EMIT_FILE_NAMES
+typeset -gaH ZKL_EMIT_SECTIONS
+typeset -gaH ZKL_EMIT_DESCRIPTIONS
+
+#
+# Paths
+#
 
 # Problematic function_argzero
 if [[ ! -o "functionargzero" ]]; then
@@ -412,8 +425,29 @@ Options are:
 #
 
 -zkl-emit() {
-    print -rl -- "${ZKL_OUTPUT[@]}" > "$ZKL_OUTPUT_PATH"
-    ZKL_OUTPUT=( )
+    local -a output
+
+    #
+    # Aggregate
+    #
+
+    integer size="${#ZKL_EMIT_ZEKYLLS}" i
+    for (( i=1; i<=size; i++ )); do
+        local zekylls="${ZKL_EMIT_ZEKYLLS[i]}"
+        local section="${ZKL_EMIT_SECTIONS[i]}"
+        local repo="${ZKL_EMIT_REPOS[i]}"
+        local file_name="${ZKL_EMIT_FILE_NAMES[i]}"
+        local desc="${ZKL_EMIT_DESCRIPTIONS[i]}"
+
+        -process-zekyll-file "${ZKL_REPOS_DIR}/${repo}/${file_name}" "$desc"
+        output+=( "${reply[@]}" )
+    done
+
+    #
+    # Write to file
+    #
+
+    print -rl -- "${output[@]}" > "$ZKL_OUTPUT_PATH"
 
     if [ "$ZKL_UPDATE_ONLY" = "0" ]; then
         -zkl-pinfo "Generated $ZKL_OUTPUT_PATH"
@@ -465,6 +499,10 @@ zkl() {
 
     [ "$ZKL_YES" = "NO" ] && return
 
+    #
+    # Repo management
+    #
+
     -zkl-prepare-home
     -zkl-any-to-user-plugin-zekyll "$1" "$2" "$3"
     local user="${reply[-3]}" plugin="${reply[-2]}" zekyll="${reply[-1]}"
@@ -473,10 +511,14 @@ zkl() {
 
     [ "$ZKL_UPDATE_ONLY" = "1" ] && return
 
+    #
+    # Zekylls verification and preprocessing
+    #
+
     # Allow underscores - remove them now
     zekyll="${zekyll//_/}"
 
-    local -a zekylls fragment zekyll_file
+    local -a zekylls zekyll_file
     local zzz line
 
     # Generate three-character bits
@@ -486,18 +528,24 @@ zkl() {
 
     # Iterate over the bits
     for zzz in "${zekylls[@]}"; do
-        # Skip one letter zekylls - they are allowed though not processed
-        [ "${#zzz}" -eq 1 ] && continue
+        # Skip one or two letter zekylls - they are allowed though not processed
+        [[ "${#zzz}" -eq 1 || "${#zzz}" -eq 2 ]] && continue
 
-        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zzz}--*(N.) )
+        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zzz}.[A-Z]--*(N.) )
         if [[ "${#zekyll_file}" -eq 0 ]]; then
             echo "Zekyll $zzz doesn't exist, skipping"
             continue
         fi
 
-        -process-zekyll-file "${zekyll_file[1]}"
+        local file_name="${zekyll_file[1]##*/}"
+        local section="${${file_name/#???.}%%--*}"
 
-        ZKL_OUTPUT+=( "${reply[@]}" )
+        # Store gathered data
+        ZKL_EMIT_ZEKYLLS+=( "$zekyll" )
+        ZKL_EMIT_SECTIONS+=( "$section" )
+        ZKL_EMIT_REPOS+=( "${user}---${plugin}" )
+        ZKL_EMIT_FILE_NAMES+=( "$file_name" )
+        ZKL_EMIT_DESCRIPTIONS+=( "" )
     done
 }
 
@@ -549,15 +597,21 @@ zkllong() {
         return
     fi
 
-    zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zekyll}--*(N.) )
+    zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${plugin}/${zekyll}.[A-Z]--*(N.) )
     if [[ "${#zekyll_file}" -eq 0 ]]; then
         echo "Zekyll $zekyll ($desc) doesn't exist, skipping"
         return
     fi
 
-    -process-zekyll-file "${zekyll_file[1]}" "$desc"
+    local file_name="${zekyll_file[1]##*/}"
+    local section="${${file_name/#???.}%%--*}"
 
-    ZKL_OUTPUT+=( "${reply[@]}" )
+    # Store gathered data
+    ZKL_EMIT_ZEKYLLS+=( "$zekyll" )
+    ZKL_EMIT_SECTIONS+=( "$section" )
+    ZKL_EMIT_REPOS+=( "${user}---${plugin}" )
+    ZKL_EMIT_FILE_NAMES+=( "$file_name" )
+    ZKL_EMIT_DESCRIPTIONS+=( "" )
 }
 
 #
