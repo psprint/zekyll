@@ -46,20 +46,25 @@ detect_duplicates() {
 
 read_destination_path() {
     local zekylls_path
-    pinfo "Where are zekylls located? (default: current directory \".\"):"
 
-    # TODO
-    local compcontext="user:Dirs:(\"$HOME\" \"$ZKL_HOME\" \"$ZKL_DIR\")"
-    vared -cp "Enter path: " zekylls_path
+    while (( 1 )); do
+        pinfo "Where are zekylls located? (default: current directory \".\"):"
 
-    if [ -z "$zekylls_path" ]; then
-        zekylls_path="."
-    fi
+        # TODO
+        local compcontext="user:Dirs:(\"$HOME\" \"$ZKL_HOME\" \"$ZKL_DIR\")"
+        vared -cp "Enter path: " zekylls_path
 
-    if ! test -d "$zekylls_path"; then
-        perror "Path doesn't exist"
-        return 1
-    fi
+        if [ -z "$zekylls_path" ]; then
+            zekylls_path="."
+        fi
+
+        if ! test -d "$zekylls_path"; then
+            perror "Path doesn't exist, try again"
+            continue
+        fi
+
+        break
+    done
 
     REPLY="$zekylls_path"
     return 0
