@@ -38,7 +38,10 @@ if [[ -z "$ZKL_PATH" && -n "$1" ]]; then
 fi
 
 REPLY="$ZKL_PATH"
-[ "$REPLY" = "" ] && { read_destination_path || exit 1 }
+[ "$REPLY" = "" ] && {
+    [ -n "$ZEKYLL_DEFAULT_REPO" ] && { get_path_from_repo "$ZEKYLL_DEFAULT_REPO"; ZKL_PATH="$REPLY"; }
+    read_destination_path "$ZKL_PATH" || exit 1
+}
 ZKL_PATH="$REPLY"
 cd_will_work_on "$REPLY"
 
