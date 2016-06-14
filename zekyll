@@ -230,6 +230,27 @@ ZKLCOL=(
     return 0
 }
 
+-zkl-any3-to-user-repo-zekyllfile() {
+    local user repo zekyllfile="$1"
+    if [[ "$1" = [a-zA-Z0-9]##:[\.a-zA-Z0-9]## ]]; then
+        user="${1%:*}"
+        zekyllfile="${1#*:}"
+    elif [[ "$1" = [a-zA-Z0-9]##/[a-zA-Z0-9]##:[\.a-zA-Z0-9]## ]]; then
+        user="${1%/*}"
+        repo="${${1#*/}%:*}"
+        zekyllfile="${1#*:}"
+    fi
+
+    [ -z "$user" ] && user="$ZKL_CUR_USER"
+    [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user" && return 1
+
+    [ -z "$repo" ] && repo="$ZKL_CUR_PLUGIN"
+    [[ "$repo" = "_unknown" || -z "$repo" ]] && -zkl-error "Error: unknown repo" && return 1
+
+    reply=( "$user" "$repo" "$zekyllfile" )
+    return 0
+}
+
 # This function is used for repository paths manipulations
 # Basically, every repository path consists of user name and repo name
 # There are 3 formats:
@@ -346,19 +367,23 @@ ZKLCOL=(
 # - detecting if "update only" mode is done
 # - signaling inproper input and update mode
 #
-# Has two modes, zkl and zkllong. Input differs for both of them.
-# For the first input, reffer to -zkl-any-to-user-repo and for
-# the second one to -zkl-any2-to-user-repo-zekyll-desc.
+# Has three modes, zkl, zkllong, file. Input differs for all of
+# them. For the first input, reffer to -zkl-any-to-user-repo and
+# for the second one to -zkl-any2-to-user-repo-zekyll-desc. Third
+# one extends the one from -zkl-any3-to-user-repo-zekyllfile.
 #
 -zkl-start-zekyll-input() {
     -zkl-prepare-home
 
-    if [ "$1" = "zkl" ]; then
-        shift
+    local optype="$1"
+    shift
+
+    if [ "$optype" = "zkl" ]; then
         -zkl-any-to-user-repo-zekyll "$1" "$2" "$3" || return 2
-    elif [ "$1" = "zkllong" ]; then
-        shift
+    elif [ "$optype" = "zkllong" ]; then
         -zkl-any2-to-user-repo-zekyll-desc "$@" || return 2
+    elif [ "$optype" = "file" ]; then
+        -zkl-any3-to-user-repo-zekyllfile "$1" || return 2
     else
         return 1
     fi
@@ -761,28 +786,9 @@ file() {
     # Quick exit when not generating
     [ "$ZKL_YES" = "NO" ] && return
 
-    -zkl-prepare-home
-
-    local user="$ZKL_CUR_USER"
-    [ "$user" = "_unknown" ] && -zkl-error "Error: unknown user" && return
-
-    local repo="$ZKL_CUR_PLUGIN"
-    [ "$repo" = "_unknown" ] && -zkl-error "Error: unknown repo" && return
-
-    local zekyllfile="$1"
-    if [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
-        user="${1%:*}"
-        zekyllfile="${1#*:}"
-    elif [[ "$1" = [a-zA-Z0-9]##/[a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
-        user="${1%/*}"
-        repo="${1#*/}"
-        repo="${repo%:*}"
-        zekyllfile="${1#*:}"
-    fi
-
-    -zkl-repo-preamble "$user" "$repo"
-
-    [ "$ZKL_UPDATE_ONLY" = "1" ] && return
+    # Strictly, this will propagate error code from -zkl-start-zekyll-input
+    -zkl-start-zekyll-input "file" "$1" || return
+    local user="${reply[1]}" repo="${reply[2]}" zekyllfile="${reply[3]}"
 
     # Now CD into given "$user" "$repo" and source zekyllfile
     [ ! -d "$ZKL_REPOS_DIR/${user}---${repo}" ] && -zkl-error "Repository ${user}/${repo} doesn't exist" && return 1
