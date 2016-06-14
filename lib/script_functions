@@ -19,6 +19,7 @@ help-git() { print -- "-g/--git            -- perform operations with git (to up
 help-path(){ print -- "-p/--path [path]    -- work in given path (don't ask for it)"; }
 help-zkl() { print -- "-z/--zkl [zekylls]  -- process given zekylls"; }
 help-dft() { print -- "-d/--default        -- use ZEKYLL_DEFAULT_REPO if available as working directory (don't ask)"; }
+help-repo(){ print -- "-r/--repo           -- use given repo as path specification"; }
 
 #
 # Detects duplicates in given array
@@ -71,6 +72,35 @@ read_destination_path() {
 }
 
 #
+# Read repository spec
+#
+
+read_repo() {
+    local repo_spec="$1"
+
+    while (( 1 )); do
+        vared -cp "Enter user/name or just user: " repo_spec
+
+        if [[ "$repo_spec" != [a-zA-Z0-9][a-zA-Z0-9-]#[/][a-zA-Z0-9_-]## && "$repo_spec" != [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
+            perror "Incorrect repository spec. It can contain letters, numbers, underscores and hyphens."
+            continue
+        fi
+
+        get_path_from_repo "$repo_spec"
+        if ! test -d "$REPLY"; then
+            perror "Repository doesn't exist, try again"
+            continue
+        fi
+
+        break
+    done
+
+    REPLY="$repo_spec"
+
+    return 0
+}
+
+#
 # Resolves path according to various rules and sources
 #
 resolve_path() {
@@ -89,6 +119,29 @@ resolve_path() {
     [[ -n "$ZEKYLL_DEFAULT_REPO" && -z "$ZKL_PATH" ]] && { get_path_from_repo "$ZEKYLL_DEFAULT_REPO"; ZKL_PATH="$REPLY"; }
 
     (( ask )) && { read_destination_path "$ZKL_PATH" || exit 1 }
+}
+
+#
+# This function translates repo to path, but
+# also asks for the repo if conditions are
+# meet
+#
+resolve_repo() {
+    integer ask=1
+    [[ "$ZKL_DEFAULT" = 1 && -n "$ZEKYLL_DEFAULT_REPO" ]] && ask=0
+    [ -n "$ZKL_REPO" ] && ask=0
+
+    # -r/--repo has precedence
+    local repo="$ZEKYLL_DEFAULT_REPO"
+    [ -n "$ZKL_REPO" ] && repo="$ZKL_REPO"
+
+    if (( ask )); then
+        # Will propose the repo (if it's set)
+        read_repo "$repo" || exit 1
+        repo="$REPLY"
+    fi
+
+    get_path_from_repo "$repo"
 }
 
 #

@@ -1,0 +1,44 @@
+#!/usr/bin/env zsh
+
+ZERO="${(%):-%N}"
+REPO_DIR="${ZERO%/*}"
+source "$REPO_DIR/lib/script_preamble"
+source "$REPO_DIR/lib/script_vars"
+source "$REPO_DIR/lib/script_functions"
+
+#
+# Zparseopts
+#
+
+ZKL_HELP="0"
+ZKL_REPO=""
+ZKL_DEFAULT="0"
+zparseopts -E -D -A opthash h -help r: -repo: d -default || exit 1
+
+(( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+(( ${+opthash[-r]} )) && ZKL_REPO="${opthash[-r]}"
+(( ${+opthash[--repo]} )) && ZKL_REPO="${opthash[--repo]}"
+(( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
+
+if [ "$ZKL_HELP" = "1" ]; then
+    pinfo "Usage: zkl-cd [options] [path]"
+    print "Asks for zekylls, and lists associated files in the same order as found in zekylls"
+    print
+    help-opts
+    help-repo
+    help-dft
+
+    exit 0
+fi
+
+#
+# Read destination path
+#
+
+# Take repo from first argument if not given via -r/--repo
+if [[ -z "$ZKL_REPO" && -n "$1" ]]; then
+    ZKL_REPO="$1"
+fi
+
+resolve_repo
+echo "$REPLY"
