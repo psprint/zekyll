@@ -41,15 +41,14 @@ decode_zcode() {
         return 1
     fi
 
-    # Compute first element of the hundred
-    # pointed to by zcode
-    integer hundred=$(( (number-1)*100 + 1 ))
+    # Compute first element pointed to by index
+    integer first=$(( (number-1)*150 + 1 ))
 
-    # The zcode can have at most 20 digits
-    # This is the 100 bits (100 zekylls)
+    # The zcode can have at most 30 digits
+    # This is the 150 bits (150 zekylls)
     # written in base 36. We have to obtain
-    # the 100 bits. We will implement division
-    # in base 36 and gradually obtain the 100 bits.
+    # the 150 bits. We will implement division
+    # in base 36 and gradually obtain the 150 bits.
 
     local -a bits
     local workingvar="$letters"
@@ -116,6 +115,32 @@ div2() {
     reply=( "$REPLY" "$subtracted" )
 
     return 0
+}
+
+#
+# Takes number in $1, returns string [a-z0-9]+
+# that is representation of the number in base 36
+#
+convert_integer_to_base_36() {
+    integer number="$1"
+    local -a digits
+
+    integer new_number=number
+    integer remainder
+    while (( new_number != 0 )); do
+        remainder=new_number%36
+        new_number=new_number/36
+
+        digits+=( "$remainder" )
+    done
+
+    [[ "${#digits}" -eq 0 ]] && digits+=( 0 )
+    [[ "${#digits}" -eq 1 ]] && digits+=( 0 )
+    [[ "${#digits}" -eq 2 ]] && digits+=( 0 )
+
+    digits=( "${(Oa)digits[@]}" )
+
+    numbers_to_letters "${digits[@]}"
 }
 
 # vim:ft=zsh

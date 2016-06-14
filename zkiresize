@@ -1,0 +1,70 @@
+#!/usr/bin/env zsh
+
+ZERO="${(%):-%N}"
+REPO_DIR="${ZERO%/*}"
+source "$REPO_DIR/lib/script_preamble"
+source "$REPO_DIR/lib/script_vars"
+source "$REPO_DIR/lib/script_functions"
+source "$REPO_DIR/lib/math_functions"
+
+#
+# Zparseopts
+#
+
+ZKL_HELP="0"
+ZKL_PATH=""
+ZKL_DEFAULT="0"
+ZKL_INDEX=""
+ZKL_SIZE=""
+zparseopts -E -D -A opthash h -help p: -path: d -default i: -index: s: -size: || exit 1
+
+(( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
+(( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
+(( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
+(( ${+opthash[-i]} )) && ZKL_INDEX="${opthash[-i]}"
+(( ${+opthash[--index]} )) && ZKL_INDEX="${opthash[--index]}"
+(( ${+opthash[-s]} )) && ZKL_SIZE="${opthash[-s]}"
+(( ${+opthash[--size]} )) && ZKL_SIZE="${opthash[--size]}"
+(( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
+
+if [ "$ZKL_HELP" = "1" ]; then
+    pinfo "Usage: zkiresize [options]"
+    print "Resizes given index (-i) to given size (-s)"
+    print
+    help-opts
+    help-index
+    help-rsize
+
+    exit 0
+fi
+
+#
+# Read destination path
+#
+
+# Take path from first argument if not given via -p/--path
+if [[ -z "$ZKL_PATH" && -n "$1" ]]; then
+    ZKL_PATH="$1"
+fi
+
+REPLY="$ZKL_PATH"
+[ "$REPLY" = "" ] && resolve_path
+ZKL_PATH="$REPLY"
+cd_will_work_on "$REPLY" || exit 1
+
+#
+# Work on the index
+#
+
+# Sets ZKL_INDEX_ZEKYLLS array. It is used by the index
+# subsystem as reference of what files are potentially
+# part of current index
+set_index "$ZKL_INDEX"
+
+# Check
+if compute_index_size_check_consistency "$ZKL_INDEX"; then
+    echo "Index of size $REPLY is consistent"
+else
+    perror "Inconsistent index (of size $REPLY)! The problematic file is:" "${reply[@]}"
+    perror "It is not in sequence with other files."
+fi

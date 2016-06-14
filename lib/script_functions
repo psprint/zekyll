@@ -12,14 +12,16 @@ clearinput() { repeat 10; do read -rs -k 1 -t; done; }
 #
 
 dry-mode-msg() { [ "$ZKL_PERFORM_WRITE" = "0" ] && pinfo2 "= Dry mode =" || perror "= Actual mode (not-dry) ="; }
-help-opts(){ pinfo "Options are:"; }
-help-cd()  { print -- "-c/--cd             -- ask for working directory, otherwise it's current directory"; }
-help-dry() { print -- "-w/--write          -- actual operation mode - else it is always dry-run mode"; }
-help-git() { print -- "-g/--git            -- perform operations with git (to update repository not just files)"; }
-help-path(){ print -- "-p/--path [path]    -- work in given path (don't ask for it)"; }
-help-zkl() { print -- "-z/--zkl [zekylls]  -- process given zekylls"; }
-help-dft() { print -- "-d/--default        -- use ZEKYLL_DEFAULT_REPO if available as working directory (don't ask)"; }
-help-repo(){ print -- "-r/--repo           -- use given repo as path specification"; }
+help-opts()  { pinfo "Options are:"; }
+help-cd()    { print -- "-c/--cd             -- ask for working directory, otherwise it's current directory"; }
+help-dry()   { print -- "-w/--write          -- actual operation mode - else it is always dry-run mode"; }
+help-git()   { print -- "-g/--git            -- perform operations with git (to update repository not just files)"; }
+help-path()  { print -- "-p/--path [path]    -- work in given path (don't ask for it)"; }
+help-zkl()   { print -- "-z/--zkl [zekylls]  -- process given zekylls"; }
+help-dft()   { print -- "-d/--default        -- use ZEKYLL_DEFAULT_REPO if available as working directory (don't ask)"; }
+help-repo()  { print -- "-r/--repo           -- use given repo as path specification"; }
+help-index() { print -- "-i/--index [index]  -- work on given index"; }
+help-rsize() { print -- "-s/--size [size]    -- resize to given size"; }
 
 #
 # Detects duplicates in given array
@@ -247,6 +249,83 @@ three_to_section_order() {
 
     typeset -ga reply2 reply3
     reply=( "${out_zekylls[@]}" ) ; reply2=( "${out_files[@]}" ) ; reply3=( "${out_sections[@]}" )
+}
+
+#
+# Sets ZKL_INDEX_ZEKYLLS array which contains all
+# zekylls that potentially can be part of the
+# index
+#
+set_index() {
+    integer index="$1"
+
+    ZKL_INDEX_ZEKYLLS=( )
+
+    # Compute first element pointed to by index
+    integer first=$(( (index-1)*150 ))
+
+    integer i
+    for (( i=first; i<=(first+150-1); i ++ )); do
+        # Convert the number to base 36 with leading zeros
+        convert_integer_to_base_36 "$i"
+        ZKL_INDEX_ZEKYLLS+=( "$REPLY" )
+        #print "$REPLY $i"
+    done
+    #print -rl "${ZKL_INDEX_ZEKYLLS[@]}"
+}
+
+#
+# Returns array of file names of files that
+# belong to current index
+#
+get_files_of_index() {
+    local -a filter
+    filter=( "${ZKL_INDEX_ZEKYLLS[@]//*(#m)/$MATCH.*}" )
+    reply=( $^~filter(N) )
+}
+
+# Checks what possible files in index exist,
+# counts them and checks for holes - which
+# would mean inconsistency
+compute_index_size_check_consistency() {
+    local -a files
+
+    get_files_of_index
+
+    # Save for return
+    local -a files
+    files=( "${reply[@]}" )
+
+    # Will work on reply
+    integer size=${#reply} start_size end_size end=0 consistent=1
+    local zzz
+    for zzz in "${ZKL_INDEX_ZEKYLLS[@]}"; do
+        start_size="${#reply}"
+        reply=( "${reply[@]:#$zzz.*(#m)}" )
+        end_size="${#reply}"
+
+        #echo "start_size vs end_size - $start_size vs $end_size"
+        if [[ "$start_size" -eq "$end_size" ]]; then
+            # No match -> end
+            end=1
+        else
+            # Match: must not have been ended earlier
+            if (( end == 1 )); then
+                files=( "$MATCH" )
+                consistent=0
+                break
+            fi
+        fi
+
+        if [[ "$end_size" -eq 0 ]]; then
+            break
+        fi
+    done
+
+    REPLY="${#files}"
+    reply=( "${files[@]}" )
+
+    return $(( 1-consistent ))
 }
 
 # vim:ft=zsh
