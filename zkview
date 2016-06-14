@@ -79,31 +79,36 @@ if [ "${#${zekylls1[-1]}}" = "1" ]; then
 fi
 
 #
-# List zekylls to terminal, inform about
-# non-existing ones, compute existing ones
+# Obtain section ordered list
 #
 
-local -a existing
-existing=( )
-local zekyll
-for zekyll in "${zekylls1[@]}"; do
-    zekyll_file=( ${zekyll}.[A-Z]--*(N.) )
-    if [[ "$#zekyll_file" -eq 0 ]]; then
-        perror "No such zekyll $zekyll"
-    else
-        existing+=( "$zekyll" )
-        pinfo2 "-> ${zekyll_file[1]}"
-    fi
-done
+filter_for_existing_zekylls "${zekylls1[@]}"
+
+local -a existing files sections
+existing=( "${reply[@]}" )
+files=( "${reply2[@]}" )
+sections=( "${reply3[@]}" )
 
 [[ "${#existing}" -eq 0 ]] && print && exit 0
+
+# Move to section order
+integer a i secsize="${#section_letters}" size="${#files}"
+local -a section_order_existing
+for (( a=1; a<=secsize; a++ )); do
+    selected_section="${section_letters[a]}"
+    for (( i=1; i<=size; i++ )); do
+        [ "$selected_section" != "${sections[i]#.}" ] && continue
+        section_order_existing+=( "$existing[i]" )
+        pinfo2 "-> ${files[i]}"
+    done
+done
 
 #
 # Display list of zekylls and open editor for any selection
 #
 
 local -a files
-files=( ${^existing}.[A-Z]--*(N.) )
+files=( ${^section_order_existing}.[A-Z]--*(N.) )
 
 while (( 1 )); do
     local selection=""
