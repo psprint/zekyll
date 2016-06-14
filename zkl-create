@@ -126,7 +126,7 @@ for zekyll in "${zekylls1[@]}"; do
 
     local section=""
     while (( 1 )); do
-        echo "Creating ${zekyll}.A-Z--... ($count/$all), enter the A-Z, i.e. section"
+        echo "Creating ${ZKLCOL[info2]}${zekyll}.A-Z--...${ZKLCOL[rst]} ${ZKLCOL[info3]}($count/$all)${ZKLCOL[rst]}, enter the A-Z, i.e. ${ZKLCOL[info2]}section letter${ZKLCOL[rst]}"
         vared -cp "section: " section
 
         if [[ "$section" != [A-Z] ]]; then
@@ -141,7 +141,7 @@ for zekyll in "${zekylls1[@]}"; do
 
     local desc=""
     while (( 1 )); do
-        echo "Creating ${zekyll}--... ($count/$all), enter description"
+        echo "Creating ${ZKLCOL[info2]}${zekyll}--...${ZKLCOL[rst]} ${ZKLCOL[info3]}($count/$all)${ZKLCOL[rst]}, enter ${ZKLCOL[info2]}description${ZKLCOL[rst]}"
         vared -cp "description: " desc
 
         if [[ "$desc" != [a-zA-Z0-9_-]# ]]; then
