@@ -16,7 +16,8 @@ ZKL_CD="0"
 ZKL_PATH=""
 ZKL_HELP="0"
 ZKL_DEFAULT="0"
-zparseopts -E -D -A opthash w -write g -git c -cd h -help p: -path: d -default || exit 1
+ZKL_VERBOSE="-s"
+zparseopts -E -D -A opthash w -write g -git c -cd h -help p: -path: d -default v -verbose || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -26,6 +27,7 @@ zparseopts -E -D -A opthash w -write g -git c -cd h -help p: -path: d -default |
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
+(( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
 
 # -c/--cd means prompt should be displayed
 # it will use ZEKYLL_DEFAULT_REPO as normal
@@ -69,7 +71,7 @@ fi
 # Will work on
 #
 
-cd_will_work_on "$REPLY" || exit 1
+cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 1
 
 #
 # Examine parameters

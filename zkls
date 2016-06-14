@@ -14,7 +14,8 @@ ZKL_HELP="0"
 ZKL_PATH=""
 ZKL_ZEKYLLS=""
 ZKL_DEFAULT="0"
-zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default || exit 1
+ZKL_VERBOSE="-s"
+zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default v -verbose || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
@@ -22,6 +23,7 @@ zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default || exit 1
 (( ${+opthash[-z]} )) && ZKL_ZEKYLLS="${opthash[-z]}"
 (( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
+(( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-ls [options] [path]"
@@ -46,7 +48,7 @@ fi
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
 ZKL_PATH="$REPLY"
-cd_will_work_on "$REPLY" || exit 1
+cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 1
 
 #
 # Read and examine new zekylls string
