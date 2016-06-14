@@ -123,12 +123,12 @@ ZKLCOL=(
 
     if [[ "$#" -eq "1" ]]; then
         # user/repo:zekyll(s)?
-        if [[ "$1" = [a-zA-Z0-9]##[/][a-zA-Z0-9]##[:][a-zA-Z0-9_]## ]]; then
+        if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#[/][a-zA-Z0-9_-]##[:][a-zA-Z0-9_]## ]]; then
             user="${1%%/*}"
             repo="${${1%%:*}##*/}"
             zekyll="${1##*:}"
         # user:zekyll(s)?
-        elif [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9_]## ]]; then
+        elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#:[a-zA-Z0-9_]## ]]; then
             user="${1%%:*}"
             repo="$ZKL_CUR_PLUGIN"
             zekyll="${1##*:}"
@@ -142,7 +142,7 @@ ZKLCOL=(
         fi
     elif [[ "$#" -eq "2" ]]; then
         # user/repo?
-        if [[ "$1" = [a-zA-Z0-9]##[/][a-zA-Z0-9]## ]]; then
+        if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#[/][a-zA-Z0-9_-]## ]]; then
             # Should be zekyll(s)
             if [[ "$2" = [a-zA-Z0-9_]## ]]; then
                 user="${1%%/*}"
@@ -167,9 +167,9 @@ ZKLCOL=(
     elif [[ "$#" -eq "3" ]]; then
         integer correct=0
         # Should be user
-        if [[ "$1" = [a-zA-Z0-9]## ]]; then
+        if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
             # Should be repo
-            if [[ "$2" = [a-zA-Z0-9]## ]]; then
+            if [[ "$2" = [a-zA-Z0-9_-]## ]]; then
                 # Should be zekyll(s)
                 if [[ "$3" = [a-zA-Z0-9_]## ]]; then
                     user="$1"
