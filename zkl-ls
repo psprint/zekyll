@@ -87,8 +87,7 @@ fi
 # Do the listing
 #
 
-local -a existing
-existing=( )
+local -a existing sections
 local zekyll
 for zekyll in "${zekylls1[@]}"; do
     zekyll_file=( ${zekyll}.[A-Z]--*(N.) )
@@ -96,11 +95,23 @@ for zekyll in "${zekylls1[@]}"; do
         perror "No such zekyll $zekyll"
     else
         existing+=( "$zekyll" )
+
+        if [[ "${zekyll_file[1]}" = (#b)${zekyll}.([A-Z])--* ]]; then
+            sections+=( ".${match[1]}" )
+        else
+            sections+=( "" )
+            perror "Warning: suspicious zekyll $zekyll"
+        fi
         pinfo2 "-> ${zekyll_file[1]}"
     fi
 done
 
 print
 
-echo "Your EDITOR string would be: ${EDITOR:-vim} ~/.vimrc" $^existing"--*"
+# Zip zekylls and sections
+local -a z v
+local p q
+z=( "${(@)existing:^sections}" ); for p q in "${z[@]}"; do v+=( "$p$q" ); done
+
+echo "Your EDITOR string would be: ${EDITOR:-vim}" $^v"--*"
 echo "Other possibility is: zkl-view-zekylls -p \"$ZKL_PATH\" --zkl $zekylls_string"
