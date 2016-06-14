@@ -548,8 +548,13 @@ Options are:
     #
 
     integer size="${#ZKL_EMIT_ZEKYLLS}" i a
-    local section_seen
-    for (( a=1; a<=size; a++ )); do
+    local selected_section
+    local -a secs
+    secs=( A B C D E F G H I J K L M N O P Q R S T U V W X Y Z )
+
+    for (( a=1; a<=26; a++ )); do
+        selected_section="${secs[a]}"
+
         for (( i=1; i<=size; i++ )); do
             local zekylls="${ZKL_EMIT_ZEKYLLS[i]}"
             local section="${ZKL_EMIT_SECTIONS[i]}"
@@ -557,16 +562,11 @@ Options are:
             local file_name="${ZKL_EMIT_FILE_NAMES[i]}"
             local desc="${ZKL_EMIT_DESCRIPTIONS[i]}"
 
-            [[ "$section_seen" = "" && "$section" != "-" ]] && section_seen="$section"
-            [ "$section_seen" != "$section" ] && continue
-
-            # Mark the section as processed
-            ZKL_EMIT_SECTIONS[i]="-"
+            [ "$selected_section" != "$section" ] && continue
 
             -process-zekyll-file "${ZKL_REPOS_DIR}/${repo}/${file_name}" "$desc"
             output+=( "${reply[@]}" )
         done
-        section_seen=""
     done
 
     #
