@@ -52,8 +52,6 @@ read_destination_path() {
     while (( 1 )); do
         pinfo "Where are zekylls located? (default: current directory \".\"):"
 
-        # TODO
-        local compcontext="user:Dirs:(\"$HOME\" \"$ZKL_HOME\" \"$ZKL_DIR\")"
         vared -cp "Enter path: " zekylls_path
 
         if [ -z "$zekylls_path" ]; then
