@@ -84,7 +84,7 @@ if [ "${#${zekylls1[-1]}}" = "1" ]; then
 fi
 
 #
-# Do the listing
+# List with section order
 #
 
 filter_for_existing_zekylls "${zekylls1[@]}"
@@ -95,7 +95,6 @@ files=( "${reply2[@]}" )
 sections=( "${reply3[@]}" )
 
 integer a i secsize="${#section_letters}" size="${#files}"
-
 for (( a=1; a<=secsize; a++ )); do
     selected_section="${section_letters[a]}"
     for (( i=1; i<=size; i++ )); do
