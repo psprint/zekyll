@@ -14,8 +14,9 @@ ZKL_PERFORM_WRITE="0"
 ZKL_ADD_GIT="0"
 ZKL_HELP="0"
 ZKL_PATH=""
+ZKL_ZEKYLLS=""
 ZKL_DEFAULT="0"
-zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default || exit 1
+zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl: || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -23,6 +24,8 @@ zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default || exit
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
+(( ${+opthash[-z]} )) && ZKL_ZEKYLLS="${opthash[-z]}"
+(( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 
 if [ "$ZKL_HELP" = "1" ]; then
@@ -59,8 +62,12 @@ cd_will_work_on "$REPLY" || exit 1
 
 local zekylls_string_vis=""
 while (( 1 )); do
-    pinfo "Enter NEW zekylls string:"
-    vared -cp "zekylls: " zekylls_string_vis
+    if [ "$ZKL_ZEKYLLS" = "" ]; then
+        pinfo "Enter NEW zekylls string:"
+        vared -cp "Enter zekylls: " zekylls_string_vis
+    else
+        zekylls_string_vis="$ZKL_ZEKYLLS"
+    fi
 
     print
     zekylls_string="${zekylls_string_vis//_/}"
@@ -72,8 +79,13 @@ while (( 1 )); do
 
     pinfo "Checking current zekyll for duplicates..."
     if ! detect_duplicates "${zekylls1[@]}"; then
-        perror "Duplicates found, restaring"
-        continue
+        if [ -n "$ZKL_ZEKYLLS" ]; then
+            perror "Duplicates found, aborting"
+            exit 1
+        else
+            perror "Duplicates found, restaring"
+            continue
+        fi
     fi
 
     print
