@@ -144,13 +144,15 @@ for zekyll in "${zekylls1[@]}"; do
         echo "Creating ${ZKLCOL[info2]}${zekyll}--...${ZKLCOL[rst]} ${ZKLCOL[info3]}($count/$all)${ZKLCOL[rst]}, enter ${ZKLCOL[info2]}description${ZKLCOL[rst]}"
         vared -cp "description: " desc
 
-        if [[ "$desc" != [a-zA-Z0-9_-]# ]]; then
+        if [[ "$desc" != [[:blank:]a-zA-Z0-9_-]# ]]; then
             print
-            perror "Allowed are letters, digits, underscores and hyphens, try again"
+            perror "Allowed are letters, digits, underscores, spaces and hyphens, try again"
         else
             break
         fi
     done
+
+    desc="${desc//[[:blank:]]/-}"
 
     zekyll_file="${zekyll}.${section}--${desc}"
     if [ "$ZKL_ADD_GIT" = "1" ]; then
