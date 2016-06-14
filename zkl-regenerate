@@ -139,14 +139,14 @@ pinfo "Checking for collisions with remaining files..."
 # Get list of zekylls that are not in zekylls1 list, but exist on filesystem
 # First get all zekylls
 local -a all_zekylls
-all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]--*(N.) )
+all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9].[A-Z]--*(N.) )
 if [[ "$#all_zekylls" -eq 0 ]]; then
     perror "There are no zekylls in current directory, exiting"
     exit 1
 fi
 
-# Here we will have them fully extracted, without descriptions
-all_zekylls=( "${all_zekylls[@]//(#b)([a-zA-Z0-9])([a-zA-Z0-9])([a-zA-Z0-9])--*/${match[1]}${match[2]}${match[3]}}" )
+# Here we will have them fully extracted, without descriptions and sections
+all_zekylls=( "${all_zekylls[@]//(#b)([a-zA-Z0-9])([a-zA-Z0-9])([a-zA-Z0-9]).[A-Z]--*/${match[1]}${match[2]}${match[3]}}" )
 
 # Now substract zekylls1 from all_zekylls
 local -a subtract
@@ -181,6 +181,7 @@ if ! test -d ".git"; then
 fi
 
 integer i
+local -a already_processed
 for (( i=1; i<=size; i++ )); do
     local zzz1="${zekylls1[i]}"
     local zzz2="${zekylls2[i]}"
@@ -190,26 +191,47 @@ for (( i=1; i<=size; i++ )); do
         continue
     fi
 
+    #
+    # Get the source file
+    #
+
     local -a zekyll_file1
-    zekyll_file1=( ${zzz1}--*(N.) )
+    zekyll_file1=( ${zzz1}.[A-Z]--*(N.) )
 
     if [ "${#zekyll_file1}" -eq 0 ]; then
         echo "Skipping not existing zekyll $zzz1 (targetted to rename to $zzz2)"
         continue
     fi
 
+    #
+    # Prepare destination file's name
+    #
+
     local file1="${zekyll_file1[1]}"
-    local desc="${file1#${zzz1}--}"
-    local file2="${zzz2}--$desc"
+    match=( )
+    local desc="${file1#(#b)${zzz1}.([A-Z])--}"
+    if [[ -z "${match[1]}" ]]; then
+        perror "Error during processing of zekyll ${zzz1}, aborting"
+        perror "Already processed source zekylls are: ${already_processed[@]}"
+        exit 1
+    fi
+    local file2="${zzz2}.${match[1]}--$desc"
+
+    #
+    # Move
+    #
 
     if [ "$file1" != "$file2" ]; then
         # Dry run?
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+            echo "${cmd[@]}" "$file1" "$file2"
             "${cmd[@]}" "$file1" "$file2"
         else
             echo "${cmd[@]}" "$file1" "$file2"
         fi
     fi
+
+    already_processed+=( "${zzz1}" )
 done
 
 # vim:ft=zsh
