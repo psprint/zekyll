@@ -22,6 +22,9 @@ typeset -gaH ZKL_EMIT_FILE_NAMES
 typeset -gaH ZKL_EMIT_SECTIONS
 typeset -gaH ZKL_EMIT_DESCRIPTIONS
 
+typeset -gH ZKL_LAST_PROCESSING_USER
+typeset -gH ZKL_LAST_PROCESSING_REPO
+
 #
 # Paths
 #
@@ -631,7 +634,11 @@ zkl() {
     # Generate three-character bits
     zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-    -zkl-pinfo2 "\nProcessing for user $user, repo $repo\n"
+    if [[ "$ZKL_LAST_PROCESSING_USER" != "$user" || "$ZKL_LAST_PROCESSING_REPO" != "$repo" ]]; then
+        -zkl-pinfo2 "\nProcessing for user $user, repo $repo\n"
+    fi
+    ZKL_LAST_PROCESSING_USER="$user"
+    ZKL_LAST_PROCESSING_REPO="$repo"
 
     # Iterate over the bits
     for zzz in "${zekylls[@]}"; do
@@ -671,7 +678,11 @@ zkllong() {
     -zkl-start-zekyll-input "zkllong" "$@" || return
     local user="${reply[1]}" repo="${reply[2]}" zekyll="${reply[3]}" desc="${reply[4]}"
 
-    -zkl-pinfo2 "\nProcessing (long) for user $user, repo $repo\n"
+    if [[ "$ZKL_LAST_PROCESSING_USER" != "$user" || "$ZKL_LAST_PROCESSING_REPO" != "$repo" ]]; then
+        -zkl-pinfo2 "\nProcessing (long) for user $user, repo $repo\n"
+    fi
+    ZKL_LAST_PROCESSING_USER="$user"
+    ZKL_LAST_PROCESSING_REPO="$repo"
 
     if [ "${#zekyll}" -eq 1 ]; then
         echo "Skipping single letter zekyll $zekyll"
