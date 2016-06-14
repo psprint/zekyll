@@ -87,23 +87,21 @@ fi
 # Do the listing
 #
 
-local -a existing sections
-local zekyll
-for zekyll in "${zekylls1[@]}"; do
-    zekyll_file=( ${zekyll}.[A-Z]--*(N.) )
-    if [[ "$#zekyll_file" -eq 0 ]]; then
-        perror "No such zekyll $zekyll"
-    else
-        existing+=( "$zekyll" )
+filter_for_existing_zekylls "${zekylls1[@]}"
 
-        if [[ "${zekyll_file[1]}" = (#b)${zekyll}.([A-Z])--* ]]; then
-            sections+=( ".${match[1]}" )
-        else
-            sections+=( "" )
-            perror "Warning: suspicious zekyll $zekyll"
-        fi
-        pinfo2 "-> ${zekyll_file[1]}"
-    fi
+local -a existing files sections
+existing=( "${reply[@]}" )
+files=( "${reply2[@]}" )
+sections=( "${reply3[@]}" )
+
+integer a i secsize="${#section_letters}" size="${#files}"
+
+for (( a=1; a<=secsize; a++ )); do
+    selected_section="${section_letters[a]}"
+    for (( i=1; i<=size; i++ )); do
+        [ "$selected_section" != "${sections[i]#.}" ] && continue
+        pinfo2 "-> ${files[i]}"
+    done
 done
 
 print

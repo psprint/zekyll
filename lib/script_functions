@@ -192,4 +192,34 @@ get_path_from_user_repo() {
     REPLY="$ZKL_REPOS_DIR/${1}---${2}"
 }
 
+#
+# Iterates over given zekylls, rejects non-existing ones,
+# saves file names (returned in reply2) and sections (reply3)
+#
+filter_for_existing_zekylls() {
+    local -a existing sections files
+    local zekyll
+    for zekyll in "$@"; do
+        zekyll_file=( ${zekyll}.[A-Z]--*(N.) )
+        if [[ "$#zekyll_file" -eq 0 ]]; then
+            perror "No such zekyll $zekyll"
+        else
+            existing+=( "$zekyll" )
+            files+=( "${zekyll_file[1]}" )
+
+            if [[ "${zekyll_file[1]}" = (#b)${zekyll}.([A-Z])--* ]]; then
+                sections+=( "${match[1]}" )
+            else
+                sections+=( "" )
+                perror "Warning: suspicious zekyll $zekyll"
+            fi
+        fi
+    done
+
+    typeset -ga reply2 reply3
+    reply=( "${existing[@]}" )
+    reply2=( "${files[@]}" )
+    reply3=( "${sections[@]}" )
+}
+
 # vim:ft=zsh
