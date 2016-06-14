@@ -108,15 +108,10 @@ done
 
 print
 
-# Zip zekylls and sections
-local -a z v
-local p q
-z=( "${(@)existing:^sections}" ); for p q in "${z[@]}"; do v+=( "$p$q" ); done
-
 # Handle vim specifically, adding its -p option
 if [ "${EDITOR:-vim}" = "vim" ]; then
     local vimopt=" -p"
 fi
 
-echo "Your EDITOR string would be: ${EDITOR:-vim}$vimopt" $^v"--*"
+echo "Your EDITOR string would be: ${EDITOR:-vim}$vimopt" $^existing"*"
 echo "Other possibility is: zkl-view-zekylls -p \"$ZKL_PATH\" --zkl $zekylls_string"
