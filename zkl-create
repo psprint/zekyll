@@ -120,36 +120,66 @@ fi
 integer count=0
 integer all=${#zekylls1}
 local zekyll
+local -a sections
 for zekyll in "${zekylls1[@]}"; do
     count=count+1
 
-    local desc=""
+    local section=""
     while (( 1 )); do
-        echo "Will create zekyll ${zekyll}--... ($count/$all), enter description"
-        vared -cp "description: " desc
+        echo "Creating ${zekyll}.A-Z--... ($count/$all), enter the A-Z, i.e. section"
+        vared -cp "section: " section
 
-        if [[ "$desc" != [a-zA-Z0-9_-]# ]]; then
-            perror "Allowed characters are letters, digits, underscore and hyphen, try again"
+        if [[ "$section" != [A-Z] ]]; then
+            print
+            perror "Single capital letter A-Z is allowed, try again"
         else
             break
         fi
     done
 
-    zekyll_file="${zekyll}.X--${desc}"
+    sections+=( ".$section" )
+
+    local desc=""
+    while (( 1 )); do
+        echo "Creating ${zekyll}--... ($count/$all), enter description"
+        vared -cp "description: " desc
+
+        if [[ "$desc" != [a-zA-Z0-9_-]# ]]; then
+            print
+            perror "Allowed are letters, digits, underscores and hyphens, try again"
+        else
+            break
+        fi
+    done
+
+    zekyll_file="${zekyll}.${section}--${desc}"
     if [ "$ZKL_ADD_GIT" = "1" ]; then
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+            print
+            pinfo2 "touch $zekyll_file; git add $zekyll_file"
             touch $zekyll_file; git add $zekyll_file
         else
-            echo "touch $zekyll_file; git add $zekyll_file"
+            print
+            pinfo2 "touch $zekyll_file; git add $zekyll_file"
         fi
     else
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+            print
+            pinfo2 "touch $zekyll_file"
             touch $zekyll_file
         else
-            echo "touch $zekyll_file"
+            print
+            pinfo2 "touch $zekyll_file"
         fi
     fi
+
+    print
 done
 
-echo "Your EDITOR string would be: ${EDITOR:-vim} ~/.vimrc" $^zekylls1".X--*"
+# Zip zekylls and sections
+local -a z v
+local p q
+z=( "${(@)zekylls1:^sections}" ); for p q in "${z[@]}"; do v+=( "$p$q" ); done
+
+echo "Your EDITOR string would be: ${EDITOR:-vim}" $^v"--*"
 echo "Other possibility is: zkl-view-zekylls -p \"$ZKL_PATH\" --zkl $zekylls_string"
