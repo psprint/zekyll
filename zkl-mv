@@ -88,10 +88,10 @@ local src_zekyll="$1"
 local dst_zekyll="$2"
 
 local -a src_file
-src_file=( ${src_zekyll}--*(N.) )
+src_file=( ${src_zekyll}.[A-Z]--*(N.) )
 
 local -a dst_file
-dst_file=( ${dst_zekyll}--*(N) )
+dst_file=( ${dst_zekyll}.[A-Z]--*(N) )
 
 if [[ "${#src_file}" -eq 0 ]]; then
     perror "Source file doesn't exist (for zekyll: $src_zekyll)"

@@ -104,7 +104,7 @@ local -a existing
 existing=( )
 local zekyll
 for zekyll in "${zekylls1[@]}"; do
-    zekyll_file=( ${zekyll}--*(N.) )
+    zekyll_file=( ${zekyll}.[A-Z]--*(N.) )
     if [[ "$#zekyll_file" -eq 0 ]]; then
         perror "No such zekyll $zekyll"
     else
@@ -113,7 +113,7 @@ for zekyll in "${zekylls1[@]}"; do
 done
 
 for zekyll in "${existing[@]}"; do
-    zekyll_file=( ${zekyll}--*(N.) )
+    zekyll_file=( ${zekyll}.[A-Z]--*(N.) )
     if [[ "$#zekyll_file" -eq 0 ]]; then
         perror "No such zekyll $zekyll"
     else

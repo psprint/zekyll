@@ -87,10 +87,10 @@ while (( 1 )); do
     # Get list of zekylls that are not in zekylls1 list, but exist on filesystem
     # First get all zekylls
     local -a all_zekylls
-    all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]--*(N.) )
+    all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9].[A-Z]--*(N.) )
 
-    # Here we will have them fully extracted, without paths
-    all_zekylls=( "${all_zekylls[@]//(#b)([a-zA-Z0-9])([a-zA-Z0-9])([a-zA-Z0-9])--*/${match[1]}${match[2]}${match[3]}}" )
+    # Here we will have them fully extracted, without descriptions and sections
+    all_zekylls=( "${all_zekylls[@]//(#b)([a-zA-Z0-9])([a-zA-Z0-9])([a-zA-Z0-9]).[A-Z]--*/${match[1]}${match[2]}${match[3]}}" )
 
     # Now check if target zekylls1 have something in common with current files
     local -a common 
@@ -135,7 +135,7 @@ for zekyll in "${zekylls1[@]}"; do
         fi
     done
 
-    zekyll_file="${zekyll}--${desc}"
+    zekyll_file="${zekyll}.X--${desc}"
     if [ "$ZKL_ADD_GIT" = "1" ]; then
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
             touch $zekyll_file; git add $zekyll_file
@@ -151,5 +151,5 @@ for zekyll in "${zekylls1[@]}"; do
     fi
 done
 
-echo "Your EDITOR string would be: ${EDITOR:-vim} ~/.vimrc" $^zekylls1"--*"
+echo "Your EDITOR string would be: ${EDITOR:-vim} ~/.vimrc" $^zekylls1".X--*"
 echo "Other possibility is: zkl-view-zekylls -p \"$ZKL_PATH\" --zkl $zekylls_string"
