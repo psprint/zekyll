@@ -547,16 +547,26 @@ Options are:
     # Aggregate
     #
 
-    integer size="${#ZKL_EMIT_ZEKYLLS}" i
-    for (( i=1; i<=size; i++ )); do
-        local zekylls="${ZKL_EMIT_ZEKYLLS[i]}"
-        local section="${ZKL_EMIT_SECTIONS[i]}"
-        local repo="${ZKL_EMIT_REPOS[i]}"
-        local file_name="${ZKL_EMIT_FILE_NAMES[i]}"
-        local desc="${ZKL_EMIT_DESCRIPTIONS[i]}"
+    integer size="${#ZKL_EMIT_ZEKYLLS}" i a
+    local section_seen
+    for (( a=1; a<=size; a++ )); do
+        for (( i=1; i<=size; i++ )); do
+            local zekylls="${ZKL_EMIT_ZEKYLLS[i]}"
+            local section="${ZKL_EMIT_SECTIONS[i]}"
+            local repo="${ZKL_EMIT_REPOS[i]}"
+            local file_name="${ZKL_EMIT_FILE_NAMES[i]}"
+            local desc="${ZKL_EMIT_DESCRIPTIONS[i]}"
 
-        -process-zekyll-file "${ZKL_REPOS_DIR}/${repo}/${file_name}" "$desc"
-        output+=( "${reply[@]}" )
+            [[ "$section_seen" = "" && "$section" != "-" ]] && section_seen="$section"
+            [ "$section_seen" != "$section" ] && continue
+
+            # Mark the section as processed
+            ZKL_EMIT_SECTIONS[i]="-"
+
+            -process-zekyll-file "${ZKL_REPOS_DIR}/${repo}/${file_name}" "$desc"
+            output+=( "${reply[@]}" )
+        done
+        section_seen=""
     done
 
     #
