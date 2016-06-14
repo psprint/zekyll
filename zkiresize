@@ -16,7 +16,8 @@ ZKL_PATH=""
 ZKL_DEFAULT="0"
 ZKL_INDEX=""
 ZKL_SIZE=""
-zparseopts -E -D -A opthash h -help p: -path: d -default i: -index: s: -size: || exit 1
+ZKL_VERBOSE="-s"
+zparseopts -E -D -A opthash h -help p: -path: d -default i: -index: s: -size: v -verbose || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
@@ -26,6 +27,7 @@ zparseopts -E -D -A opthash h -help p: -path: d -default i: -index: s: -size: ||
 (( ${+opthash[-s]} )) && ZKL_SIZE="${opthash[-s]}"
 (( ${+opthash[--size]} )) && ZKL_SIZE="${opthash[--size]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
+(( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkiresize [options]"
@@ -50,7 +52,7 @@ fi
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
 ZKL_PATH="$REPLY"
-cd_will_work_on "$REPLY" || exit 1
+cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 1
 
 #
 # Work on the index
