@@ -222,4 +222,31 @@ filter_for_existing_zekylls() {
     reply3=( "${sections[@]}" )
 }
 
+#
+# Converts lists of zekylls, files and sections into
+# section order
+#
+three_to_section_order() {
+    local -a zekylls files sections out_zekylls out_files out_sections
+    integer size="$1"
+    shift
+
+    zekylls=( "${@[1,size]}" ) ; files=( "${@[1+size,size*2]}" ) ; sections=( "${@[1+2*size,size*3]}" )
+
+    integer a i secsize="${#section_letters}"
+    for (( a=1; a<=secsize; a++ )); do
+        selected_section="${section_letters[a]}"
+        for (( i=1; i<=size; i++ )); do
+            [ "$selected_section" != "${sections[i]#.}" ] && continue
+
+            out_zekylls+=( "${zekylls[i]}" )
+            out_files+=( "${files[i]}" )
+            out_sections+=( "${sections[i]}" )
+        done
+    done
+
+    typeset -ga reply2 reply3
+    reply=( "${out_zekylls[@]}" ) ; reply2=( "${out_files[@]}" ) ; reply3=( "${out_sections[@]}" )
+}
+
 # vim:ft=zsh

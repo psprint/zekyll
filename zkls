@@ -90,17 +90,12 @@ fi
 filter_for_existing_zekylls "${zekylls1[@]}"
 
 local -a existing files sections
-existing=( "${reply[@]}" )
-files=( "${reply2[@]}" )
-sections=( "${reply3[@]}" )
+existing=( "${reply[@]}" ) ; files=( "${reply2[@]}" ) ; sections=( "${reply3[@]}" )
+three_to_section_order "${#existing}" "${existing[@]}" "${files[@]}" "${sections[@]}"
 
-integer a i secsize="${#section_letters}" size="${#files}"
-for (( a=1; a<=secsize; a++ )); do
-    selected_section="${section_letters[a]}"
-    for (( i=1; i<=size; i++ )); do
-        [ "$selected_section" != "${sections[i]#.}" ] && continue
-        pinfo2 "-> ${files[i]}"
-    done
+local file
+for file in "${reply2[@]}"; do
+    pinfo2 "-> $file"
 done
 
 print
