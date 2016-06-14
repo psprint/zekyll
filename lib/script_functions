@@ -287,6 +287,8 @@ get_files_of_index() {
 # Checks what possible files in index exist,
 # counts them and checks for holes - which
 # would mean inconsistency
+#
+# It also returns the files
 compute_index_size_check_consistency() {
     local -a files
 
