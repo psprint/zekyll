@@ -37,6 +37,7 @@ fun! s:StartZekyll()
     nmap <silent> gf :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
     nmap <silent> o :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
+    imap <silent> <CR> <C-O>:call <SID>NoOp()<CR>
 
     setlocal buftype=nofile
     setlocal ft=help
@@ -204,6 +205,10 @@ endfun
 " FUNCTION: ResetState() {{{2
 fun! s:ResetState()
     let s:lzsd = []
+endfun
+" 2}}}
+" FUNCTION: NoOp() {{{2
+fun! s:NoOp()
 endfun
 " 2}}}
 " 1}}}
