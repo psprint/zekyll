@@ -140,7 +140,7 @@ endfun
 " 2}}}
 " }}}
 " Low level functions {{{1
-" FUNCTION: {{{2
+" FUNCTION: ReadRepo {{{2
 fun! s:ReadRepo()
     let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -q")
     let s:listing = split(listing_text, '\n\+')
