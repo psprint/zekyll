@@ -125,7 +125,7 @@ else
 
     [[ "$ZKL_SIZE" -eq 0 ]] && perror "Will delete whole index"
 
-    if [[ ! quiet && "$ZKL_PERFORM_WRITE" = "1" ]]; then
+    if [[ !quiet && "$ZKL_PERFORM_WRITE" = "1" ]]; then
         pinfo "Will delete following zekylls, are you sure? [y/n]"
         print
         print -rl -- "${del_zekylls[@]}"
