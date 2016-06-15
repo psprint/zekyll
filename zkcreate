@@ -43,6 +43,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-git
     help-path
     help-dft
+    help-zkl
 
     exit 0
 fi
