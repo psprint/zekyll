@@ -96,6 +96,11 @@ if [ "$ZKL_SIZE" = "" ]; then
     exit 0
 fi
 
+if [[ "$ZKL_SIZE" -eq "$size" ]]; then
+    quiet || print "Current index size and requested index size are the same, exiting"
+    exit 0
+fi
+
 if [[ "$ZKL_SIZE" -gt "$size" ]]; then
     quiet || pinfo "Requested index is greater, will create zekylls"
 
