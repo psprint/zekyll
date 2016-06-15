@@ -2,6 +2,8 @@
 
 ZERO="${(%):-%N}"
 REPO_DIR="${ZERO%/*}"
+# On asciinema 0 and ZERO are functionargzero
+[ "$ZERO" = "$REPO_DIR" ] && REPO_DIR="$HOME/.zekyll/zekyll"
 source "$REPO_DIR/lib/script_preamble"
 source "$REPO_DIR/lib/script_vars"
 source "$REPO_DIR/lib/script_functions"
