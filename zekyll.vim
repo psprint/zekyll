@@ -69,7 +69,7 @@ fun! s:Render()
 
     let text = ""
     for entry in s:lzsd
-        let text = text . entry[1] . s:after_zekyll_spaces . entry[2] . s:after_section_spaces . entry[3] . "\n"
+        let text = text . "|".entry[1]."|" . s:after_zekyll_spaces . "*".entry[2]."*" . s:after_section_spaces . entry[3] . "\n"
     endfor
 
     let @l = text
@@ -168,11 +168,11 @@ fun! s:ParseListingIntoArrays()
             echom "Skipped processing of line: " . line
             continue
         end
-        let zekylls_entry = "|".result[1]."|"
+        let zekylls_entry = result[1]
 
         " sections entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.\([A-Z]\).*' )
-        let sections_entry = "*".result[1]."*"
+        let sections_entry = result[1]
 
         " descriptions entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.[A-Z]--\(.*\)' )
@@ -200,8 +200,53 @@ fun! s:ProcessBuffer()
     let line = getline( s:line_index )
     let result = matchlist( line, 'Enter index:[[:space:]]*\(\d\+\)' )
     if len( result ) >= 2
-        let s:cur_index = result[1]
-        call s:Render()
+        if s:cur_index != result[1]
+            let s:cur_index = result[1]
+            call s:Render()
+            return
+        end
+    end
+
+    let last_line = line( "$" )
+    let i = s:last_line + 1
+    let new_lzsd = []
+    while i <= last_line
+        let line = getline(i)
+        let i = i + 1
+
+        let result = s:BufferLineToZSD( line )
+        if len( result ) > 0
+            let zekyll = result[0]
+            let section = result[1]
+            let description = substitute( result[2], " ", "-", "g" )
+            let file_name = zekyll . "." . section . "--" . description
+
+            let new_entry = [ file_name, zekyll, section, description ]
+            call add( new_lzsd, new_entry )
+        end
+    endwhile
+
+    " Compare to establish if descriptions have changed
+    let size1 = len( new_lzsd )
+    let size2 = len( s:lzsd )
+    if size1 == size2
+        let i = 0
+        while i < size1
+            " Zekyll must agree
+            if s:lzsd[i][0] == new_lzsd[i][0]
+                " Is section or description changed?
+                if s:lzsd[i][1] != new_lzsd[i][1]
+                    echom "Something changed 1 " . s:lzsd[i][1] . " vs " . new_lzsd[i][1]
+                end
+                if s:lzsd[i][2] != new_lzsd[i][2]
+                    echom "Something changed 2 " . s:lzsd[i][2] . " vs " . new_lzsd[i][2]
+                end
+            end
+            echom new_lzsd[i][0]
+            let i = i + 1
+        endwhile
+    else
+        echo "Problem processing buffer (" . size1 . "," . size2 . ")"
     end
 endfun
 " 2}}}
@@ -218,12 +263,14 @@ endfun
 " Utility functions {{{1
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
-    let result = matchlist( a:line, '|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|    \*\([A-Z]\)\*    \(.*\)' )
-    let zekyll = result[1]
-    let section = result[2]
-    let description = substitute( result[3], " ", "-", "g" )
-
-    return [ zekyll, section, description ]
+    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|    \*\([A-Z]\)\*    \(.*\)$' )
+    if len( result ) > 0
+        let zekyll = result[1]
+        let section = result[2]
+        let description = substitute( result[3], " ", "-", "g" )
+        return [ zekyll, section, description ]
+    end
+    return []
 endfun
 " 1}}}
 
