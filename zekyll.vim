@@ -184,11 +184,10 @@ endfun
 " 2}}}
 " FUNCTION: GoToFile() {{{2
 fun! s:GoToFile()
-    let line = getline(".")
-    let result = matchlist( line, '|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|    \*\([A-Z]\)\*    \(.*\)' )
-    let zekyll = result[1]
-    let section = result[2]
-    let description = substitute( result[3], " ", "-", "g" )
+    let result = s:BufferLineToZSD( getline( "." ) )
+    let zekyll = result[0]
+    let section = result[1]
+    let description = substitute( result[2], " ", "-", "g" )
 
     let dir = substitute( s:cur_repo_path, '/$', "", "" )
 
@@ -215,6 +214,17 @@ endfun
 fun! s:NoOp()
 endfun
 " 2}}}
+" 1}}}
+" Utility functions {{{1
+" FUNCTION: BufferLineToZSD() {{{2
+fun! s:BufferLineToZSD(line)
+    let result = matchlist( a:line, '|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|    \*\([A-Z]\)\*    \(.*\)' )
+    let zekyll = result[1]
+    let section = result[2]
+    let description = substitute( result[3], " ", "-", "g" )
+
+    return [ zekyll, section, description ]
+endfun
 " 1}}}
 
 " ------------------------------------------------------------------------------
