@@ -24,6 +24,14 @@ help-index() { print -- "-i/--index [index]  -- work on given index"; }
 help-rsize() { print -- "-s/--size [size]    -- resize to given size"; }
 
 #
+# Returns if quiet mode
+#
+
+quiet() {
+    [ "$ZKL_QUIET" = "0" ] && return 1 || return 0
+}
+
+#
 # Detects duplicates in given array
 #
 
