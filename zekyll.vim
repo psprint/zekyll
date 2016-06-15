@@ -21,6 +21,7 @@ map <silent> <unique> <script> <Plug>StartZekyll :set lz<CR>:call <SID>StartZeky
 let s:cur_repo = "psprint/zkl"
 let s:cur_repo_path = $HOME."/.zekyll/repos/psprint---zkl"
 let s:repos_paths = [ $HOME."/.zekyll/repos" ]
+let s:cur_index = 1
 
 let s:after_zekyll_spaces = "    "
 let s:after_section_spaces = "    "
@@ -34,21 +35,29 @@ fun! s:StartZekyll()
 
     "nmap <silent> gf :set lz<CR>:silent! call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <silent> gf :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
+    nmap <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
+    nmap <silent> o :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
 
     setlocal buftype=nofile
     setlocal ft=help
-    call s:render()
+    call s:Render()
 endfun
 
-fun! s:render()
+" UI management functions {{{1
+" FUNCTION: Render() {{{2
+fun! s:Render()
     " save the view
     let savedLine = line(".")
     let savedCol = col(".")
     let zeroLine = line("w0")
 
+    call s:ResetState()
+    %d_
+
     call setline(1, "Welcome to Zekyll Manager")
-    call setline(2, "=========================")
-    call cursor(2,1)
+    call setline(2, "Enter index: " . s:cur_index)
+    call setline(3, "=========================")
+    call cursor(3,1)
 
     call s:ReadRepo()
     call s:ParseListingIntoArrays()
@@ -69,7 +78,8 @@ fun! s:render()
     call cursor(savedLine, savedCol)
     let &scrolloff = savedScrolloff
 endfun
-
+" 2}}}
+" 1}}}
 " Functionality functions {{{1
 " FUNCTION: InterfaceHeader() {{{2
 fun! s:InterfaceHeader()
@@ -127,7 +137,7 @@ endfun
 " Low level functions {{{1
 " FUNCTION: {{{2
 fun! s:ReadRepo()
-    let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i 1 -q")
+    let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -q")
     let s:listing = split(listing_text, '\n\+')
 endfun
 " 2}}}
@@ -174,6 +184,21 @@ fun! s:GoToFile()
 
     let file_name = zekyll.".".section."--".description
     exec "edit " . dir . "/" . file_name
+endfun
+" 2}}}
+" FUNCTION: ProcessBuffer() {{{2
+fun! s:ProcessBuffer()
+    let line = getline(2)
+    let result = matchlist( line, 'Enter index:[[:space:]]*\(\d\+\)' )
+    if len( result ) >= 2
+        let s:cur_index = result[1]
+        call s:Render()
+    end
+endfun
+" 2}}}
+" FUNCTION: ResetState() {{{2
+fun! s:ResetState()
+    let s:lzsd = []
 endfun
 " 2}}}
 " 1}}}
