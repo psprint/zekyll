@@ -101,6 +101,22 @@ fi
 
 if [[ "$ZKL_SIZE" -gt "$size" ]]; then
     pinfo "Requested index is greater, will create zekylls"
+
+    # What zekylls need to be created?
+    local -a new_zekylls
+    integer lim="$ZKL_SIZE"
+    new_zekylls=( "${(@)ZKL_INDEX_ZEKYLLS[size+1, lim]}" )
+    if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+        pinfon "Will create zekylls: "
+    else
+        pinfon "Would create zekylls (dry mode): "
+    fi
+    print ${new_zekylls[@]}
+    print
+
+    local write
+    [ "$ZKL_PERFORM_WRITE" = "1" ] && write="-w"
+    zkcreate -p "$ZKL_PATH" $write -z "${(j::)new_zekylls}"
 else
     if [ "$ZKL_REMOVE" = "1" ]; then
         pinfo "Requested index is smaller, and deletion of zekylls requested"
