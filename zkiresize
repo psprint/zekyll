@@ -11,14 +11,16 @@ source "$REPO_DIR/lib/math_functions"
 # Zparseopts
 #
 
+ZKL_PERFORM_WRITE="0"
 ZKL_HELP="0"
 ZKL_PATH=""
 ZKL_DEFAULT="0"
 ZKL_INDEX=""
 ZKL_SIZE=""
 ZKL_VERBOSE="-s"
-zparseopts -E -D -A opthash h -help p: -path: d -default i: -index: s: -size: v -verbose || exit 1
+zparseopts -E -D -A opthash h -help p: -path: d -default i: -index: s: -size: v -verbose w -write || exit 1
 
+(( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
@@ -38,6 +40,20 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-rsize
 
     exit 0
+fi
+
+#
+# Input data verification
+#
+
+if [[ "$ZKL_SIZE" -lt "0" ]]; then
+    perror "Negative index size given, aborting"
+    exit 1
+fi
+
+if [[ "$ZKL_SIZE" -gt "150" ]]; then
+    perror "Maximum index size is 150, aborting"
+    exit 1
 fi
 
 #
@@ -65,8 +81,61 @@ set_index "$ZKL_INDEX"
 
 # Check
 if compute_index_size_check_consistency "$ZKL_INDEX"; then
-    echo "Index of size $REPLY is consistent"
+    pinfo2 "Index of size $REPLY is consistent"
+    print
 else
     perror "Inconsistent index (of size $REPLY)! The problematic file is:" "${reply[@]}"
     perror "It is not in sequence with other files."
+    exit 1
+fi
+
+integer size="$REPLY"
+local -a files
+files=( "${reply[@]}" )
+
+if [ "$ZKL_SIZE" = "" ]; then
+    pinfo "You didn't request resize. Here are files of index $ZKL_INDEX, bye:"
+    print -rl -- "${files[@]}"
+    exit 0
+fi
+
+if [[ "$ZKL_SIZE" -gt "$size" ]]; then
+    pinfo "Requested index is greater, will create zekylls"
+else
+    if [ "$ZKL_REMOVE" = "1" ]; then
+        pinfo "Requested index is smaller, and deletion of zekylls requested"
+    else
+        pinfo "Requested index is smaller, zekylls will be moved to \"_\"-beginning file names"
+    fi
+
+    # What zekylls need to be deleted?
+    local -a kept_zekylls del_zekylls
+    integer lim="$ZKL_SIZE"
+    kept_zekylls=( "${(@)files[1,lim]}" )
+    del_zekylls=( "${(@)files:|kept_zekylls}" )
+
+    [[ "$ZKL_SIZE" -eq 0 ]] && perror "Will delete whole index"
+
+    if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+        pinfo "Will delete following zekylls, are you sure? [y/n]"
+        print
+        print -rl -- "${del_zekylls[@]}"
+        print
+
+        local key
+        read -qs key
+
+        if [ "$key" = "n" ]; then
+            perror "No agreement to continue, exiting"
+            exit 1
+        fi
+    fi
+
+    local f
+    for f in "${del_zekylls[@]}"; do
+        echo "mv ${ZKLCOL[info2]}$f${ZKLCOL[rst]} _$f"
+        if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+            command mv "$f" "_$f"
+        fi
+    done
 fi
