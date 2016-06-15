@@ -25,6 +25,10 @@ let s:cur_index = 1
 
 let s:after_zekyll_spaces = "    "
 let s:after_section_spaces = "    "
+let s:line_welcome = 1
+let s:line_index = 2
+let s:line_rule = 3
+let s:last_line = s:line_rule
 
 let s:lzsd = []
 
@@ -55,10 +59,10 @@ fun! s:Render()
     call s:ResetState()
     %d_
 
-    call setline(1, "Welcome to Zekyll Manager")
-    call setline(2, "Enter index: " . s:cur_index)
-    call setline(3, "=========================")
-    call cursor(3,1)
+    call setline(s:line_welcome, "Welcome to Zekyll Manager")
+    call setline(s:line_index, "Enter index: " . s:cur_index)
+    call setline(s:line_rule, "=========================")
+    call cursor(s:last_line+1,1)
 
     call s:ReadRepo()
     call s:ParseListingIntoArrays()
@@ -194,7 +198,7 @@ endfun
 " 2}}}
 " FUNCTION: ProcessBuffer() {{{2
 fun! s:ProcessBuffer()
-    let line = getline(2)
+    let line = getline( s:line_index )
     let result = matchlist( line, 'Enter index:[[:space:]]*\(\d\+\)' )
     if len( result ) >= 2
         let s:cur_index = result[1]
