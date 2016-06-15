@@ -115,11 +115,7 @@ if [[ "$ZKL_SIZE" -gt "$size" ]]; then
     [ "$ZKL_PERFORM_WRITE" = "1" ] && write="-w"
     zkcreate -p "$ZKL_PATH" $write -z "${(j::)new_zekylls}"
 else
-    if [ "$ZKL_REMOVE" = "1" ]; then
-        quiet || pinfo "Requested index is smaller, and deletion of zekylls requested"
-    else
-        quiet || pinfo "Requested index is smaller, zekylls will be moved to \"_\"-beginning file names"
-    fi
+    quiet || pinfo "Requested index is smaller, zekylls will be moved to \"_\"-beginning file names"
 
     # What zekylls need to be deleted?
     local -a kept_zekylls del_zekylls
