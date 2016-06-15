@@ -127,7 +127,7 @@ endfun
 " Low level functions {{{1
 " FUNCTION: {{{2
 fun! s:ReadRepo()
-    let listing_text = globpath( s:repos_paths[0]."/psprint---zkl", "*--*" )
+    let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i 1 -q")
     let s:listing = split(listing_text, '\n\+')
 endfun
 " 2}}}
@@ -139,11 +139,11 @@ fun! s:ParseListingIntoArrays()
         let sections_entry = ""
         let descriptions_entry = ""
 
+        " Clear any path
+        let path = substitute( s:cur_repo_path, '/$', "", "" )
+        let line = substitute( line, '^' . s:cur_repo_path, "", "" )
+        
         " Listing entry
-        let result = matchlist( line, s:cur_repo_path.'\(.*\)$' )
-        let line = result[1]
-        " Any trailing "/" ?
-        let line = substitute( line, '^/', "", "" )
         let listing_entry = line
 
         " zekylls entry
