@@ -152,12 +152,12 @@ all_zekylls=( "${all_zekylls[@]//(#b)([a-zA-Z0-9])([a-zA-Z0-9])([a-zA-Z0-9]).[A-
 
 # Now substract zekylls1 from all_zekylls
 local -a subtract
-subtract=( ${all_zekylls:|zekylls1} )
+subtract=( "${(@)all_zekylls:|zekylls1}" )
 
 # Now check if target zekylls2 have something in common with
 # remaining files i.e. if they collide with remaining files
 local -a common
-common=( ${subtract:*zekylls2} )
+common=( "${(@)subtract:*zekylls2}" )
 
 if [[ "${#common}" -gt 0 ]]; then
     perror "Collision detected: you would move files to \"${common[@]}\" zekylls"
