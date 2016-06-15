@@ -158,6 +158,11 @@ fun! s:ParseListingIntoArrays()
 
         " zekylls entry
         let result = matchlist( line, '\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)\.[A-Z].*' )
+        if len( result ) < 2
+            " Something's wrong, skip this line
+            echom "Skipped processing of line: " . line
+            continue
+        end
         let zekylls_entry = "|".result[1]."|"
 
         " sections entry
