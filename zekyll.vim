@@ -22,6 +22,7 @@ let s:cur_repo = "psprint/zkl"
 let s:cur_repo_path = $HOME."/.zekyll/repos/psprint---zkl"
 let s:repos_paths = [ $HOME."/.zekyll/repos" ]
 let s:cur_index = 1
+let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
 
 let s:after_zekyll_spaces = "    "
 let s:after_section_spaces = "    "
@@ -64,6 +65,7 @@ fun! s:Render()
     call setline(s:line_rule, "=========================")
     call cursor(s:last_line+1,1)
 
+    call s:SetIndex(s:cur_index)
     call s:ReadRepo()
     call s:ParseListingIntoArrays()
 
@@ -306,6 +308,27 @@ fun! s:GatherSecDescChanges(new_lzsd)
 
     return secdesc_changed
 endfun
+" FUNCTION: SetIndex() {{{2
+"
+" Sets s:index_zekylls array which contains all
+" zekylls that potentially can be part of the
+" index
+"
+fun! s:SetIndex(index)
+    let s:index_zekylls=[]
+
+    " Compute first element pointed to by index
+    let first=(a:index-1)*150
+
+    let i=first
+    while i <= (first+150-1)
+        " Convert the number to base 36 with leading zeros
+        let base36 = s:ConvertIntegerToBase36(i)
+        call add( s:index_zekylls, base36 )
+        let i = i + 1
+        " echom base36 . " " . i
+    endwhile
+endfun
 " Utility functions {{{1
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
@@ -317,6 +340,50 @@ fun! s:BufferLineToZSD(line)
         return [ zekyll, section, description ]
     end
     return []
+endfun
+" FUNCTION: NumbersToLetters() {{{2
+fun! s:NumbersToLetters(numbers)
+    let result=""
+    for i in a:numbers
+        let result = result . s:characters[i]
+    endfor
+    return result
+endfun
+" FUNCTION: ConvertIntegerToBase36() {{{2
+"
+" Takes number in $1, returns string [a-z0-9]+
+" that is representation of the number in base 36
+"
+fun! s:ConvertIntegerToBase36(number)
+    let digits = []
+
+    let new_number=a:number
+    while new_number != 0
+        let remainder=new_number%36
+        let new_number=new_number/36
+
+        call add( digits, remainder )
+    endwhile
+
+    if len( digits ) == 0
+        call add( digits, 0 )
+    end
+    if len( digits ) == 1
+        call add( digits, 0 )
+    end
+    if len( digits ) == 2
+        call add( digits, 0 )
+    end
+
+    let digits_reversed=[]
+    let size = len( digits )
+    let i = size-1
+    while i >= 0
+        call add( digits_reversed, digits[i] )
+        let i = i - 1
+    endwhile
+
+    return s:NumbersToLetters( digits_reversed )
 endfun
 " 1}}}
 
