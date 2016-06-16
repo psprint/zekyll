@@ -261,6 +261,12 @@ fun! s:ProcessBuffer()
     "
 
     call s:RewriteZekylls( cnss[2], cnss[3] )
+
+    "
+    " Refresh buffer (e.g. set Apply back to "no")
+    "
+
+    call s:Render()
 endfun
 " 2}}}
 " FUNCTION: ResetState() {{{2
