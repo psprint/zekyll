@@ -454,8 +454,8 @@ fun! s:ConvertIntegerToBase36(number)
 
     return s:NumbersToLetters( digits_reversed )
 endfun
-" 1}}}
 " 2}}}
+" 1}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
 fun! s:ReadRepo()
