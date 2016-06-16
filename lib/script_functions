@@ -32,6 +32,21 @@ quiet() {
 }
 
 #
+# Returns if source zekylls given
+#
+
+src() {
+    [ -z "$ZKL_ZEKYLLS" ] && return 1 || return 0
+}
+#
+# Returns if target zekylls given
+#
+
+tgt() {
+    [ -z "$ZKL_TARGET_ZEKYLLS" ] && return 1 || return 0
+}
+
+#
 # Detects duplicates in given array
 #
 
@@ -44,7 +59,7 @@ detect_duplicates() {
     local prev="" i
     for i in "${sorted[@]}"; do
         if [ "$prev" = "$i" ]; then
-            echo "Duplicate zekyll found: $i" >&2
+            quiet || echo "Duplicate zekyll found: $i" >&2
             dups=1
         fi
         prev="$i"

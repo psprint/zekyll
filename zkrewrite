@@ -16,9 +16,11 @@ ZKL_PERFORM_WRITE="0"
 ZKL_HELP="0"
 ZKL_PATH=""
 ZKL_ZEKYLLS=""
+ZKL_TARGET_ZEKYLLS=""
 ZKL_DEFAULT="0"
 ZKL_VERBOSE="-s"
-zparseopts -E -D -A opthash w -write h -help p: -path: d -default z: -zkl: v -verbose || exit 1
+ZKL_QUIET="0"
+zparseopts -E -D -A opthash w -write h -help q -quiet p: -path: d -default z: -zkl: Z: -Zkl: v -verbose || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -27,8 +29,11 @@ zparseopts -E -D -A opthash w -write h -help p: -path: d -default z: -zkl: v -ve
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
 (( ${+opthash[-z]} )) && ZKL_ZEKYLLS="${opthash[-z]}"
 (( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
+(( ${+opthash[-Z]} )) && ZKL_TARGET_ZEKYLLS="${opthash[-Z]}"
+(( ${+opthash[--Zkl]} )) && ZKL_TARGET_ZEKYLLS="${opthash[--Zkl]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 (( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
+(( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-regenerate [options]"
@@ -45,7 +50,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     exit 0
 fi
 
-dry-mode-msg
+quiet || dry-mode-msg
 
 #
 # Read destination path
@@ -53,7 +58,7 @@ dry-mode-msg
 
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
-cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 1
+cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 10
 
 #
 # Read zekylls
@@ -62,30 +67,34 @@ cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 1
 local zekylls_string
 
 if [ "$ZKL_ZEKYLLS" = "" ]; then
-    pinfo "Enter current zekylls string:"
-    vared -cp "zekylls: " zekylls_string
+    quiet || pinfo "Enter current zekylls string:"
+    vared -cp "src zekylls: " zekylls_string
 else
     zekylls_string="$ZKL_ZEKYLLS"
 fi
 
-print
+quiet || print
 zekylls_string="${zekylls_string//_/}"
-pinfo2 "Read: $zekylls_string"
-print
+quiet || pinfo2 "Read: $zekylls_string"
+quiet || print
 
 local -a zekylls1
 zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-pinfo "Checking current zekyll for duplicates..."
-detect_duplicates "${zekylls1[@]}" || { echo "Duplicates found, aborting"; exit 1 }
+quiet || pinfo "Checking current zekyll for duplicates..."
+detect_duplicates "${zekylls1[@]}" || { quiet || echo "Duplicates found, aborting"; exit 11 }
 
 integer lena="${#zekylls_string}"
 
 local new_string_vis=""
 local new_string=""
 while (( 1 )); do
-    pinfo "Enter NEW zekylls string:"
-    vared -cp "zekylls: " new_string_vis
+    if tgt; then
+        new_string_vis="$ZKL_TARGET_ZEKYLLS"
+    else
+        quiet || pinfo "Enter NEW zekylls string:"
+        vared -cp "dst zekylls: " new_string_vis
+    fi
 
     # Private copy with underscores removed
     new_string="${new_string_vis//_/}"
@@ -102,51 +111,54 @@ while (( 1 )); do
     cabsstr="${cabsstr#-}"
 
     if [[ "$diff" -eq "0" ]]; then
-        print
-        pinfo2 "Entered string correct: $new_string"
+        quiet || print
+        quiet || pinfo2 "Entered string correct: $new_string"
 
         if [[ "$cdiff" -lt 0 ]]; then
-            pinfo2 "String is longer by $cabsstr character but that's only a remainder"
-            pinfo2 "Remainders (uneven characters) are skipped by zekyll"
+            quiet || pinfo2 "String is longer by $cabsstr character but that's only a remainder"
+            quiet || pinfo2 "Remainders (uneven characters) are skipped by zekyll"
         elif [[ "$cdiff" -gt 0 ]]; then
-            pinfo2 "String is shorter by $cabsstr character but that's only a remainder"
-            pinfo2 "Remainders (uneven characters) are skipped by zekyll"
+            quiet || pinfo2 "String is shorter by $cabsstr character but that's only a remainder"
+            quiet || pinfo2 "Remainders (uneven characters) are skipped by zekyll"
         fi
         
-        print
+        quiet || print
 
         break
     fi
 
     if [[ "$cdiff" -lt 0 ]]; then
         # Is the difference allowed?
-        print "The entered string is ${cabsstr} character(s) too long, try again"
+        quiet || print "The entered string is ${cabsstr} character(s) too long, try again"
+        tgt && exit 12
+
     else
-        print "The entered string is ${cabsstr} character(s) too short, try again"
+        quiet || print "The entered string is ${cabsstr} character(s) too short, try again"
+        tgt && exit 13
     fi
 done
 
 local -a zekylls2
 zekylls2=( ${(@s:_:)${new_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-pinfo "Checking new zekyll for duplicates..."
-detect_duplicates "${zekylls2[@]}" || { echo "Duplicates found, aborting"; exit 1 }
+quiet || pinfo "Checking new zekyll for duplicates..."
+detect_duplicates "${zekylls2[@]}" || { quiet || echo "Duplicates found, aborting"; exit 14 }
 
-print
+quiet || print
 
 #
 # Check for collisions with remaining (uncovered) files
 #
 
-pinfo "Checking for collisions with remaining files..."
+quiet || pinfo "Checking for collisions with remaining files..."
 
 # Get list of zekylls that are not in zekylls1 list, but exist on filesystem
 # First get all zekylls
 local -a all_zekylls
 all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9].[A-Z]--*(N.) )
 if [[ "$#all_zekylls" -eq 0 ]]; then
-    perror "There are no zekylls in current directory, exiting"
-    exit 1
+    quiet || perror "There are no zekylls in current directory, exiting"
+    exit 15
 fi
 
 # Here we will have them fully extracted, without descriptions and sections
@@ -162,9 +174,9 @@ local -a common
 common=( "${(@)subtract:*zekylls2}" )
 
 if [[ "${#common}" -gt 0 ]]; then
-    perror "Collision detected: you would move files to \"${common[@]}\" zekylls"
-    perror "but such files already exist, and weren't covered in current zekylls string"
-    exit
+    quiet || perror "Collision detected: you would move files to \"${common[@]}\" zekylls"
+    quiet || perror "but such files already exist, and weren't covered in current zekylls string"
+    exit 16
 fi
 
 #
@@ -191,7 +203,7 @@ for (( i=1; i<=size; i++ )); do
     local zzz2="${zekylls2[i]}"
 
     if [[ "${#zzz1}" -eq "1" || "${#zzz2}" -eq "1" ]]; then
-        echo "Skipping remainder"
+        quiet || echo "Skipping remainder"
         continue
     fi
 
@@ -203,7 +215,7 @@ for (( i=1; i<=size; i++ )); do
     zekyll_file1=( ${zzz1}.[A-Z]--*(N.) )
 
     if [ "${#zekyll_file1}" -eq 0 ]; then
-        echo "Skipping not existing zekyll $zzz1 (targetted to rename to $zzz2)"
+        quiet || echo "Skipping not existing zekyll $zzz1 (targetted to rename to $zzz2)"
         continue
     fi
 
@@ -215,9 +227,9 @@ for (( i=1; i<=size; i++ )); do
     match=( )
     local desc="${file1#(#b)${zzz1}.([A-Z])--}"
     if [[ -z "${match[1]}" ]]; then
-        perror "Error during processing of zekyll ${zzz1}, aborting"
-        perror "Already processed source zekylls are: ${already_processed[@]}"
-        exit 1
+        quiet || perror "Error during processing of zekyll ${zzz1}, aborting"
+        quiet || perror "Already processed source zekylls are: ${already_processed[@]}"
+        exit 17
     fi
     local file2="${zzz2}.${match[1]}--$desc"
 
@@ -228,10 +240,10 @@ for (( i=1; i<=size; i++ )); do
     if [ "$file1" != "$file2" ]; then
         # Dry run?
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
-            echo "${cmd[@]}" "$file1" "$file2"
+            quiet || echo "${cmd[@]}" "$file1" "$file2"
             "${cmd[@]}" "$file1" "$file2"
         else
-            echo "${cmd[@]}" "$file1" "$file2"
+            quiet || echo "${cmd[@]}" "$file1" "$file2"
         fi
     fi
 
