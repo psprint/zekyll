@@ -218,6 +218,9 @@ fun! s:ProcessBuffer()
         let new_file_name = entry[1][1] . "." . entry[1][2] . "--" . entry[1][3]
         echom "Renaming " . old_file_name . " -> " . new_file_name
     endfor
+
+    " Current, new, string, string
+    let cnss = s:ComputeNewZekylls(new_lzsd)
 endfun
 " 2}}}
 " FUNCTION: ResetState() {{{2
@@ -302,6 +305,32 @@ fun! s:GatherSecDescChanges(new_lzsd)
 
     return secdesc_changed
 endfun
+" FUNCTION: ComputeNewZekylls() {{{2
+" This function is only a wrapper to slice on s:index_zekylls
+" and produce useful data structures. This is because zekylls
+" are always ordered and without holes, and for given buffer
+" there can be only one sequence of zekylls
+fun! s:ComputeNewZekylls(new_lzsd)
+    let size = len( a:new_lzsd )
+    let newer_zekylls = s:index_zekylls[0:size-1]
+
+    let i = 0
+    let current_zekylls=[]
+    let str_current = ""
+    let str_newer = ""
+    while i < size
+        call add( current_zekylls, a:new_lzsd[i][1] )
+        let str_current = str_current . a:new_lzsd[i][1]
+        let str_newer = str_newer . newer_zekylls[i]
+        let i = i + 1
+    endwhile
+
+    "echom str_current
+    "echom str_newer
+
+    return [ current_zekylls, newer_zekylls, str_current, str_newer ]
+endfun
+" 2}}}
 " FUNCTION: SetIndex() {{{2
 "
 " Sets s:index_zekylls array which contains all
