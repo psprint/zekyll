@@ -413,6 +413,30 @@ fun! s:ComputeNewZekylls(new_lzsd)
     return [ current_zekylls, newer_zekylls, str_current, str_newer ]
 endfun
 " 2}}}
+" FUNCTION: DebugMsg() {{{2
+fun! s:DebugMsg(...)
+    if exists("g:zekyll_debug") && g:zekyll_debug == 1
+        let argsize = len( a:000 )
+        let a = 0
+        while a < argsize
+            if type(a:000[a]) == type("")
+                echom a:000[a]
+            end
+
+            if type(a:000[a]) == type([])
+                let size = len( a:000[a] )
+                let i = 0
+                while i < size
+                    echom a:000[a][i]
+                    let i = i + 1
+                endwhile
+            end
+
+            let a = a + 1
+        endwhile
+    end
+endfun
+" 2}}}
 " FUNCTION: SetIndex() {{{2
 "
 " Sets s:index_zekylls array which contains all
@@ -512,16 +536,7 @@ fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
     let arr = split( cmd_output, '\n\+' )
     let cmd_output = join( arr, "\n" )
 
-    " Debug
-    if exists("g:zekyll_debug") && g:zekyll_debug == 1
-        echom "Command [" . v:shell_error . "]: " . cmd
-        let size = len( arr )
-        let i = 0
-        while i < size
-            echom arr[i]
-            let i = i + 1
-        endwhile
-    end
+    call s:DebugMsg( "Command [" . v:shell_error . "]: " . cmd, arr )
 endfun
 " 2}}}
 " FUNCTION: RemoveLZSD() {{{2
