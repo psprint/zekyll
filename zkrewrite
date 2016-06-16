@@ -67,22 +67,22 @@ cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 10
 local zekylls_string
 
 if [ "$ZKL_ZEKYLLS" = "" ]; then
-    quiet || pinfo "Enter current zekylls string:"
+    qinfo "Enter current zekylls string:"
     vared -cp "src zekylls: " zekylls_string
 else
     zekylls_string="$ZKL_ZEKYLLS"
 fi
 
-quiet || print
+qprint
 zekylls_string="${zekylls_string//_/}"
-quiet || pinfo2 "Read: $zekylls_string"
-quiet || print
+qinfo2 "Read: $zekylls_string"
+qprint
 
 local -a zekylls1
 zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-quiet || pinfo "Checking current zekyll for duplicates..."
-detect_duplicates "${zekylls1[@]}" || { quiet || echo "Duplicates found, aborting"; exit 11 }
+qinfo "Checking current zekyll for duplicates..."
+detect_duplicates "${zekylls1[@]}" || { qprint "Duplicates found, aborting"; exit 11 }
 
 integer lena="${#zekylls_string}"
 
@@ -92,7 +92,7 @@ while (( 1 )); do
     if tgt; then
         new_string_vis="$ZKL_TARGET_ZEKYLLS"
     else
-        quiet || pinfo "Enter NEW zekylls string:"
+        qinfo "Enter NEW zekylls string:"
         vared -cp "dst zekylls: " new_string_vis
     fi
 
@@ -111,29 +111,29 @@ while (( 1 )); do
     cabsstr="${cabsstr#-}"
 
     if [[ "$diff" -eq "0" ]]; then
-        quiet || print
-        quiet || pinfo2 "Entered string correct: $new_string"
+        qprint
+        qinfo2 "Entered string correct: $new_string"
 
         if [[ "$cdiff" -lt 0 ]]; then
-            quiet || pinfo2 "String is longer by $cabsstr character but that's only a remainder"
-            quiet || pinfo2 "Remainders (uneven characters) are skipped by zekyll"
+            qinfo2 "String is longer by $cabsstr character but that's only a remainder"
+            qinfo2 "Remainders (uneven characters) are skipped by zekyll"
         elif [[ "$cdiff" -gt 0 ]]; then
-            quiet || pinfo2 "String is shorter by $cabsstr character but that's only a remainder"
-            quiet || pinfo2 "Remainders (uneven characters) are skipped by zekyll"
+            qinfo2 "String is shorter by $cabsstr character but that's only a remainder"
+            qinfo2 "Remainders (uneven characters) are skipped by zekyll"
         fi
         
-        quiet || print
+        qprint
 
         break
     fi
 
     if [[ "$cdiff" -lt 0 ]]; then
         # Is the difference allowed?
-        quiet || print "The entered string is ${cabsstr} character(s) too long, try again"
+        qprint "The entered string is ${cabsstr} character(s) too long, try again"
         tgt && exit 12
 
     else
-        quiet || print "The entered string is ${cabsstr} character(s) too short, try again"
+        qprint "The entered string is ${cabsstr} character(s) too short, try again"
         tgt && exit 13
     fi
 done
@@ -141,23 +141,23 @@ done
 local -a zekylls2
 zekylls2=( ${(@s:_:)${new_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-quiet || pinfo "Checking new zekyll for duplicates..."
-detect_duplicates "${zekylls2[@]}" || { quiet || echo "Duplicates found, aborting"; exit 14 }
+qinfo "Checking new zekyll for duplicates..."
+detect_duplicates "${zekylls2[@]}" || { qprint "Duplicates found, aborting"; exit 14 }
 
-quiet || print
+qprint
 
 #
 # Check for collisions with remaining (uncovered) files
 #
 
-quiet || pinfo "Checking for collisions with remaining files..."
+qinfo "Checking for collisions with remaining files..."
 
 # Get list of zekylls that are not in zekylls1 list, but exist on filesystem
 # First get all zekylls
 local -a all_zekylls
 all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9].[A-Z]--*(N.) )
 if [[ "$#all_zekylls" -eq 0 ]]; then
-    quiet || perror "There are no zekylls in current directory, exiting"
+    qerror "There are no zekylls in current directory, exiting"
     exit 15
 fi
 
@@ -174,8 +174,8 @@ local -a common
 common=( "${(@)subtract:*zekylls2}" )
 
 if [[ "${#common}" -gt 0 ]]; then
-    quiet || perror "Collision detected: you would move files to \"${common[@]}\" zekylls"
-    quiet || perror "but such files already exist, and weren't covered in current zekylls string"
+    qerror "Collision detected: you would move files to \"${common[@]}\" zekylls"
+    qerror "but such files already exist, and weren't covered in current zekylls string"
     exit 16
 fi
 
@@ -203,7 +203,7 @@ for (( i=1; i<=size; i++ )); do
     local zzz2="${zekylls2[i]}"
 
     if [[ "${#zzz1}" -eq "1" || "${#zzz2}" -eq "1" ]]; then
-        quiet || echo "Skipping remainder"
+        qprint "Skipping remainder"
         continue
     fi
 
@@ -215,7 +215,7 @@ for (( i=1; i<=size; i++ )); do
     zekyll_file1=( ${zzz1}.[A-Z]--*(N.) )
 
     if [ "${#zekyll_file1}" -eq 0 ]; then
-        quiet || echo "Skipping not existing zekyll $zzz1 (targetted to rename to $zzz2)"
+        qprint "Skipping not existing zekyll $zzz1 (targetted to rename to $zzz2)"
         continue
     fi
 
@@ -227,8 +227,8 @@ for (( i=1; i<=size; i++ )); do
     match=( )
     local desc="${file1#(#b)${zzz1}.([A-Z])--}"
     if [[ -z "${match[1]}" ]]; then
-        quiet || perror "Error during processing of zekyll ${zzz1}, aborting"
-        quiet || perror "Already processed source zekylls are: ${already_processed[@]}"
+        qerror "Error during processing of zekyll ${zzz1}, aborting"
+        qerror "Already processed source zekylls are: ${already_processed[@]}"
         exit 17
     fi
     local file2="${zzz2}.${match[1]}--$desc"
@@ -240,10 +240,10 @@ for (( i=1; i<=size; i++ )); do
     if [ "$file1" != "$file2" ]; then
         # Dry run?
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
-            quiet || echo "${cmd[@]}" "$file1" "$file2"
+            qprint "${cmd[@]}" "$file1" "$file2"
             "${cmd[@]}" "$file1" "$file2"
         else
-            quiet || echo "${cmd[@]}" "$file1" "$file2"
+            qprint "${cmd[@]}" "$file1" "$file2"
         fi
     fi
 
