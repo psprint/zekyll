@@ -581,9 +581,15 @@ fun! s:Rename2LZSD(llzzssdd)
         let old_file_name = entry[0][1] . "." . entry[0][2] . "--" . entry[0][3]
         let new_file_name = entry[1][1] . "." . entry[1][2] . "--" . entry[1][3]
         let cmd = "git -C " . shellescape( s:cur_repo_path ) . " mv " . shellescape(old_file_name) . " " . shellescape(new_file_name)
-        call system( cmd )
+
+        let cmd_output = system( cmd )
+        let arr = split( cmd_output, '\n\+' )
+
+        call s:DebugMsg( "Command [" . v:shell_error . "]: " . cmd, arr )
         let result = result + v:shell_error
     endfor
+
+    return result
 endfun
 " 2}}}
 " FUNCTION: IndexChangeSize() {{{2
