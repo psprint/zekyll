@@ -347,7 +347,7 @@ fun! s:GatherSecDescChanges(new_lzsd)
             let i = i + 1
         endwhile
     else
-        echo "Problem processing buffer (" . size1 . "," . size2 . ")"
+        echo "Problem processing document (" . size1 . "," . size2 . "). Please don't change document's format"
     end
 
     return secdesc_changed
