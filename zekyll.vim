@@ -233,50 +233,25 @@ fun! s:ProcessBuffer()
         return
     end
 
+    " Compute reference to all operations - current buffer's LZSD
     let new_lzsd = s:BufferToLZSD()
 
-    "
-    " Compute renames
-    "
-
-    let secdesc_changed = s:GatherSecDescChanges(new_lzsd)
-
-    "
-    " Perform renames
-    "
-
-    call s:Rename2LZSD( secdesc_changed )
-
-    "
-    " Compute removals
-    "
-
+    " Compute renames, removals, rewrite
+    let lzsd2_renames = s:GatherSecDescChanges(new_lzsd)
     let lzsd_deleted = s:GatherDeletedEntries(new_lzsd)
-
-    "
-    " Perform removals
-    "
-
-    call s:RemoveLZSD( lzsd_deleted )
-
-    "
-    " Compute rewrite (order change)
-    " 
-    " Result is current, new, string, string
-    "
-
+    " cnss - current, new, string, string
     let cnss = s:ComputeNewZekylls(new_lzsd)
 
-    "
-    " Perform rewrite (order change)
-    "
+    " Perform renames
+    call s:Rename2LZSD( lzsd2_renames )
 
+    " Perform removals
+    call s:RemoveLZSD( lzsd_deleted )
+
+    " Perform rewrite (order change)
     call s:RewriteZekylls( cnss[2], cnss[3] )
 
-    "
     " Refresh buffer (e.g. set Apply back to "no")
-    "
-
     call s:Render()
 endfun
 " 2}}}
@@ -369,7 +344,7 @@ fun! s:GatherSecDescChanges(new_lzsd)
     " Gather changes do sections and descriptions
     "
 
-    let secdesc_changed = []
+    let lzsd2_renames = []
     let size2 = len( s:lzsd )
     let size1 = len( a:new_lzsd )
     let i = 0
@@ -403,14 +378,14 @@ fun! s:GatherSecDescChanges(new_lzsd)
             if changed > 0
                 let entryA = [ s:lzsd[j][0], s:lzsd[j][1], s:lzsd[j][2], s:lzsd[j][3] ]
                 let entryB = [ a:new_lzsd[i][0], a:new_lzsd[i][1], a:new_lzsd[i][2], a:new_lzsd[i][3] ]
-                call add( secdesc_changed, [ entryA, entryB ] )
+                call add( lzsd2_renames, [ entryA, entryB ] )
             end
         end
 
         let i = i + 1
     endwhile
 
-    return secdesc_changed
+    return lzsd2_renames
 endfun
 " FUNCTION: ComputeNewZekylls() {{{2
 " This function is only a wrapper to slice on s:index_zekylls
