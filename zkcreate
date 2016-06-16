@@ -169,7 +169,7 @@ for zekyll in "${zekylls1[@]}"; do
         fi
     done
 
-    desc="${desc//[[:blank:]]/-}"
+    desc="${desc//[[:blank:]]/_}"
 
     zekyll_file="${zekyll}.${section}--${desc}"
     if [ "$ZKL_ADD_GIT" = "1" ]; then
