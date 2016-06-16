@@ -256,17 +256,13 @@ fun! s:ProcessBuffer()
     " Compute removals
     "
 
-    let entries_deleted = s:GatherDeletedEntries(new_lzsd)
+    let lzsd_deleted = s:GatherDeletedEntries(new_lzsd)
 
     "
     " Perform removals
     "
 
-    for entry in entries_deleted
-        let entry[3] = substitute( entry[3], " ", "_", "g" )
-        let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
-        echom "Removing " . file_name
-    endfor
+    call s:RemoveLZSD( lzsd_deleted )
 
     "
     " Compute rewrite (order change)
@@ -541,6 +537,19 @@ fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
     "echom cmd_output
 endfun
 " 2}}}
+" FUNCTION: RemoveLZSD() {{{2
+fun! s:RemoveLZSD(lzsd)
+    let result = 0
+    for entry in a:lzsd
+        let entry[3] = substitute( entry[3], " ", "_", "g" )
+        let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
+        let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv " . shellescape(file_name) . " _" . shellescape(file_name)
+        call system( cmd )
+        let result = result + v:shell_error
+    endfor
+
+    return result
+endfun
 " 1}}}
 " ------------------------------------------------------------------------------
 let &cpo=s:keepcpo
