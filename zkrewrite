@@ -198,6 +198,7 @@ fi
 
 integer i
 local -a already_processed
+local -a destination_files
 for (( i=1; i<=size; i++ )); do
     local zzz1="${zekylls1[i]}"
     local zzz2="${zekylls2[i]}"
@@ -239,24 +240,50 @@ for (( i=1; i<=size; i++ )); do
 
     if [ "$file1" != "$file2" ]; then
         # Dry run?
+        destination_files+=( "$file2" )
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
             if [ "$USE_GIT" = "1" ]; then
-                qprint git mv "$file1" "$file2"
-                git mv "$file1" "$file2"
+                qprint git mv "$file1" "_$file2"
+                git mv "$file1" "_$file2"
             else
-                qprint mv "$file1" "$file2"
-                mv "$file1" "$file2"
+                qprint mv "$file1" "_$file2"
+                mv "$file1" "_$file2"
             fi
         else
             if [ "$USE_GIT" = "1" ]; then
-                qprint git mv "$file1" "$file2"
+                qprint git mv "$file1" "_$file2"
             else
-                qprint mv "$file1" "$file2"
+                qprint mv "$file1" "_$file2"
             fi
         fi
     fi
 
     already_processed+=( "${zzz1}" )
 done
+
+# Now move files from names starting with
+# "_" into names without underscore
+
+size="${#destination_files}"
+for (( i=1; i<=size; i++ )); do
+    local file="${destination_files[i]}"
+    # Dry run?
+    if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
+        if [ "$USE_GIT" = "1" ]; then
+            qprint git mv "_$file" "$file"
+            git mv "_$file" "$file"
+        else
+            qprint mv "_$file1" "$file2"
+            mv "_$file1" "$file2"
+        fi
+    else
+        if [ "$USE_GIT" = "1" ]; then
+            qprint git mv "_$file1" "$file2"
+        else
+            qprint mv "_$file1" "$file2"
+        fi
+    fi
+done
+
 
 # vim:ft=zsh
