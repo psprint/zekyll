@@ -196,7 +196,7 @@ endfun
 fun! s:ProcessBuffer()
     let line = getline( s:line_index )
     let result = matchlist( line, 'Enter index:[[:space:]]*\(\d\+\)' )
-    if len( result ) >= 2
+    if len( result ) > 0
         if s:cur_index != result[1]
             let s:cur_index = result[1]
             call s:Render()
