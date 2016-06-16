@@ -26,6 +26,7 @@ let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
 
 let s:after_zekyll_spaces = "    "
 let s:after_section_spaces = "    "
+let s:after_switch_spaces = "    "
 let s:line_welcome = 1
 let s:line_index = 2
 let s:line_apply = 3
@@ -74,7 +75,7 @@ fun! s:Render()
     let text = ""
     for entry in s:lzsd
         let desc = substitute( entry[3], "_", " ", "g" )
-        let text = text . "|".entry[1]."|" . s:after_zekyll_spaces . "*".entry[2]."*" . s:after_section_spaces . desc . "\n"
+        let text = text . "|".entry[1]."|" . s:after_zekyll_spaces . "[x]" . s:after_switch_spaces . "*".entry[2]."*" . s:after_section_spaces . desc . "\n"
     endfor
 
     let @l = text
@@ -401,7 +402,8 @@ endfun
 " Utility functions {{{1
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
-    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|    \*\([A-Z]\)\*    \(.*\)$' )
+    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . s:after_zekyll_spaces . '\[.\]' . 
+                            \ s:after_switch_spaces . '\*\([A-Z]\)\*' . s:after_section_spaces . '\(.*\)$' )
     if len( result ) > 0
         let zekyll = result[1]
         let section = result[2]
