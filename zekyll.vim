@@ -22,6 +22,7 @@ let s:cur_repo = "psprint/zkl"
 let s:cur_repo_path = $HOME."/.zekyll/repos/psprint---zkl"
 let s:repos_paths = [ $HOME."/.zekyll/repos" ]
 let s:cur_index = 1
+let s:index_size = 0
 let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
                  \   "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
 
@@ -63,15 +64,16 @@ fun! s:Render()
     call s:ResetState()
     %d_
 
-    call setline(s:line_welcome, "Welcome to Zekyll Manager")
-    call setline(s:line_index, "Enter index: " . s:cur_index)
-    call setline(s:line_apply, "Apply: no")
-    call setline(s:line_rule, "=========================")
-    call cursor(s:last_line+1,1)
-
     call s:SetIndex(s:cur_index)
     call s:ReadRepo()
+    let s:index_size = len(s:listing)
     call s:ParseListingIntoArrays()
+
+    call setline(s:line_welcome, "Welcome to Zekyll Manager~")
+    call setline(s:line_index, s:RPad("Current index: " . s:cur_index, 18) . "|" . " Index size: " . s:index_size )
+    call setline(s:line_apply, s:RPad("Apply: no", 18) . "|")
+    call setline(s:line_rule, "=========================")
+    call cursor(s:last_line+1,1)
 
     let text = ""
     for entry in s:lzsd
@@ -204,7 +206,7 @@ fun! s:ProcessBuffer()
     "
 
     let line = getline( s:line_index )
-    let result = matchlist( line, 'Enter index:[[:space:]]*\(\d\+\)' )
+    let result = matchlist( line, 'Current index:[[:space:]]*\(\d\+\)' )
     if len( result ) > 0
         if s:cur_index != result[1]
             let s:cur_index = result[1]
@@ -479,6 +481,11 @@ fun! s:ConvertIntegerToBase36(number)
 
     return s:NumbersToLetters( digits_reversed )
 endfun
+" 2}}}
+" FUNCTION: ConvertIntegerToBase36() {{{2
+function! s:RPad(str, number)
+    return a:str . repeat(' ', a:number - len(a:str))
+endfunction
 " 2}}}
 " 1}}}
 " Backend functions {{{1
