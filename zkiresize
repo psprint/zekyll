@@ -22,7 +22,9 @@ ZKL_SIZE=""
 ZKL_VERBOSE="-s"
 ZKL_QUIET="0"
 ZKL_NOANSI="0"
-zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: s: -size: v -verbose w -write n -noansi || exit 1
+ZKL_DESCRIPTION="[]"
+ZKL_SECTION=""
+zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: s: -size: v -verbose w -write n -noansi -section: -desc: || exit 1
 
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
@@ -36,6 +38,8 @@ zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: s: 
 (( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
 (( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
 (( ${+opthash[-n]} + ${+opthash[--noansi]} )) && ZKL_NOANSI="1"
+(( ${+opthash[--desc]} )) && ZKL_DESCRIPTION="${opthash[--desc]}"
+(( ${+opthash[--section]} )) && ZKL_SECTION="${opthash[--section]}"
 
 noansi
 
@@ -64,6 +68,16 @@ fi
 if [[ "$ZKL_SIZE" -gt "150" ]]; then
     qerror "Maximum index size is 150, aborting"
     exit 3
+fi
+
+if [[ -n "$ZKL_SECTION" && "$ZKL_SECTION" != [A-Z] ]]; then
+    qerror "Improper section given, it must be single letter A-Z"
+    exit 9
+fi
+
+if [[ "$ZKL_DESCRIPTION" != "[]" && "$ZKL_DESCRIPTION" != [[:blank:]a-zA-Z0-9_-]# ]]; then
+    qerror "Improper description given. Allowed are letters, digits, underscores, spaces and hyphens"
+    exit 10
 fi
 
 #
@@ -126,7 +140,12 @@ if [[ "$ZKL_SIZE" -gt "$size" ]]; then
 
     local write
     [ "$ZKL_PERFORM_WRITE" = "1" ] && write="-w"
-    zkcreate -p "$ZKL_PATH" $write -z "${(j::)new_zekylls}"
+
+    local -a sec desc
+    [ -n "$ZKL_SECTION" ] && sec=( "--section" "$ZKL_SECTION" )
+    [ "$ZKL_DESCRIPTION" != "[]" ] && desc=( "--desc" "$ZKL_DESCRIPTION" )
+
+    zkcreate -p "$ZKL_PATH" $write -z "${(j::)new_zekylls}" "${sec[@]}" "${desc[@]}"
 else
     qinfo "Requested index is smaller, zekylls will be moved to \"_\"-beginning file names"
 
