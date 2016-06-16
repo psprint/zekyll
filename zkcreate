@@ -21,7 +21,9 @@ ZKL_DEFAULT="0"
 ZKL_VERBOSE="-s"
 ZKL_QUIET="0"
 ZKL_NOANSI="0"
-zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl: v -verbose n -noansi q -quiet || exit 21
+ZKL_DESCRIPTION="[]"
+ZKL_SECTION=""
+zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl: v -verbose n -noansi q -quiet -desc: -section: || exit 21
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -35,6 +37,8 @@ zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl
 (( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
 (( ${+opthash[-n]} + ${+opthash[--noansi]} )) && ZKL_NOANSI="1"
 (( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
+(( ${+opthash[--desc]} )) && ZKL_DESCRIPTION="${opthash[--desc]}"
+(( ${+opthash[--section]} )) && ZKL_SECTION="${opthash[--section]}"
 
 noansi
 
@@ -57,6 +61,20 @@ if [ "$ZKL_HELP" = "1" ]; then
 fi
 
 quiet || dry-mode-msg
+
+#
+# Verify input arguments
+#
+
+if [[ -n "$ZKL_SECTION" && "$ZKL_SECTION" != [A-Z] ]]; then
+    qerror "Improper section given, it must be single letter A-Z"
+    exit 25
+fi
+
+if [[ "$ZKL_DESCRIPTION" != "[]" && "$ZKL_DESCRIPTION" != [[:blank:]a-zA-Z0-9_-]# ]]; then
+    qerror "Improper description given. Allowed are letters, digits, underscores, spaces and hyphens"
+    exit 26
+fi
 
 #
 # Read destination path
@@ -154,6 +172,11 @@ for zekyll in "${zekylls1[@]}"; do
 
     local section=""
     while (( 1 )); do
+        if [ -n "$ZKL_SECTION" ]; then
+            section="$ZKL_SECTION"
+            break
+        fi
+            
         qprint "Creating ${ZKLCOL[info2]}${zekyll}.A-Z--...${ZKLCOL[rst]} ${ZKLCOL[info3]}($count/$all)${ZKLCOL[rst]}, enter the A-Z, i.e. ${ZKLCOL[info2]}section letter${ZKLCOL[rst]}"
         vared -cp "section: " section
 
@@ -169,6 +192,11 @@ for zekyll in "${zekylls1[@]}"; do
 
     local desc=""
     while (( 1 )); do
+        if [ "$ZKL_DESCRIPTION" != "[]" ]; then
+            desc="$ZKL_DESCRIPTION"
+            break
+        fi
+
         qprint "Creating ${ZKLCOL[info2]}${zekyll}--...${ZKLCOL[rst]} ${ZKLCOL[info3]}($count/$all)${ZKLCOL[rst]}, enter ${ZKLCOL[info2]}description${ZKLCOL[rst]}"
         vared -cp "description: " desc
 
