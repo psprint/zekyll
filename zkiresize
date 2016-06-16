@@ -143,15 +143,17 @@ if [[ "$ZKL_SIZE" -gt "$size" ]]; then
     qprint ${new_zekylls[@]}
     qprint
 
-    local write git
+    local write git quiet noansi
     [ "$ZKL_PERFORM_WRITE" = "1" ] && write="-w"
     [ "$USE_GIT" = "1" ] && git="-g"
+    [ "$ZKL_QUIET" = "1" ] && quiet="-q"
+    [ "$ZKL_NOANSI" = "1" ] && noansi="-q"
 
     local -a sec desc
     [ -n "$ZKL_SECTION" ] && sec=( "--section" "$ZKL_SECTION" )
     [ "$ZKL_DESCRIPTION" != "[]" ] && desc=( "--desc" "$ZKL_DESCRIPTION" )
 
-    zkcreate -p "$ZKL_PATH" $write $git -z "${(j::)new_zekylls}" "${sec[@]}" "${desc[@]}"
+    zkcreate -p "$ZKL_PATH" $write $git $quiet $noansi -z "${(j::)new_zekylls}" "${sec[@]}" "${desc[@]}"
 else
     qinfo "Requested index is smaller, zekylls will be moved to \"_\"-beginning file names"
 
