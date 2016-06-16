@@ -21,7 +21,7 @@ ZKL_DEFAULT="0"
 ZKL_VERBOSE="-s"
 ZKL_QUIET="0"
 ZKL_NOANSI="0"
-zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl: v -verbose n -noansi q -quiet || exit 1
+zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl: v -verbose n -noansi q -quiet || exit 21
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -65,7 +65,7 @@ quiet || dry-mode-msg
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
 ZKL_PATH="$REPLY"
-cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 1
+cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 22
 
 #
 # Read and examine new zekylls string
@@ -92,7 +92,7 @@ while (( 1 )); do
     if ! detect_duplicates "${zekylls1[@]}"; then
         if [ -n "$ZKL_ZEKYLLS" ]; then
             qerror "Duplicates found, aborting"
-            exit 1
+            exit 23
         else
             qerror "Duplicates found, restaring"
             continue
@@ -122,7 +122,7 @@ while (( 1 )); do
     if [[ "${#common}" -gt 0 ]]; then
         if [ -n "$ZKL_ZEKYLLS" ]; then
             qerror "Collisions detected: ${common[@]}, you would create duplicate zekylls, aborting"
-            exit 1
+            exit 24
         else
             qerror "Collisions detected: ${common[@]}, you would create duplicate zekylls, restarting"
         fi
