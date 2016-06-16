@@ -216,7 +216,7 @@ fun! s:ProcessBuffer()
     end
 
     "
-    " Perform rename, order change, removal?
+    " Perform changes? Apply is "yes"?
     "
 
     let line = getline( s:line_apply )
@@ -233,24 +233,8 @@ fun! s:ProcessBuffer()
         return
     end
 
-    "
-    " Compute removals
-    "
-
     let new_lzsd = s:BufferToLZSD()
-    let entries_deleted = s:GatherDeletedEntries(new_lzsd)
 
-    "
-    " Perform removals
-    "
-
-    for entry in entries_deleted
-        let entry[3] = substitute( entry[3], " ", "_", "g" )
-        let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
-        echom "Removing " . file_name
-    endfor
-
-    "
     "
     " Compute renames
     "
@@ -267,6 +251,22 @@ fun! s:ProcessBuffer()
         let old_file_name = entry[0][1] . "." . entry[0][2] . "--" . entry[0][3]
         let new_file_name = entry[1][1] . "." . entry[1][2] . "--" . entry[1][3]
         echom "Renaming " . old_file_name . " -> " . new_file_name
+    endfor
+
+    "
+    " Compute removals
+    "
+
+    let entries_deleted = s:GatherDeletedEntries(new_lzsd)
+
+    "
+    " Perform removals
+    "
+
+    for entry in entries_deleted
+        let entry[3] = substitute( entry[3], " ", "_", "g" )
+        let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
+        echom "Removing " . file_name
     endfor
 
     "
