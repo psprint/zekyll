@@ -69,7 +69,8 @@ fun! s:Render()
 
     let text = ""
     for entry in s:lzsd
-        let text = text . "|".entry[1]."|" . s:after_zekyll_spaces . "*".entry[2]."*" . s:after_section_spaces . entry[3] . "\n"
+        let desc = substitute( entry[3], "_", " ", "g" )
+        let text = text . "|".entry[1]."|" . s:after_zekyll_spaces . "*".entry[2]."*" . s:after_section_spaces . desc . "\n"
     endfor
 
     let @l = text
@@ -176,7 +177,7 @@ fun! s:ParseListingIntoArrays()
 
         " descriptions entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.[A-Z]--\(.*\)' )
-        let descriptions_entry = substitute( result[1], "[-]", " ", "g" )
+        let descriptions_entry = result[1]
 
         call add( s:lzsd, [ listing_entry, zekylls_entry, sections_entry, descriptions_entry ]  )
     endfor
@@ -187,7 +188,7 @@ fun! s:GoToFile()
     let result = s:BufferLineToZSD( getline( "." ) )
     let zekyll = result[0]
     let section = result[1]
-    let description = substitute( result[2], " ", "-", "g" )
+    let description = substitute( result[2], " ", "_", "g" )
 
     let dir = substitute( s:cur_repo_path, '/$', "", "" )
 
@@ -207,47 +208,20 @@ fun! s:ProcessBuffer()
         end
     end
 
-    let last_line = line( "$" )
-    let i = s:last_line + 1
-    let new_lzsd = []
-    while i <= last_line
-        let line = getline(i)
-        let i = i + 1
+    let new_lzsd = s:BufferToLZSD()
+    let secdesc_changed = s:GatherSecDescChanges(new_lzsd)
 
-        let result = s:BufferLineToZSD( line )
-        if len( result ) > 0
-            let zekyll = result[0]
-            let section = result[1]
-            let description = substitute( result[2], " ", "-", "g" )
-            let file_name = zekyll . "." . section . "--" . description
+    "
+    " Perform gathered renames
+    "
 
-            let new_entry = [ file_name, zekyll, section, description ]
-            call add( new_lzsd, new_entry )
-        end
-    endwhile
-
-    " Compare to establish if descriptions have changed
-    let size1 = len( new_lzsd )
-    let size2 = len( s:lzsd )
-    if size1 == size2
-        let i = 0
-        while i < size1
-            " Zekyll must agree
-            if s:lzsd[i][0] == new_lzsd[i][0]
-                " Is section or description changed?
-                if s:lzsd[i][1] != new_lzsd[i][1]
-                    echom "Something changed 1 " . s:lzsd[i][1] . " vs " . new_lzsd[i][1]
-                end
-                if s:lzsd[i][2] != new_lzsd[i][2]
-                    echom "Something changed 2 " . s:lzsd[i][2] . " vs " . new_lzsd[i][2]
-                end
-            end
-            echom new_lzsd[i][0]
-            let i = i + 1
-        endwhile
-    else
-        echo "Problem processing buffer (" . size1 . "," . size2 . ")"
-    end
+    echom "Number of changes: " . len( secdesc_changed )
+    for entry in secdesc_changed
+        let entry[0][3] = substitute( entry[0][3], " ", "_", "g" )
+        let old_file_name = entry[0][1] . "." . entry[0][2] . "--" . entry[0][3]
+        let new_file_name = entry[1][1] . "." . entry[1][2] . "--" . entry[1][3]
+        echom "Renaming " . old_file_name . " -> " . new_file_name
+    endfor
 endfun
 " 2}}}
 " FUNCTION: ResetState() {{{2
@@ -260,6 +234,78 @@ fun! s:NoOp()
 endfun
 " 2}}}
 " 1}}}
+" Helper functions {{{1
+" FUNCTION: BufferToLZSD() {{{2
+fun! s:BufferToLZSD()
+    "
+    " Convert buffer into lzsd
+    "
+
+    let last_line = line( "$" )
+    let i = s:last_line + 1
+    let new_lzsd = []
+    while i <= last_line
+        let line = getline(i)
+        let i = i + 1
+
+        let result = s:BufferLineToZSD( line )
+        if len( result ) > 0
+            let zekyll = result[0]
+            let section = result[1]
+            let description = substitute( result[2], " ", "_", "g" )
+            let file_name = zekyll . "." . section . "--" . description
+
+            let new_entry = [ file_name, zekyll, section, description ]
+            call add( new_lzsd, new_entry )
+        end
+    endwhile
+
+    return new_lzsd
+endfun
+" 1}}}
+" FUNCTION: GatherSecDescChanges() {{{2
+fun! s:GatherSecDescChanges(new_lzsd)
+    "
+    " Gather changes do sections and descriptions
+    "
+
+    let size1 = len( a:new_lzsd )
+    let size2 = len( s:lzsd )
+    let secdesc_changed = []
+    if size1 == size2
+        let i = 0
+        while i < size1
+            " Zekyll must agree
+            if s:lzsd[i][1] == a:new_lzsd[i][1]
+                let changed = 0
+
+                " Section changed?
+                if s:lzsd[i][2] != a:new_lzsd[i][2]
+                    echom "Something changed 1 " . s:lzsd[i][2] . " vs " . a:new_lzsd[i][2]
+                    let changed = 1
+                end
+
+                " Description changed?
+                if s:lzsd[i][3] != a:new_lzsd[i][3]
+                    echom "Something changed 2 " . s:lzsd[i][3] . " vs " . a:new_lzsd[i][3]
+                    let changed = 2
+                end
+
+                if changed > 0
+                    let entryA = [ s:lzsd[i][0], s:lzsd[i][1], s:lzsd[i][2], s:lzsd[i][3] ]
+                    let entryB = [ s:lzsd[i][0], a:new_lzsd[i][1], a:new_lzsd[i][2], a:new_lzsd[i][3] ]
+                    call add( secdesc_changed, [ entryA, entryB ] )
+                end
+            end
+            " echom a:new_lzsd[i][0]
+            let i = i + 1
+        endwhile
+    else
+        echo "Problem processing buffer (" . size1 . "," . size2 . ")"
+    end
+
+    return secdesc_changed
+endfun
 " Utility functions {{{1
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
@@ -267,7 +313,7 @@ fun! s:BufferLineToZSD(line)
     if len( result ) > 0
         let zekyll = result[1]
         let section = result[2]
-        let description = substitute( result[3], " ", "-", "g" )
+        let description = substitute( result[3], " ", "_", "g" )
         return [ zekyll, section, description ]
     end
     return []
