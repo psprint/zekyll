@@ -15,12 +15,16 @@ source "$REPO_DIR/lib/script_functions"
 ZKL_HELP="0"
 ZKL_REPO=""
 ZKL_DEFAULT="0"
-zparseopts -E -D -A opthash h -help r: -repo: d -default || exit 1
+ZKL_NOANSI="0"
+zparseopts -E -D -A opthash h -help r: -repo: d -default n -noansi || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-r]} )) && ZKL_REPO="${opthash[-r]}"
 (( ${+opthash[--repo]} )) && ZKL_REPO="${opthash[--repo]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
+(( ${+opthash[-n]} + ${+opthash[--noansi]} )) && ZKL_NOANSI="1"
+
+noansi
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-cd [options] [path]"

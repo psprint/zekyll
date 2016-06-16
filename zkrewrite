@@ -20,7 +20,8 @@ ZKL_TARGET_ZEKYLLS=""
 ZKL_DEFAULT="0"
 ZKL_VERBOSE="-s"
 ZKL_QUIET="0"
-zparseopts -E -D -A opthash w -write h -help q -quiet p: -path: d -default z: -zkl: Z: -Zkl: v -verbose || exit 1
+ZKL_NOANSI="0"
+zparseopts -E -D -A opthash w -write h -help q -quiet p: -path: d -default z: -zkl: Z: -Zkl: v -verbose n -noansi || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -34,6 +35,9 @@ zparseopts -E -D -A opthash w -write h -help q -quiet p: -path: d -default z: -z
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 (( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
 (( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
+(( ${+opthash[-n]} + ${+opthash[--noansi]} )) && ZKL_NOANSI="1"
+
+noansi
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-regenerate [options]"

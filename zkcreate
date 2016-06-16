@@ -19,7 +19,8 @@ ZKL_PATH=""
 ZKL_ZEKYLLS=""
 ZKL_DEFAULT="0"
 ZKL_VERBOSE="-s"
-zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl: v -verbose || exit 1
+ZKL_NOANSI="0"
+zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl: v -verbose n -noansi || exit 1
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -31,6 +32,9 @@ zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl
 (( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 (( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
+(( ${+opthash[-n]} + ${+opthash[--noansi]} )) && ZKL_NOANSI="1"
+
+noansi
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-create [options]"

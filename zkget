@@ -17,7 +17,8 @@ ZKL_PATH=""
 ZKL_ZEKYLLS=""
 ZKL_SILENT="0"
 ZKL_DEFAULT="0"
-zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default || exit 1
+ZKL_NOANSI="0"
+zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default n -noansi || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
@@ -25,6 +26,9 @@ zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default || exit 1
 (( ${+opthash[-z]} )) && ZKL_ZEKYLLS="${opthash[-z]}"
 (( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
+(( ${+opthash[-n]} + ${+opthash[--noansi]} )) && ZKL_NOANSI="1"
+
+noansi
 
 [ -n "$ZKL_ZEKYLLS" ] && ZKL_SILENT="1"
 

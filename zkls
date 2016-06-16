@@ -17,7 +17,8 @@ ZKL_PATH=""
 ZKL_ZEKYLLS=""
 ZKL_DEFAULT="0"
 ZKL_VERBOSE="-s"
-zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default v -verbose || exit 1
+ZKL_NOANSI="0"
+zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default v -verbose n -noansi || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
@@ -26,6 +27,9 @@ zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default v -verbose || 
 (( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 (( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
+(( ${+opthash[-n]} + ${+opthash[--noansi]} )) && ZKL_NOANSI="1"
+
+noansi
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-ls [options] [path]"

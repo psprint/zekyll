@@ -1,19 +1,19 @@
 # Helper functions
-pinfo() { print "${fg_bold[green]}$*$reset_color"; }
-pinfon() { print -n "${fg_bold[green]}$*$reset_color"; }
-pinfo2() { print "${fg_bold[yellow]}$*$reset_color"; }
-pinfo2n() { print -n "${fg_bold[yellow]}$*$reset_color"; }
-perror() { print "${fg_bold[red]}$*$reset_color" >&2; }
-perrorn() { print -n "${fg_bold[red]}$*$reset_color" >&2; }
+pinfo()   { print -- "${fg_bold[green]}$*$reset_color"; }
+pinfon()  { print -n -- "${fg_bold[green]}$*$reset_color"; }
+pinfo2()  { print -- "${fg_bold[yellow]}$*$reset_color"; }
+pinfo2n() { print -n -- "${fg_bold[yellow]}$*$reset_color"; }
+perror()  { print -- "${fg_bold[red]}$*$reset_color" >&2; }
+perrorn() { print -n -- "${fg_bold[red]}$*$reset_color" >&2; }
 
-qprint() { quiet || print "$*"; }
-qprintn() { quiet || print -n "$*"; }
-qinfo() { quiet || print "${fg_bold[green]}$*$reset_color"; }
-qinfon() { quiet || print -n "${fg_bold[green]}$*$reset_color"; }
-qinfo2() { quiet || print "${fg_bold[yellow]}$*$reset_color"; }
-qinfo2n() { quiet || print -n "${fg_bold[yellow]}$*$reset_color"; }
-qerror() { quiet || print "${fg_bold[red]}$*$reset_color" >&2; }
-qerrorn() { quiet || print -n "${fg_bold[red]}$*$reset_color" >&2; }
+qprint()  { quiet || print -- "$*"; }
+qprintn() { quiet || print -n -- "$*"; }
+qinfo()   { quiet || print -- "${fg_bold[green]}$*$reset_color"; }
+qinfon()  { quiet || print -n -- "${fg_bold[green]}$*$reset_color"; }
+qinfo2()  { quiet || print -- "${fg_bold[yellow]}$*$reset_color"; }
+qinfo2n() { quiet || print -n -- "${fg_bold[yellow]}$*$reset_color"; }
+qerror()  { quiet || print -- "${fg_bold[red]}$*$reset_color" >&2; }
+qerrorn() { quiet || print -n -- "${fg_bold[red]}$*$reset_color" >&2; }
 
 clearinput() { repeat 10; do read -rs -k 1 -t; done; }
 
@@ -54,6 +54,22 @@ src() {
 
 tgt() {
     [ -z "$ZKL_TARGET_ZEKYLLS" ] && return 1 || return 0
+}
+
+#
+# Turns colors on and off
+#
+noansi() {
+    if [ "$ZKL_NOANSI" = "1" ]; then
+        local k
+        for k in "${(@k)fg}"; do
+            fg[$k]=""
+        done
+        for k in "${(@k)fg_bold}"; do
+            fg_bold[$k]=""
+        done
+        reset_color=""
+    fi
 }
 
 #
