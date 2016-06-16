@@ -245,12 +245,7 @@ fun! s:ProcessBuffer()
     " Perform renames
     "
 
-    for entry in secdesc_changed
-        let entry[0][3] = substitute( entry[0][3], " ", "_", "g" )
-        let old_file_name = entry[0][1] . "." . entry[0][2] . "--" . entry[0][3]
-        let new_file_name = entry[1][1] . "." . entry[1][2] . "--" . entry[1][3]
-        echom "Renaming " . old_file_name . " -> " . new_file_name
-    endfor
+    call s:Rename2LZSD( secdesc_changed )
 
     "
     " Compute removals
@@ -374,40 +369,46 @@ fun! s:GatherSecDescChanges(new_lzsd)
     " Gather changes do sections and descriptions
     "
 
-    let size1 = len( a:new_lzsd )
-    let size2 = len( s:lzsd )
     let secdesc_changed = []
-    if size1 == size2
-        let i = 0
-        while i < size1
-            " Zekyll must agree
-            if s:lzsd[i][1] == a:new_lzsd[i][1]
-                let changed = 0
-
-                " Section changed?
-                if s:lzsd[i][2] != a:new_lzsd[i][2]
-                    echom "Something changed 1 " . s:lzsd[i][2] . " vs " . a:new_lzsd[i][2]
-                    let changed = 1
-                end
-
-                " Description changed?
-                if s:lzsd[i][3] != a:new_lzsd[i][3]
-                    echom "Something changed 2 " . s:lzsd[i][3] . " vs " . a:new_lzsd[i][3]
-                    let changed = 2
-                end
-
-                if changed > 0
-                    let entryA = [ s:lzsd[i][0], s:lzsd[i][1], s:lzsd[i][2], s:lzsd[i][3] ]
-                    let entryB = [ s:lzsd[i][0], a:new_lzsd[i][1], a:new_lzsd[i][2], a:new_lzsd[i][3] ]
-                    call add( secdesc_changed, [ entryA, entryB ] )
-                end
+    let size2 = len( s:lzsd )
+    let size1 = len( a:new_lzsd )
+    let i = 0
+    while i < size1
+        " Look for current zekyll in initial zekylls list
+        let found = 0
+        let j = 0
+        while j < size2
+            if s:lzsd[j][1] == a:new_lzsd[i][1]
+                let found = 1
+                break
             end
-            " echom a:new_lzsd[i][0]
-            let i = i + 1
+            let j = j + 1
         endwhile
-    else
-        echo "Problem processing document (" . size1 . "," . size2 . "). Please don't change document's format"
-    end
+
+        if found == 1
+            let changed = 0
+
+            " Section changed?
+            if s:lzsd[j][2] != a:new_lzsd[i][2]
+                echom "Something changed 1 " . s:lzsd[j][2] . " vs " . a:new_lzsd[i][2]
+                let changed = 1
+            end
+
+            " Description changed?
+            if s:lzsd[j][3] != a:new_lzsd[i][3]
+                echom "Something changed 2 " . s:lzsd[j][3] . " vs " . a:new_lzsd[i][3]
+                let changed = 2
+            end
+
+            if changed > 0
+                let entryA = [ s:lzsd[j][0], s:lzsd[j][1], s:lzsd[j][2], s:lzsd[j][3] ]
+                let entryB = [ a:new_lzsd[i][0], a:new_lzsd[i][1], a:new_lzsd[i][2], a:new_lzsd[i][3] ]
+                call add( secdesc_changed, [ entryA, entryB ] )
+            end
+        end
+
+        let i = i + 1
+    endwhile
 
     return secdesc_changed
 endfun
@@ -551,6 +552,19 @@ fun! s:RemoveLZSD(lzsd)
     return result
 endfun
 " 1}}}
+" FUNCTION: Rename2LZSD() {{{2
+fun! s:Rename2LZSD(llzzssdd)
+    let result = 0
+    for entry in a:llzzssdd 
+        let entry[0][3] = substitute( entry[0][3], " ", "_", "g" )
+        let old_file_name = entry[0][1] . "." . entry[0][2] . "--" . entry[0][3]
+        let new_file_name = entry[1][1] . "." . entry[1][2] . "--" . entry[1][3]
+        let cmd = "git -C " . shellescape( s:cur_repo_path ) . " mv " . shellescape(old_file_name) . " " . shellescape(new_file_name)
+        call system( cmd )
+        let result = result + v:shell_error
+    endfor
+endfun
+" 2}}}
 " ------------------------------------------------------------------------------
 let &cpo=s:keepcpo
 unlet s:keepcpo
