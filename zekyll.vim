@@ -509,8 +509,19 @@ endfun
 fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
     let cmd = "zkrewrite -w -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -z " . a:src_zekylls . " -Z " . a:dst_zekylls
     let cmd_output = system( cmd )
-    "echom "Command: " . cmd
-    "echom cmd_output
+    let arr = split( cmd_output, '\n\+' )
+    let cmd_output = join( arr, "\n" )
+
+    " Debug
+    if exists("g:zekyll_debug") && g:zekyll_debug == 1
+        echom "Command [" . v:shell_error . "]: " . cmd
+        let size = len( arr )
+        let i = 0
+        while i < size
+            echom arr[i]
+            let i = i + 1
+        endwhile
+    end
 endfun
 " 2}}}
 " FUNCTION: RemoveLZSD() {{{2
