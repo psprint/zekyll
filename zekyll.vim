@@ -143,12 +143,6 @@ endfun
 " 2}}}
 " }}}
 " Low level functions {{{1
-" FUNCTION: ReadRepo {{{2
-fun! s:ReadRepo()
-    let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -q")
-    let s:listing = split(listing_text, '\n\+')
-endfun
-" 2}}}
 " FUNCTION: ParseListingIntoArrays() {{{2
 fun! s:ParseListingIntoArrays()
     for line in s:listing
@@ -386,7 +380,19 @@ fun! s:ConvertIntegerToBase36(number)
     return s:NumbersToLetters( digits_reversed )
 endfun
 " 1}}}
-
+" 2}}}
+" Backend functions {{{1
+" FUNCTION: ReadRepo {{{2
+fun! s:ReadRepo()
+    let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -q")
+    let s:listing = split(listing_text, '\n\+')
+endfun
+" 2}}}
+" FUNCTION: RewriteZekylls() {{{2
+fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
+endfun
+" 2}}}
+" 1}}}
 " ------------------------------------------------------------------------------
 let &cpo=s:keepcpo
 unlet s:keepcpo
