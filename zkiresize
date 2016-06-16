@@ -89,6 +89,11 @@ REPLY="$ZKL_PATH"
 ZKL_PATH="$REPLY"
 cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 4
 
+USE_GIT="1"
+if ! test -d ".git"; then
+    USE_GIT="0"
+fi
+
 #
 # Work on the index
 #
@@ -138,14 +143,15 @@ if [[ "$ZKL_SIZE" -gt "$size" ]]; then
     qprint ${new_zekylls[@]}
     qprint
 
-    local write
+    local write git
     [ "$ZKL_PERFORM_WRITE" = "1" ] && write="-w"
+    [ "$USE_GIT" = "1" ] && git="-g"
 
     local -a sec desc
     [ -n "$ZKL_SECTION" ] && sec=( "--section" "$ZKL_SECTION" )
     [ "$ZKL_DESCRIPTION" != "[]" ] && desc=( "--desc" "$ZKL_DESCRIPTION" )
 
-    zkcreate -p "$ZKL_PATH" $write -z "${(j::)new_zekylls}" "${sec[@]}" "${desc[@]}"
+    zkcreate -p "$ZKL_PATH" $write $git -z "${(j::)new_zekylls}" "${sec[@]}" "${desc[@]}"
 else
     qinfo "Requested index is smaller, zekylls will be moved to \"_\"-beginning file names"
 
