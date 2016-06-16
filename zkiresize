@@ -50,6 +50,8 @@ if [ "$ZKL_HELP" = "1" ]; then
     exit 0
 fi
 
+quiet || dry-mode-msg
+
 #
 # Input data verification
 #
