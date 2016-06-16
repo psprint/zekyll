@@ -245,7 +245,6 @@ fun! s:ProcessBuffer()
     " Perform renames
     "
 
-    echom "Number of changes: " . len( secdesc_changed )
     for entry in secdesc_changed
         let entry[0][3] = substitute( entry[0][3], " ", "_", "g" )
         let old_file_name = entry[0][1] . "." . entry[0][2] . "--" . entry[0][3]
