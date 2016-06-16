@@ -51,12 +51,12 @@ fi
 #
 
 if [[ "$ZKL_SIZE" -lt "0" ]]; then
-    quiet || perror "Negative index size given, aborting"
+    qerror "Negative index size given, aborting"
     exit 1
 fi
 
 if [[ "$ZKL_SIZE" -gt "150" ]]; then
-    quiet || perror "Maximum index size is 150, aborting"
+    qerror "Maximum index size is 150, aborting"
     exit 1
 fi
 
@@ -80,11 +80,11 @@ set_index "$ZKL_INDEX"
 
 # Check
 if compute_index_size_check_consistency "$ZKL_INDEX"; then
-    quiet || pinfo2 "Index of size $REPLY is consistent"
-    quiet || print
+    qinfo2 "Index of size $REPLY is consistent"
+    qprint
 else
-    quiet || perror "Inconsistent index (of size $REPLY)! The problematic file is:" "${reply[@]}"
-    quiet || perror "It is not in sequence with other files."
+    qerror "Inconsistent index (of size $REPLY)! The problematic file is:" "${reply[@]}"
+    qerror "It is not in sequence with other files."
     exit 1
 fi
 
@@ -93,36 +93,36 @@ local -a files
 files=( "${reply[@]}" )
 
 if [ "$ZKL_SIZE" = "" ]; then
-    quiet || pinfo "You didn't request resize. Here are files of index $ZKL_INDEX, bye:"
+    qinfo "You didn't request resize. Here are files of index $ZKL_INDEX, bye:"
     print -rl -- "${files[@]}"
     exit 0
 fi
 
 if [[ "$ZKL_SIZE" -eq "$size" ]]; then
-    quiet || print "Current index size and requested index size are the same, exiting"
+    qprint "Current index size and requested index size are the same, exiting"
     exit 0
 fi
 
 if [[ "$ZKL_SIZE" -gt "$size" ]]; then
-    quiet || pinfo "Requested index is greater, will create zekylls"
+    qinfo "Requested index is greater, will create zekylls"
 
     # What zekylls need to be created?
     local -a new_zekylls
     integer lim="$ZKL_SIZE"
     new_zekylls=( "${(@)ZKL_INDEX_ZEKYLLS[size+1, lim]}" )
     if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
-        quiet || pinfon "Will create zekylls: "
+        qinfon "Will create zekylls: "
     else
-        quiet || pinfon "Would create zekylls (dry mode): "
+        qinfon "Would create zekylls (dry mode): "
     fi
-    quiet || print ${new_zekylls[@]}
-    quiet || print
+    qprint ${new_zekylls[@]}
+    qprint
 
     local write
     [ "$ZKL_PERFORM_WRITE" = "1" ] && write="-w"
     zkcreate -p "$ZKL_PATH" $write -z "${(j::)new_zekylls}"
 else
-    quiet || pinfo "Requested index is smaller, zekylls will be moved to \"_\"-beginning file names"
+    qinfo "Requested index is smaller, zekylls will be moved to \"_\"-beginning file names"
 
     # What zekylls need to be deleted?
     local -a kept_zekylls del_zekylls
@@ -149,7 +149,7 @@ else
 
     local f
     for f in "${del_zekylls[@]}"; do
-        quiet || echo "mv ${ZKLCOL[info2]}$f${ZKLCOL[rst]} _$f"
+        qprint "mv ${ZKLCOL[info2]}$f${ZKLCOL[rst]} _$f"
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
             command mv "$f" "_$f"
         fi
