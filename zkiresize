@@ -56,12 +56,12 @@ fi
 
 if [[ "$ZKL_SIZE" -lt "0" ]]; then
     qerror "Negative index size given, aborting"
-    exit 1
+    exit 2
 fi
 
 if [[ "$ZKL_SIZE" -gt "150" ]]; then
     qerror "Maximum index size is 150, aborting"
-    exit 1
+    exit 3
 fi
 
 #
@@ -71,7 +71,7 @@ fi
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
 ZKL_PATH="$REPLY"
-cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 1
+cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 4
 
 #
 # Work on the index
@@ -89,7 +89,7 @@ if compute_index_size_check_consistency "$ZKL_INDEX"; then
 else
     qerror "Inconsistent index (of size $REPLY)! The problematic file is:" "${reply[@]}"
     qerror "It is not in sequence with other files."
-    exit 1
+    exit 5
 fi
 
 integer size="$REPLY"
@@ -99,12 +99,12 @@ files=( "${reply[@]}" )
 if [ "$ZKL_SIZE" = "" ]; then
     qinfo "You didn't request resize. Here are files of index $ZKL_INDEX, bye:"
     print -rl -- "${files[@]}"
-    exit 0
+    exit 6
 fi
 
 if [[ "$ZKL_SIZE" -eq "$size" ]]; then
     qprint "Current index size and requested index size are the same, exiting"
-    exit 0
+    exit 7
 fi
 
 if [[ "$ZKL_SIZE" -gt "$size" ]]; then
@@ -147,7 +147,7 @@ else
 
         if [ "$key" = "n" ]; then
             perror "No agreement to continue, exiting"
-            exit 1
+            exit 8
         fi
     fi
 
