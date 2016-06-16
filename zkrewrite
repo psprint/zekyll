@@ -203,7 +203,7 @@ for (( i=1; i<=size; i++ )); do
     local zzz1="${zekylls1[i]}"
     local zzz2="${zekylls2[i]}"
 
-    if [[ "${#zzz1}" -eq "1" || "${#zzz2}" -eq "1" ]]; then
+    if [[ "${#zzz1}" -eq "1" || "${#zzz1}" -eq "2" || "${#zzz2}" -eq "1" || "${#zzz2}" -eq "2" ]]; then
         qprint "Skipping remainder"
         continue
     fi
