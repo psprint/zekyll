@@ -598,7 +598,8 @@ fun! s:IndexChangeSize()
         return
     end
 
-    let cmd = "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -w -n -s " . s:index_size_new
+    let cmd = "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index .
+                \ " -q -w -n -s " . s:index_size_new . " --desc 'New Zekyll' --section A"
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     let cmd_output = join( arr, "\n" )
