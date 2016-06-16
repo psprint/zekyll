@@ -330,7 +330,46 @@ endfun
 " 1}}}
 " FUNCTION: GatherDeletedEntries " () {{{2
 fun! s:GatherDeletedEntries(new_lzsd)
-    return []
+    let deleted = []
+    " Examine every entry that we started up with
+    let size = len( s:lzsd )
+    let i = 0
+    while i < size
+        let zekyll = s:lzsd[i][1]
+
+        " Search for that zekyll in buffer content
+        let size2 = len( a:new_lzsd )
+        let j = 0
+        let found = 0
+        while j < size2
+            if a:new_lzsd[j][1] == zekyll
+                let found = 1
+                break
+            end
+            let j = j + 1
+        endwhile
+
+        if found == 0
+            let entry = [ s:lzsd[i][0], zekyll, s:lzsd[i][2], s:lzsd[i][3] ]
+            call add( deleted, entry )
+        end
+
+        let i = i + 1
+    endwhile
+
+    " Message
+    if 1
+        let size = len( deleted )
+        let i = 0
+        let delstr = ""
+        while i < size
+            let delstr = delstr . deleted[i][1]
+            let i = i + 1
+        endwhile
+        echom "Deleted: " . delstr
+    end
+
+    return deleted
 endfun
 " 2}}}
 " FUNCTION: GatherSecDescChanges() {{{2
