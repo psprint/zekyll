@@ -191,9 +191,9 @@ integer size=size1
 #
 # Detect if at git repository
 #
-cmd=( git mv )
+USE_GIT="1"
 if ! test -d ".git"; then
-    cmd=( mv )
+    USE_GIT="0"
 fi
 
 integer i
@@ -240,10 +240,19 @@ for (( i=1; i<=size; i++ )); do
     if [ "$file1" != "$file2" ]; then
         # Dry run?
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
-            qprint "${cmd[@]}" "$file1" "$file2"
-            "${cmd[@]}" "$file1" "$file2"
+            if [ "$USE_GIT" = "1" ]; then
+                qprint git mv "$file1" "$file2"
+                git mv "$file1" "$file2"
+            else
+                qprint mv "$file1" "$file2"
+                mv "$file1" "$file2"
+            fi
         else
-            qprint "${cmd[@]}" "$file1" "$file2"
+            if [ "$USE_GIT" = "1" ]; then
+                qprint git mv "$file1" "$file2"
+            else
+                qprint mv "$file1" "$file2"
+            fi
         fi
     fi
 
