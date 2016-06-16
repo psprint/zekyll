@@ -231,10 +231,27 @@ fun! s:ProcessBuffer()
     end
 
     "
-    " Compute renames
+    " Compute removals
     "
 
     let new_lzsd = s:BufferToLZSD()
+    let entries_deleted = s:GatherDeletedEntries(new_lzsd)
+
+    "
+    " Perform removals
+    "
+
+    for entry in entries_deleted
+        let entry[3] = substitute( entry[3], " ", "_", "g" )
+        let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
+        echom "Removing " . file_name
+    endfor
+
+    "
+    "
+    " Compute renames
+    "
+
     let secdesc_changed = s:GatherSecDescChanges(new_lzsd)
 
     "
@@ -309,6 +326,11 @@ fun! s:BufferToLZSD()
     return new_lzsd
 endfun
 " 1}}}
+" FUNCTION: GatherDeletedEntries " () {{{2
+fun! s:GatherDeletedEntries(new_lzsd)
+    return []
+endfun
+" 2}}}
 " FUNCTION: GatherSecDescChanges() {{{2
 fun! s:GatherSecDescChanges(new_lzsd)
     "
