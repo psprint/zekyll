@@ -51,9 +51,7 @@ typeset -gH ZPLG_HOME_READY
 typeset -gH ZKL_CUR_USER="$ZKL_LOCAL_USER"
 typeset -gH ZKL_CUR_PLUGIN="$ZKL_DEFAULT_PLUGIN"
 
-#
 # Init {{{1
-#
 
 zmodload zsh/terminfo 2>/dev/null
 zmodload zsh/termcap 2>/dev/null
@@ -81,10 +79,7 @@ ZKLCOL=(
 )
 
 # 1}}}
-
-#
 # Helper functions {{{1
-#
 
 -zkl-pinfo()  { echo "${ZKLCOL[info1]}$*${ZKLCOL[rst]}" >&2; return 0; }
 -zkl-pinfo2() { echo "${ZKLCOL[info2]}$*${ZKLCOL[rst]}" >&2; return 0; }
@@ -399,11 +394,9 @@ ZKLCOL=(
     [ "$ZKL_UPDATE_ONLY" = "1" ] && return 1
     return 0
 }
-# 1}}}
 
-#
+# 1}}}
 # Repository, file operations {{{1
-#
 
 -zkl-setup-repo-dir() {
     local user="$1" repo="$2" github_path="$1/$2"
