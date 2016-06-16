@@ -425,8 +425,8 @@ endfun
 " Utility functions {{{1
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
-    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . s:after_zekyll_spaces . '\[.\]' . 
-                            \ s:after_switch_spaces . '\*\([A-Z]\)\*' . s:after_section_spaces . '\(.*\)$' )
+    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '\[.\]' .
+                            \ '[[:space:]]\+' . '\*\([A-Z]\)\*' . '[[:space:]]\+' . '\(.*\)$' )
     if len( result ) > 0
         let zekyll = result[1]
         let section = result[2]
