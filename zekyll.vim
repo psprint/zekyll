@@ -28,7 +28,8 @@ let s:after_zekyll_spaces = "    "
 let s:after_section_spaces = "    "
 let s:line_welcome = 1
 let s:line_index = 2
-let s:line_rule = 3
+let s:line_apply = 3
+let s:line_rule = 4
 let s:last_line = s:line_rule
 
 let s:lzsd = []
@@ -62,6 +63,7 @@ fun! s:Render()
 
     call setline(s:line_welcome, "Welcome to Zekyll Manager")
     call setline(s:line_index, "Enter index: " . s:cur_index)
+    call setline(s:line_apply, "Apply: no")
     call setline(s:line_rule, "=========================")
     call cursor(s:last_line+1,1)
 
@@ -194,6 +196,11 @@ endfun
 " 2}}}
 " FUNCTION: ProcessBuffer() {{{2
 fun! s:ProcessBuffer()
+
+    "
+    " Read new index?
+    "
+
     let line = getline( s:line_index )
     let result = matchlist( line, 'Enter index:[[:space:]]*\(\d\+\)' )
     if len( result ) > 0
@@ -204,11 +211,33 @@ fun! s:ProcessBuffer()
         end
     end
 
+    "
+    " Perform rename, order change, removal?
+    "
+
+    let line = getline( s:line_apply )
+    let result = matchlist( line, 'Apply:[[:space:]]*\([a-zA-Z0-9]\+\)' )
+    if len( result ) > 0
+        if result[1] ==? "yes"
+            " Continue below
+        else
+            echom "Set \"Apply:\" line to \"yes\" to write changes to disk"
+            return
+        end
+    else
+        echom "Improper document, control lines have been modified"
+        return
+    end
+
+    "
+    " Compute renames
+    "
+
     let new_lzsd = s:BufferToLZSD()
     let secdesc_changed = s:GatherSecDescChanges(new_lzsd)
 
     "
-    " Perform gathered renames
+    " Perform renames
     "
 
     echom "Number of changes: " . len( secdesc_changed )
@@ -219,10 +248,18 @@ fun! s:ProcessBuffer()
         echom "Renaming " . old_file_name . " -> " . new_file_name
     endfor
 
-    " Current, new, string, string
+    "
+    " Compute rewrite (order change)
+    " 
+    " Result is current, new, string, string
+    "
+
     let cnss = s:ComputeNewZekylls(new_lzsd)
 
-    " Rewrite
+    "
+    " Perform rewrite (order change)
+    "
+
     call s:RewriteZekylls( cnss[2], cnss[3] )
 endfun
 " 2}}}
