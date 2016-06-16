@@ -22,7 +22,8 @@ let s:cur_repo = "psprint/zkl"
 let s:cur_repo_path = $HOME."/.zekyll/repos/psprint---zkl"
 let s:repos_paths = [ $HOME."/.zekyll/repos" ]
 let s:cur_index = 1
-let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
+let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+                 \   "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
 
 let s:after_zekyll_spaces = "    "
 let s:after_section_spaces = "    "
