@@ -23,6 +23,7 @@ let s:cur_repo_path = $HOME."/.zekyll/repos/psprint---zkl"
 let s:repos_paths = [ $HOME."/.zekyll/repos" ]
 let s:cur_index = 1
 let s:index_size = 0
+let s:index_size_new = -1
 let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
                  \   "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
 
@@ -31,6 +32,7 @@ let s:after_section_spaces = "    "
 let s:after_switch_spaces = "    "
 let s:line_welcome = 1
 let s:line_index = 2
+let s:line_index_size = s:line_index
 let s:line_apply = 3
 let s:line_rule = 4
 let s:last_line = s:line_rule
@@ -236,11 +238,12 @@ fun! s:ProcessBuffer()
     " Compute reference to all operations - current buffer's LZSD
     let new_lzsd = s:BufferToLZSD()
 
-    " Compute renames, removals, rewrite
+    " Compute renames, removals, rewrite, index size change
     let lzsd2_renames = s:GatherSecDescChanges(new_lzsd)
     let lzsd_deleted = s:GatherDeletedEntries(new_lzsd)
     " cnss - current, new, string, string
     let cnss = s:ComputeNewZekylls(new_lzsd)
+    let s:index_size_new = s:GetNewIndexSize()
 
     " Perform renames
     call s:Rename2LZSD( lzsd2_renames )
@@ -250,6 +253,9 @@ fun! s:ProcessBuffer()
 
     " Perform rewrite (order change)
     call s:RewriteZekylls( cnss[2], cnss[3] )
+
+    " Perform index size change
+    call s:IndexChangeSize()
 
     " Refresh buffer (e.g. set Apply back to "no")
     call s:Render()
@@ -294,7 +300,7 @@ fun! s:BufferToLZSD()
     return new_lzsd
 endfun
 " 1}}}
-" FUNCTION: GatherDeletedEntries " () {{{2
+" FUNCTION: GatherDeletedEntries() {{{2
 fun! s:GatherDeletedEntries(new_lzsd)
     let deleted = []
     " Examine every entry that we started up with
@@ -411,6 +417,20 @@ fun! s:ComputeNewZekylls(new_lzsd)
     "echom str_newer
 
     return [ current_zekylls, newer_zekylls, str_current, str_newer ]
+endfun
+" 2}}}
+" FUNCTION: GetNewIndexSize() {{{2
+fun! s:GetNewIndexSize()
+    let line = getline( s:line_index_size )
+    let result = matchlist( line, 'Index size:[[:space:]]*\(\d\+\)' )
+    if len( result ) > 0
+        let index_size_new = result[1]
+        call s:DebugMsg( "Got new index size " . index_size_new )
+    else
+        let index_size_new = -1
+        call s:DebugMsg( "Couldn't get index new size" )
+    end
+    return index_size_new
 endfun
 " 2}}}
 " FUNCTION: DebugMsg() {{{2
@@ -564,6 +584,43 @@ fun! s:Rename2LZSD(llzzssdd)
         call system( cmd )
         let result = result + v:shell_error
     endfor
+endfun
+" 2}}}
+" FUNCTION: IndexChangeSize() {{{2
+fun! s:IndexChangeSize()
+    if s:index_size == s:index_size_new
+        return
+    end
+
+    let cmd = "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -w -n -s " . s:index_size_new
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+    let cmd_output = join( arr, "\n" )
+
+    let error_decode = ""
+    if v:shell_error == 1
+        let error_decode = "Improper options"
+    elseif v:shell_error == 2
+        let error_decode = "Negative index size"
+    elseif v:shell_error == 3
+        let error_decode = "Maximum index size exceeded"
+    elseif v:shell_error == 4
+        let error_decode = "Repository doesn't exist"
+    elseif v:shell_error == 5
+        let error_decode = "Inconsistent index"
+    elseif v:shell_error == 6
+        let error_decode = "No size requested"
+    elseif v:shell_error == 7
+        let error_decode = "No change in index size"
+    elseif v:shell_error == 8
+        let error_decode = "No agreement to continue"
+    end
+
+    if error_decode != ""
+        echom "Error occured: " . error_decode
+    end
+
+    call s:DebugMsg( "Command [" . v:shell_error . "]: " . cmd, arr, error_decode )
 endfun
 " 2}}}
 " ------------------------------------------------------------------------------
