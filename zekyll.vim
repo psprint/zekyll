@@ -221,6 +221,9 @@ fun! s:ProcessBuffer()
 
     " Current, new, string, string
     let cnss = s:ComputeNewZekylls(new_lzsd)
+
+    " Rewrite
+    call s:RewriteZekylls( cnss[2], cnss[3] )
 endfun
 " 2}}}
 " FUNCTION: ResetState() {{{2
@@ -419,6 +422,8 @@ endfun
 " 2}}}
 " FUNCTION: RewriteZekylls() {{{2
 fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
+    let cmd_output = system( "zkrewrite -w -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -z " . a:src_zekylls . " -Z " . a:dst_zekylls )
+    echom cmd_output
 endfun
 " 2}}}
 " 1}}}
