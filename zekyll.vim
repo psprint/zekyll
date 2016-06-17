@@ -105,6 +105,8 @@ fun! s:Render()
         let text = text . s:BuildLineFromEntry( entry )
     endfor
 
+    let text = text . s:RPad("-", s:longest_lzsd, "-")
+
     let @l = text
     silent put l
 
@@ -311,6 +313,7 @@ endfun
 " 2}}}
 " 1}}}
 " Helper functions {{{1
+" Will skip lines that arent proper
 " FUNCTION: BufferToLZSD() {{{2
 fun! s:BufferToLZSD()
     "
