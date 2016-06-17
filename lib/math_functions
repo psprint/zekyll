@@ -65,12 +65,30 @@ decode_zcode() {
 # Takes string of 0 and 1 that mark which zekylls are active
 # and encodes it to base 36 number expressed via a-z0-9
 #
-encode_zcode() {
-    local str01="$1"
-
+encode_zcode_str() {
     local -a numbers
-    str_01_to_8-bit_pack_numbers "$str01"
-    numbers=( "${reply[@]}" )
+    str_01_to_8-bit_pack_numbers "$1"
+    encode_zcode_8-bit_pack_numbers "${reply[@]}"
+
+}
+
+#
+# Takes array (positional parameters) of 0 and 1 that mark which
+# zekylls are active and encodes it to base 36 number expressed
+# via a-z0-9
+#
+encode_zcode_arr() {
+    local -a numbers
+    arr_01_to_8-bit_pack_numbers "$@"
+    encode_zcode_8-bit_pack_numbers "${reply[@]}"
+}
+
+#
+# Takes 8-bit pack numbers whose bits mark which zekylls are active
+# and encodes them to base 36 number expressed via a-z0-9
+#
+encode_zcode_8-bit_pack_numbers() {
+    numbers=( "$@" )
 
     local -a nums_base36 workingvar
     workingvar=( "${numbers[@]}" )
