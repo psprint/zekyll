@@ -66,7 +66,6 @@ decode_zcode() {
 # and encodes it to base 36 number expressed via a-z0-9
 #
 encode_zcode_str() {
-    local -a numbers
     str_01_to_8-bit_pack_numbers "$1"
     encode_zcode_8-bit_pack_numbers "${reply[@]}"
 
@@ -78,7 +77,6 @@ encode_zcode_str() {
 # via a-z0-9
 #
 encode_zcode_arr() {
-    local -a numbers
     arr_01_to_8-bit_pack_numbers "$@"
     encode_zcode_8-bit_pack_numbers "${reply[@]}"
 }
