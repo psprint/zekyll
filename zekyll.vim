@@ -785,6 +785,46 @@ fun! s:ReadCodes()
     return sel_count
 endfun
 " 2}}}
+" FUNCTION: arr_01_to_8_bit_pack_numbers() {{{2
+fun! s:arr_01_to_8_bit_pack_numbers(arr)
+    let bits = []
+    let pack = []
+    let numbers = []
+
+    let bits = a:arr
+    let bcount = 0
+    let size = len( bits )
+    let i = size - 1
+
+    " Take packs of 8 bits, convert each to number and store in array
+    while i >= 0
+        " Insert bits[i] at start of the list pack
+        call insert( pack, bits[ i ] )
+        echom pack[0]
+        let bcount = bcount + 1
+        if bcount < 8 && i != 0
+            let i = i - 1
+            continue
+        else
+            let i = i - 1
+        end
+        let bcount = 0
+
+        " Convert the max. 8 bit pack to number
+        let result = 0
+        for p in pack
+            let result = result * 2 + p
+        endfor
+
+        " Insert result at start of the list numbers
+        call insert( numbers, result )
+
+        let pack=[]
+    endwhile
+
+    return numbers
+endfun
+" 2}}}
 " 1}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
