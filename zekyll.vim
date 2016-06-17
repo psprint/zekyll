@@ -26,6 +26,7 @@ let s:inconsistent_listing = []
 let s:cur_index = 1
 let s:index_size = -1
 let s:index_size_new = -1
+let s:longest_lzsd = 0
 let s:consistent = "yes"
 let s:are_errors = "no"
 let s:do_reset = "no"
@@ -81,6 +82,7 @@ fun! s:Render()
     call s:ReadRepo()
     let s:index_size = len(s:listing)
     call s:ParseListingIntoArrays()
+    call s:LongestLZSD()
 
     call setline( s:line_welcome-1, ">" )
     call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
@@ -100,8 +102,7 @@ fun! s:Render()
 
     let text = ""
     for entry in s:lzsd
-        let desc = substitute( entry[3], "_", " ", "g" )
-        let text = text . "|".entry[1]."|" . s:after_zekyll_spaces . "[x]" . s:after_switch_spaces . "*".entry[2]."*" . s:after_section_spaces . desc . "\n"
+        let text = text . s:BuildLine( entry )
     endfor
 
     let @l = text
@@ -516,6 +517,17 @@ fun! s:SetIndex(index)
         " echom base36 . " " . i
     endwhile
 endfun
+" 2}}}
+" FUNCTION: LongestLZSD() {{{2
+fun! s:LongestLZSD()
+    let size = len( s:lzsd )
+    let i = 0
+    let longest = 0
+    while i < size
+        let i = i + 1
+    endwhile
+endfun
+" 2}}}
 " Utility functions {{{1
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
@@ -578,6 +590,14 @@ endfun
 function! s:RPad(str, number)
     return a:str . repeat(' ', a:number - len(a:str))
 endfunction
+" 2}}}
+" FUNCTION: BuildLine() {{{2
+fun! s:BuildLine(entry)
+    let desc = substitute( a:entry[3], "_", " ", "g" )
+    let text = "|".a:entry[1]."|" . s:after_zekyll_spaces . "[x]" . s:after_switch_spaces .
+                    \ "*".a:entry[2]."*" . s:after_section_spaces . desc . "\n"
+    return text
+endfun
 " 2}}}
 " 1}}}
 " Backend functions {{{1
