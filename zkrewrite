@@ -21,7 +21,7 @@ ZKL_DEFAULT="0"
 ZKL_VERBOSE="-s"
 ZKL_QUIET="0"
 ZKL_NOANSI="0"
-zparseopts -E -D -A opthash w -write h -help q -quiet p: -path: d -default z: -zkl: Z: -Zkl: v -verbose n -noansi || exit 1
+zparseopts -E -D -A opthash w -write h -help q -quiet p: -path: d -default z: -zkl: Z: -Zkl: v -verbose n -noansi || exit 40
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -62,7 +62,7 @@ quiet || dry-mode-msg
 
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
-cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 10
+cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 41
 
 #
 # Read zekylls
@@ -86,7 +86,7 @@ local -a zekylls1
 zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
 qinfo "Checking current zekyll for duplicates..."
-detect_duplicates "${zekylls1[@]}" || { qprint "Duplicates found, aborting"; exit 11 }
+detect_duplicates "${zekylls1[@]}" || { qprint "Duplicates found, aborting"; exit 42 }
 
 integer lena="${#zekylls_string}"
 
@@ -134,11 +134,11 @@ while (( 1 )); do
     if [[ "$cdiff" -lt 0 ]]; then
         # Is the difference allowed?
         qprint "The entered string is ${cabsstr} character(s) too long, try again"
-        tgt && exit 12
+        tgt && exit 43
 
     else
         qprint "The entered string is ${cabsstr} character(s) too short, try again"
-        tgt && exit 13
+        tgt && exit 44
     fi
 done
 
@@ -146,7 +146,7 @@ local -a zekylls2
 zekylls2=( ${(@s:_:)${new_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
 qinfo "Checking new zekyll for duplicates..."
-detect_duplicates "${zekylls2[@]}" || { qprint "Duplicates found, aborting"; exit 14 }
+detect_duplicates "${zekylls2[@]}" || { qprint "Duplicates found, aborting"; exit 45 }
 
 qprint
 
@@ -162,7 +162,7 @@ local -a all_zekylls
 all_zekylls=( [a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9].[A-Z]--*(N.) )
 if [[ "$#all_zekylls" -eq 0 ]]; then
     qerror "There are no zekylls in current directory, exiting"
-    exit 15
+    exit 46
 fi
 
 # Here we will have them fully extracted, without descriptions and sections
@@ -180,7 +180,7 @@ common=( "${(@)subtract:*zekylls2}" )
 if [[ "${#common}" -gt 0 ]]; then
     qerror "Collision detected: you would move files to \"${common[@]}\" zekylls"
     qerror "but such files already exist, and weren't covered in current zekylls string"
-    exit 16
+    exit 47
 fi
 
 #
@@ -234,7 +234,7 @@ for (( i=1; i<=size; i++ )); do
     if [[ -z "${match[1]}" ]]; then
         qerror "Error during processing of zekyll ${zzz1}, aborting"
         qerror "Already processed source zekylls are: ${already_processed[@]}"
-        exit 17
+        exit 48
     fi
     local file2="${zzz2}.${match[1]}--$desc"
 
