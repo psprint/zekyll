@@ -24,8 +24,10 @@ let s:repos_paths = [ $HOME."/.zekyll/repos" ]
 let s:listing = []
 let s:inconsistent_listing = []
 let s:cur_index = 1
+let s:prev_index = -1
 let s:index_size = -1
 let s:index_size_new = -1
+let s:index_size_prev = -1
 let s:longest_lzsd = 0
 let s:consistent = "yes"
 let s:are_errors = "no"
@@ -77,6 +79,9 @@ fun! s:Render()
     let savedCol = col(".")
     let zeroLine = line("w0")
 
+    " Remember to have information whether index size has changed
+    let s:index_size_prev = s:index_size
+
     call s:ResetState()
     %d_
 
@@ -107,7 +112,7 @@ fun! s:Render()
         let text = text . s:BuildLineFromFullEntry( entry )
     endfor
 
-    let text = s:SetupCodeSelectors( text )
+    let text = s:SetupSelectionCodes( text )
 
     let text = text . s:RPad("-", s:longest_lzsd, "-")
 
@@ -241,6 +246,8 @@ endfun
 " FUNCTION: ProcessBuffer() {{{2
 fun! s:ProcessBuffer()
 
+    let s:prev_index = s:cur_index
+
     "
     " Read new index?
     "
@@ -250,6 +257,7 @@ fun! s:ProcessBuffer()
     if len( result ) > 0
         if s:cur_index != result[1]
             let s:cur_index = result[1]
+            call s:ResetCodeSelectors()
             call s:Render()
             return
         end
@@ -276,11 +284,14 @@ fun! s:ProcessBuffer()
     " Compute reference to all operations - current buffer's LZSD
     let new_lzsd = s:BufferToLZSD()
 
-    " Compute renames, removals, rewrite, index size change
+    " Compute renames, removals, rewrite, codes change, index size change
     let lzsd2_renames = s:GatherSecDescChanges(new_lzsd)
     let lzsd_deleted = s:GatherDeletedEntries(new_lzsd)
     " cnss - current, new, string, string
     let cnss = s:ComputeNewZekylls(new_lzsd)
+    " Read buffer looking for state of Code Switches (codes)
+    call s:ReadCodes()
+    " Parse new index size
     let s:index_size_new = s:GetNewIndexSize()
 
     " Perform renames
@@ -294,6 +305,7 @@ fun! s:ProcessBuffer()
 
     " Perform index size change
     call s:IndexChangeSize()
+
 
     " Refresh buffer (e.g. set Apply back to "no")
     call s:Render()
@@ -344,6 +356,35 @@ fun! s:BufferToLZSD()
     endwhile
 
     return new_lzsd
+endfun
+" 1}}}
+" FUNCTION: BufferToLZCSD() {{{2
+fun! s:BufferToLZCSD()
+    "
+    " Convert buffer into lzsd
+    "
+
+    let last_line = line( "$" )
+    let i = s:last_line + 1
+    let new_lzcsd = []
+    while i <= last_line
+        let line = getline(i)
+        let i = i + 1
+
+        let result = s:BufferLineToZCSD( line )
+        if len( result ) > 0
+            let zekyll = result[0]
+            let codes = result[1]
+            let section = result[2]
+            let description = substitute( result[3], " ", "_", "g" )
+            let file_name = zekyll . "." . section . "--" . description
+
+            let new_entry = [ file_name, zekyll, codes, section, description ]
+            call add( new_lzcsd, new_entry )
+        end
+    endwhile
+
+    return new_lzcsd
 endfun
 " 1}}}
 " FUNCTION: GatherDeletedEntries() {{{2
@@ -561,7 +602,7 @@ endfun
 " The same as BufferLineToZSD but also
 " returns state of code selector
 fun! s:BufferLineToZCSD(line)
-    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '\(\[.\]\)' .
+    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '\[\(.\)\]' .
                             \ '[[:space:]]\+' . '\*\([A-Z]\)\*' . '[[:space:]]\+' . '\(.*\)$' )
     if len( result ) > 0
         let zekyll = result[1]
@@ -666,10 +707,20 @@ fun! s:ZSDToListing( zsd )
     return listing
 endfun
 " 2}}}
-" FUNCTION: SetupCodeSelectors() {{{2
-fun! s:SetupCodeSelectors( text )
-    if len( s:code_selectors ) != len( s:lzsd )
+" FUNCTION: SetupSelectionCodes() {{{2
+" Here we have LZSD that is from buffer recreated after disk operations
+fun! s:SetupSelectionCodes( text )
+    if s:prev_index != s:cur_index
         call s:ResetCodeSelectors()
+    elseif len( s:code_selectors ) > len( s:lzsd )
+        let s:code_selectors = s:code_selectors[1:len(s:lzsd)]
+    elseif len( s:code_selectors ) < len( s:lzsd )
+        let diff = len( s:lzsd ) - len( s:code_selectors )
+        let i = 0
+        while i < diff
+            call add( s:code_selectors, 0 )
+            let i = i + 1
+        endwhile
     end
 
     let text2 = ""
@@ -712,6 +763,28 @@ fun! s:ZcsdToLzds( zcsd, listing )
     return [ a:listing, a:zcsd[0], a:zcsd[2], a:zcsd[3] ]
 endf
 "2}}}
+" FUNCTION: ReadCodes() {{{2
+fun! s:ReadCodes()
+    let new_lzcsd = s:BufferToLZCSD()
+    let s:code_selectors = []
+
+    let sel_count = 0
+    let size = len(new_lzcsd)
+    let i = 0
+    while i < size
+        if new_lzcsd[i][2] == " "
+            let selection = 0
+        else
+            let selection = 1
+            let sel_count = sel_count + 1
+        end
+        call add( s:code_selectors, selection )
+        let i = i + 1
+    endwhile
+
+    return sel_count
+endfun
+" 2}}}
 " 1}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
