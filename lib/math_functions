@@ -111,6 +111,7 @@ encode_zcode_8-bit_pack_numbers() {
     done
 
     # echo "Base36 numbers of $str01 are: ${(j:,:)nums_base36[@]}"
+    numbers_to_letters "${nums_base36[@]}"
     reply=( "${nums_base36[@]}" )
 }
 
