@@ -658,7 +658,7 @@ fun! s:ConvertIntegerToBase36(number)
     return s:NumbersToLetters( digits_reversed )
 endfun
 " 2}}}
-" FUNCTION: ConvertIntegerToBase36() {{{2
+" FUNCTION: RPad() {{{2
 function! s:RPad(str, number, ...)
     if len(a:000) > 0 && type( a:000[0] ) == type( ' ' )
         return a:str . repeat(a:000[0], a:number - len(a:str))
