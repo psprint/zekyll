@@ -365,9 +365,12 @@ compute_index_size_check_consistency() {
         else
             # Match: must not have been ended earlier
             if (( end == 1 )); then
-                files=( "$MATCH" )
-                consistent=0
-                break
+                if [[ "$consistent" -eq "1" ]]; then
+                    files=( "$MATCH" )
+                    consistent=0
+                else
+                    files+=( "$MATCH" )
+                fi
             fi
         fi
 
