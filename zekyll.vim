@@ -760,9 +760,9 @@ fun! s:RemoveLZSD(lzsd)
 endfun
 " 1}}}
 " FUNCTION: Rename2LZSD() {{{2
-fun! s:Rename2LZSD(llzzssdd)
+fun! s:Rename2LZSD(lzsd_lzsd)
     let result = 0
-    for entry in a:llzzssdd 
+    for entry in a:lzsd_lzsd 
         let entry[0][3] = substitute( entry[0][3], " ", "_", "g" )
         let old_file_name = entry[0][1] . "." . entry[0][2] . "--" . entry[0][3]
         let new_file_name = entry[1][1] . "." . entry[1][2] . "--" . entry[1][3]
