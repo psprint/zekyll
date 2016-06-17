@@ -82,7 +82,7 @@ fun! s:Render()
     call s:ReadRepo()
     let s:index_size = len(s:listing)
     call s:ParseListingIntoArrays()
-    call s:LongestLZSD()
+    let s:longest_lzsd = s:LongestLZSD( s:lzsd )
 
     call setline( s:line_welcome-1, ">" )
     call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
@@ -97,12 +97,12 @@ fun! s:Render()
     call setline( s:line_index,      s:RPad( "Current index: " . s:cur_index, 18). " | " . "Index size: " . s:index_size )
     call setline( s:line_code,       s:RPad( "Code: 1/bacdb",   18 )             . " | " )
     call setline( s:line_apply,      s:RPad( "Apply: yes",      18 )             . " | " . "Reset: " . s:do_reset )
-    call setline( s:line_rule, "=====================================" )
+    call setline( s:line_rule,       s:RPad("-", s:longest_lzsd, "-") )
     call cursor(s:last_line+1,1)
 
     let text = ""
     for entry in s:lzsd
-        let text = text . s:BuildLine( entry )
+        let text = text . s:BuildLineFromEntry( entry )
     endfor
 
     let @l = text
@@ -518,16 +518,6 @@ fun! s:SetIndex(index)
     endwhile
 endfun
 " 2}}}
-" FUNCTION: LongestLZSD() {{{2
-fun! s:LongestLZSD()
-    let size = len( s:lzsd )
-    let i = 0
-    let longest = 0
-    while i < size
-        let i = i + 1
-    endwhile
-endfun
-" 2}}}
 " Utility functions {{{1
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
@@ -587,12 +577,32 @@ fun! s:ConvertIntegerToBase36(number)
 endfun
 " 2}}}
 " FUNCTION: ConvertIntegerToBase36() {{{2
-function! s:RPad(str, number)
-    return a:str . repeat(' ', a:number - len(a:str))
+function! s:RPad(str, number, ...)
+    if len(a:000) > 0 && type( a:000[0] ) == type( ' ' )
+        return a:str . repeat(a:000[0], a:number - len(a:str))
+    else
+        return a:str . repeat(' ', a:number - len(a:str))
+    end
 endfunction
 " 2}}}
-" FUNCTION: BuildLine() {{{2
-fun! s:BuildLine(entry)
+" FUNCTION: LongestLZSD() {{{2
+fun! s:LongestLZSD( lzsd )
+    let size = len( a:lzsd )
+    let longest = 0
+    let i = 0
+    while i < size
+        let line = s:BuildLineFromEntry( a:lzsd[i] )
+        let len = len( line )
+        if longest < len
+            let longest = len
+        end
+        let i = i + 1
+    endwhile
+    return longest
+endfun
+" 2}}}
+" FUNCTION: BuildLineFromEntry() {{{2
+fun! s:BuildLineFromEntry(entry)
     let desc = substitute( a:entry[3], "_", " ", "g" )
     let text = "|".a:entry[1]."|" . s:after_zekyll_spaces . "[x]" . s:after_switch_spaces .
                     \ "*".a:entry[2]."*" . s:after_section_spaces . desc . "\n"
