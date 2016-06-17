@@ -65,7 +65,7 @@ decode_zcode() {
 # Takes string of 0 and 1 that mark which zekylls are active
 # and encodes it to base 36 number expressed via a-z0-9
 #
-encode_zcode_str() {
+encode_zcode_str01() {
     str_01_to_8-bit_pack_numbers "$1"
     encode_zcode_8-bit_pack_numbers "${reply[@]}"
 
@@ -76,7 +76,7 @@ encode_zcode_str() {
 # zekylls are active and encodes it to base 36 number expressed
 # via a-z0-9
 #
-encode_zcode_arr() {
+encode_zcode_arr01() {
     arr_01_to_8-bit_pack_numbers "$@"
     encode_zcode_8-bit_pack_numbers "${reply[@]}"
 }
