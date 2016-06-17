@@ -143,7 +143,7 @@ div2() {
 
         result+=( "$quotient" )
 
-        integer recovered=quotient*2
+        integer recovered=$(( quotient*2 ))
         integer subtracted=prepared_for_division-recovered
 
         cur+=1
@@ -237,7 +237,7 @@ div_8-bit_pack_numbers_36() {
 
         result+=( "$quotient" )
 
-        integer recovered=quotient*36
+        integer recovered=$(( quotient*36 ))
         integer subtracted=prepared_for_division-recovered
 
         cur+=1
