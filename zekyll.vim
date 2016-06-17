@@ -621,6 +621,14 @@ fun! s:IndexChangeSize()
         let error_decode = "No change in index size"
     elseif v:shell_error == 8
         let error_decode = "No agreement to continue"
+    elseif v:shell_error == 9
+        let error_decode = "Improper section given"
+    elseif v:shell_error == 10
+        let error_decode = "Improper description given"
+    elseif v:shell_error == 11
+        let error_decode = "[inconsistent]"
+    elseif v:shell_error == 12
+        let error_decode = "[inconsistent-l]"
     end
 
     if error_decode != ""
