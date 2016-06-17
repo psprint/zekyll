@@ -350,6 +350,10 @@ compute_index_size_check_consistency() {
     local -a files
     files=( "${reply[@]}" )
 
+    # Focus on listing?
+    integer listing=0
+    [ "$2" = "-f" ] && listing=1
+
     # Will work on reply
     integer size=${#reply} start_size end_size end=0 consistent=1
     local zzz
@@ -365,11 +369,18 @@ compute_index_size_check_consistency() {
         else
             # Match: must not have been ended earlier
             if (( end == 1 )); then
-                if [[ "$consistent" -eq "1" ]]; then
-                    files=( "$MATCH" )
-                    consistent=0
+                if (( listing == 0 )); then
+                    # Normal mode: report inconsistent files
+                    if [[ "$consistent" -eq "1" ]]; then
+                        files=( "$MATCH" )
+                        consistent=0
+                    else
+                        files+=( "$MATCH" )
+                    fi
                 else
-                    files+=( "$MATCH" )
+                    # Listing mode: report all files
+                    consistent=0
+                    break
                 fi
             fi
         fi

@@ -25,7 +25,9 @@ ZKL_NOANSI="0"
 ZKL_DESCRIPTION="[]"
 ZKL_SECTION=""
 ZKL_CONSISTENT=""
-zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: s: -size: v -verbose w -write n -noansi -section: -desc: -consistent || exit 1
+ZKL_LIST=""
+zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: s: -size: v -verbose w -write n \
+                 -noansi -section: -desc: -consistent l -list || exit 1
 
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
@@ -42,6 +44,7 @@ zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: s: 
 (( ${+opthash[--desc]} )) && ZKL_DESCRIPTION="${opthash[--desc]}"
 (( ${+opthash[--section]} )) && ZKL_SECTION="${opthash[--section]}"
 (( ${+opthash[--consistent]} )) && ZKL_CONSISTENT="1"
+(( ${+opthash[-l]} + ${+opthash[--list]} )) && ZKL_LIST="1"
 
 noansi
 
@@ -105,26 +108,42 @@ fi
 # part of current index
 set_index "$ZKL_INDEX"
 
-# Check
-if compute_index_size_check_consistency "$ZKL_INDEX"; then
-    if [ "$ZKL_CONSISTENT" = "1" ]; then
-        print "consistent"
+if [ "$ZKL_LIST" != "1" ]; then
+
+    # Focus on checking consistency
+    if compute_index_size_check_consistency "$ZKL_INDEX"; then
+        if [ "$ZKL_CONSISTENT" = "1" ]; then
+            print "consistent"
+            exit 0
+        else
+            qinfo2 "Index of size $REPLY is consistent"
+            qprint
+        fi
+    else
+        if [ "$ZKL_CONSISTENT" = "1" ]; then
+            print "inconsistent"
+            print -rl "${reply[@]}"
+            exit 11
+        else
+            qerror "Inconsistent index (of size $REPLY)! The problematic file is:" "${reply[@]}"
+            qerror "It is not in sequence with other files."
+            exit 5
+        fi
+    fi
+
+else
+
+    # Focus on listing the files
+    if compute_index_size_check_consistency "$ZKL_INDEX" -f; then
+        print -rl -- "${reply[@]}"
         exit 0
     else
-        qinfo2 "Index of size $REPLY is consistent"
-        qprint
+        print -rl -- "${reply[@]}"
+        exit 12
     fi
-else
-    if [ "$ZKL_CONSISTENT" = "1" ]; then
-        print "inconsistent"
-        print -rl "${reply[@]}"
-        exit 11
-    else
-        qerror "Inconsistent index (of size $REPLY)! The problematic file is:" "${reply[@]}"
-        qerror "It is not in sequence with other files."
-        exit 5
-    fi
+
 fi
+
 
 integer size="$REPLY"
 local -a files
