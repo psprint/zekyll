@@ -33,6 +33,8 @@ let s:do_reset = "no"
 let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
                  \   "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
 
+let s:code_selectors = []
+
 let s:after_zekyll_spaces = "    "
 let s:after_section_spaces = "    "
 let s:after_switch_spaces = "    "
@@ -102,8 +104,10 @@ fun! s:Render()
 
     let text = ""
     for entry in s:lzsd
-        let text = text . s:BuildLineFromEntry( entry )
+        let text = text . s:BuildLineFromFullEntry( entry )
     endfor
+
+    let text = s:SetupCodeSelectors( text )
 
     let text = text . s:RPad("-", s:longest_lzsd, "-")
 
@@ -521,6 +525,25 @@ fun! s:SetIndex(index)
     endwhile
 endfun
 " 2}}}
+" FUNCTION: ResetCodeSelectors() {{{2
+" Sets code selectors to default state,
+" in number corresponding to len( s:lzsd )
+fun! s:ResetCodeSelectors()
+    let s:code_selectors = []
+    let size = len( s:lzsd )
+    let i = 0
+    while i < size
+        call add( s:code_selectors, 1 )
+        let i = i + 1
+    endwhile
+endfun
+"2}}}
+" FUNCTION: GatherCodeSelectors() {{{2
+" Sets s:code_selectors from the buffer
+fun! s:GatherCodeSelectors()
+endfun
+" 2}}}
+"1}}}
 " Utility functions {{{1
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
@@ -531,6 +554,21 @@ fun! s:BufferLineToZSD(line)
         let section = result[2]
         let description = substitute( result[3], " ", "_", "g" )
         return [ zekyll, section, description ]
+    end
+    return []
+endfun
+" FUNCTION: BufferLineToZCSD() {{{2
+" The same as BufferLineToZSD but also
+" returns state of code selector
+fun! s:BufferLineToZCSD(line)
+    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '\(\[.\]\)' .
+                            \ '[[:space:]]\+' . '\*\([A-Z]\)\*' . '[[:space:]]\+' . '\(.*\)$' )
+    if len( result ) > 0
+        let zekyll = result[1]
+        let codes = result[2]
+        let section = result[3]
+        let description = substitute( result[4], " ", "_", "g" )
+        return [ zekyll, codes, section, description ]
     end
     return []
 endfun
@@ -594,7 +632,7 @@ fun! s:LongestLZSD( lzsd )
     let longest = 0
     let i = 0
     while i < size
-        let line = s:BuildLineFromEntry( a:lzsd[i] )
+        let line = s:BuildLineFromFullEntry( a:lzsd[i] )
         let len = len( line )
         if longest < len
             let longest = len
@@ -604,14 +642,76 @@ fun! s:LongestLZSD( lzsd )
     return longest
 endfun
 " 2}}}
-" FUNCTION: BuildLineFromEntry() {{{2
-fun! s:BuildLineFromEntry(entry)
+" FUNCTION: BuildLineFromFullEntry() {{{2
+fun! s:BuildLineFromFullEntry(entry, ...)
+    let selector = "x"
+    if a:0 > 0
+        if a:1 == 1
+            let selector = "v"
+        else
+            let selector = " "
+        end
+    end
+
     let desc = substitute( a:entry[3], "_", " ", "g" )
-    let text = "|".a:entry[1]."|" . s:after_zekyll_spaces . "[x]" . s:after_switch_spaces .
+    let text = "|".a:entry[1]."|" . s:after_zekyll_spaces . "[" . selector . "]" . s:after_switch_spaces .
                     \ "*".a:entry[2]."*" . s:after_section_spaces . desc . "\n"
     return text
 endfun
 " 2}}}
+" FUNCTION: ZSDToListing() {{{2
+fun! s:ZSDToListing( zsd )
+    let a:zsd[2] = substitute( a:zsd[2], " ", "_", "g" )
+    let listing = a:zsd[0] . "." . a:zsd[1] . "--" . a:zsd[2]
+    return listing
+endfun
+" 2}}}
+" FUNCTION: SetupCodeSelectors() {{{2
+fun! s:SetupCodeSelectors( text )
+    if len( s:code_selectors ) != len( s:lzsd )
+        call s:ResetCodeSelectors()
+    end
+
+    let text2 = ""
+    let arr = split( a:text, '\n\+' )
+    let size = len( arr )
+    let i = 0
+    while i < size
+        let ZCSD = s:BufferLineToZCSD( arr[i] )
+        let listing = s:ZSDToListing( s:ZcsdToZsd( ZCSD ) )
+        let line = s:BuildLineFromFullEntry( s:ZcsdToLzds( ZCSD, listing ), s:code_selectors[i] )
+        let text2 = text2 . line
+        let i = i + 1
+    endwhile
+
+    return text2
+endfun
+" 2}}}
+" FUNCTION: LzcsdToLzsd() {{{2
+fun! s:LzcsdToLzsd( lzcsd )
+    if len( a:lzcsd ) == 5
+        return [ a:lzcsd[0], a:lzcsd[1], a:lzcsd[3], a:lzcsd[4] ]
+    else
+        return []
+    end
+endfun
+" 2}}}
+" FUNCTION: ZcsdToZsd() {{{2
+" Strips off "C" (codes-elector) from Zcsd
+fun! s:ZcsdToZsd( zcsd )
+    if len( a:zcsd ) == 4
+        return [ a:zcsd[0], a:zcsd[2], a:zcsd[3] ]
+    else
+        call s:DebugMsg( "ZcsdToZsd given list of size: " . len( a:zcsd ) )
+        return []
+    end
+endfun
+" 2}}}
+" FUNCTION: ZcsdToLzds() {{{2
+fun! s:ZcsdToLzds( zcsd, listing )
+    return [ a:listing, a:zcsd[0], a:zcsd[2], a:zcsd[3] ]
+endf
+"2}}}
 " 1}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
