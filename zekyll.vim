@@ -21,20 +21,31 @@ map <silent> <unique> <script> <Plug>StartZekyll :set lz<CR>:call <SID>StartZeky
 let s:cur_repo = "psprint/zkl"
 let s:cur_repo_path = $HOME."/.zekyll/repos/psprint---zkl"
 let s:repos_paths = [ $HOME."/.zekyll/repos" ]
+let s:listing = []
+let s:inconsistent_listing = []
 let s:cur_index = 1
-let s:index_size = 0
+let s:index_size = -1
 let s:index_size_new = -1
+let s:consistent = "yes"
+let s:are_errors = "no"
+let s:do_reset = "no"
 let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
                  \   "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
 
 let s:after_zekyll_spaces = "    "
 let s:after_section_spaces = "    "
 let s:after_switch_spaces = "    "
-let s:line_welcome = 1
-let s:line_index = 2
-let s:line_index_size = s:line_index
-let s:line_apply = 3
-let s:line_rule = 4
+
+let s:line_welcome = 2
+let s:line_consistent   = 4
+let s:line_errors       = 4
+let s:line_index        = 5
+let s:line_index_size   = 5
+let s:line_code         = 6
+let s:line_xxxx         = 6
+let s:line_apply        = 7
+let s:line_git_reset    = 7
+let s:line_rule         = 8
 let s:last_line = s:line_rule
 
 let s:lzsd = []
@@ -71,10 +82,20 @@ fun! s:Render()
     let s:index_size = len(s:listing)
     call s:ParseListingIntoArrays()
 
-    call setline(s:line_welcome, "     Welcome to Zekyll Manager~")
-    call setline(s:line_index, s:RPad("Current index: " . s:cur_index, 18) . "|" . " Index size: " . s:index_size )
-    call setline(s:line_apply, s:RPad("Apply: no", 18) . "|" . " Code: 1/bacdb")
-    call setline(s:line_rule, "=====================================")
+    call setline( s:line_welcome-1, ">" )
+    call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
+    if s:consistent == "no" || s:are_errors == "yes"
+        call setline( s:line_welcome+1, ">" )
+        let s:prefix = " "
+    else
+        call setline( s:line_welcome+1, "" )
+        let s:prefix = ""
+    end
+    call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 18 ) . " | " . "Errors: " . s:are_errors )
+    call setline( s:line_index,      s:RPad( "Current index: " . s:cur_index, 18). " | " . "Index size: " . s:index_size )
+    call setline( s:line_code,       s:RPad( "Code: 1/bacdb",   18 )             . " | " )
+    call setline( s:line_apply,      s:RPad( "Apply: yes",      18 )             . " | " . "Reset: " . s:do_reset )
+    call setline( s:line_rule, "=====================================" )
     call cursor(s:last_line+1,1)
 
     let text = ""
@@ -168,19 +189,29 @@ fun! s:ParseListingIntoArrays()
 
         " zekylls entry
         let result = matchlist( line, '\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)\.[A-Z].*' )
-        if len( result ) < 2
-            " Something's wrong, skip this line
-            echom "Skipped processing of line: " . line
+        if len( result ) == 0
+            call s:DebugMsg( "Skipped processing of line: " . line )
+            let s:are_errors = "yes"
             continue
         end
         let zekylls_entry = result[1]
 
         " sections entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.\([A-Z]\).*' )
+        if len( result ) == 0
+            call s:DebugMsg( "Skipped processing of line: " . line )
+            let s:are_errors = "yes"
+            continue
+        end
         let sections_entry = result[1]
 
         " descriptions entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.[A-Z]--\(.*\)' )
+        if len( result ) == 0
+            call s:DebugMsg( "Skipped processing of line: " . line )
+            let s:are_errors = "yes"
+            continue
+        end
         let descriptions_entry = result[1]
 
         call add( s:lzsd, [ listing_entry, zekylls_entry, sections_entry, descriptions_entry ]  )
@@ -264,6 +295,13 @@ endfun
 " FUNCTION: ResetState() {{{2
 fun! s:ResetState()
     let s:lzsd = []
+    let s:listing = []
+    let s:inconsistent_listing = []
+    let s:index_size = -1
+    let s:index_size_new = -1
+    let s:consistent = "yes"
+    let s:are_errors = "no"
+    let s:do_reset = "no"
 endfun
 " 2}}}
 " FUNCTION: NoOp() {{{2
@@ -545,8 +583,23 @@ endfunction
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
 fun! s:ReadRepo()
-    let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -q")
-    let s:listing = split(listing_text, '\n\+')
+    let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -q --consistent")
+    if v:shell_error == 11
+        let s:inconsistent_listing = split(listing_text, '\n\+')
+        let s:inconsistent_listing= s:inconsistent_listing[1:]
+        let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -q -l")
+        let s:listing = split(listing_text, '\n\+')
+        call s:DebugMsg( "Inconsistent Listing: ", s:inconsistent_listing )
+        call s:DebugMsg( "All Listing: ", s:listing )
+        let s:consistent = "no"
+    else
+        let s:listing = split(listing_text, '\n\+')
+        let s:listing= s:listing[1:]
+        let s:consistent = "yes"
+
+        " call s:DebugMsg("Listing:", s:listing)
+    end
+
 endfun
 " 2}}}
 " FUNCTION: RewriteZekylls() {{{2
