@@ -71,10 +71,10 @@ fun! s:Render()
     let s:index_size = len(s:listing)
     call s:ParseListingIntoArrays()
 
-    call setline(s:line_welcome, "Welcome to Zekyll Manager~")
+    call setline(s:line_welcome, "     Welcome to Zekyll Manager~")
     call setline(s:line_index, s:RPad("Current index: " . s:cur_index, 18) . "|" . " Index size: " . s:index_size )
-    call setline(s:line_apply, s:RPad("Apply: no", 18) . "|")
-    call setline(s:line_rule, "=========================")
+    call setline(s:line_apply, s:RPad("Apply: no", 18) . "|" . " Code: 1/bacdb")
+    call setline(s:line_rule, "=====================================")
     call cursor(s:last_line+1,1)
 
     let text = ""
