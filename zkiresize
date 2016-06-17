@@ -114,6 +114,7 @@ if [ "$ZKL_LIST" != "1" ]; then
     if compute_index_size_check_consistency "$ZKL_INDEX"; then
         if [ "$ZKL_CONSISTENT" = "1" ]; then
             print "consistent"
+            print -rl "${reply[@]}"
             exit 0
         else
             qinfo2 "Index of size $REPLY is consistent"
