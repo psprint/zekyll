@@ -59,6 +59,7 @@ decode_zcode() {
         #echo "After div $workingvar/${reply[2]}"
     done
     #echo "Bits of the letters $letters are: ${(j::)bits[@]}"
+    reply=( "${bits[@]}" )
 }
 
 #

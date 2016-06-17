@@ -396,4 +396,23 @@ compute_index_size_check_consistency() {
     return $(( 1-consistent ))
 }
 
+#
+# Gets zekylls for given code ($1)
+#
+get_zekylls_for_code() {
+    local zcode="$1"
+    decode_zcode "$zcode"
+
+    local zekylls
+    integer i size="${#reply}"
+
+    for (( i=1; i<=size; i++ )); do
+        if [ "${reply[i]}" = "1" ]; then
+            zekylls+="${ZKL_INDEX_ZEKYLLS[i]}"
+        fi
+    done
+
+    REPLY="$zekylls"
+}
+
 # vim:ft=zsh

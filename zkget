@@ -6,6 +6,7 @@ REPO_DIR="${ZERO%/*}"
 [ "$ZERO" = "$REPO_DIR" ] && REPO_DIR="$HOME/.zekyll/zekyll"
 source "$REPO_DIR/lib/script_preamble"
 source "$REPO_DIR/lib/script_vars"
+source "$REPO_DIR/lib/math_functions"
 source "$REPO_DIR/lib/script_functions"
 
 #
@@ -18,7 +19,8 @@ ZKL_ZEKYLLS=""
 ZKL_SILENT="0"
 ZKL_DEFAULT="0"
 ZKL_NOANSI="0"
-zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default n -noansi || exit 1
+ZKL_CODE=""
+zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default n -noansi || exit 60
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
@@ -45,6 +47,18 @@ if [ "$ZKL_HELP" = "1" ]; then
 fi
 
 #
+# Code given?
+#
+
+if [ -n "$1" ]; then
+    ZKL_CODE="$1"
+    if [[ "$ZKL_CODE" != [0-9]##/[a-z0-9]## ]]; then
+        qerror "Improper zcode, exiting"
+        exit 61
+    fi
+fi
+
+#
 # Read destination path
 #
 
@@ -53,10 +67,27 @@ REPLY="$ZKL_PATH"
 ZKL_PATH="$REPLY"
 if [ "$ZKL_SILENT" = "1" ]; then
     # Silent
-    cd_will_work_on "$REPLY" -s || exit 1
+    cd_will_work_on "$REPLY" -s || exit 62
 else
     # Not silent
-    cd_will_work_on "$REPLY" || exit 1
+    cd_will_work_on "$REPLY" || exit 63
+fi
+
+#
+# If code was given, establish ZKL_ZEKYLLS basing
+# on it, overwriting any user given -z/--zkl string
+#
+
+if [ -n "$ZKL_CODE" ]; then
+    if [[ "$ZKL_CODE" = (#b)([0-9]##)/([a-z0-9]##) ]]; then
+        integer index="${match[1]}"
+        local code="${match[2]}"
+        ZKL_INDEX="$index"
+
+        set_index "$ZKL_INDEX"
+        get_zekylls_for_code "$ZKL_CODE"
+        ZKL_ZEKYLLS="$REPLY"
+    fi
 fi
 
 #
