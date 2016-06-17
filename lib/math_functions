@@ -61,6 +61,41 @@ decode_zcode() {
     #echo "Bits of the letters $letters are: ${(j::)bits[@]}"
 }
 
+#
+# Takes string of 0 and 1 that mark which zekylls are active
+# and encodes it to base 36 number expressed via a-z0-9
+#
+encode_zcode() {
+    local str01="$1"
+
+    local -a numbers
+    str_01_to_8-bit_pack_numbers "$str01"
+    numbers=( "${reply[@]}" )
+
+    local -a nums_base36 workingvar
+    workingvar=( "${numbers[@]}" )
+
+    integer sum=0 i
+    for i in "${workingvar[@]}"; do
+        sum+=i
+    done
+
+    while (( sum != 0 )); do
+        div_8-bit_pack_numbers_36 "${workingvar[@]}"
+        workingvar=( "${reply[@]}" )
+        nums_base36=( "$REPLY" "${nums_base36[@]}" )
+
+        # Check if workingvar is all zero
+        sum=0
+        for i in "${workingvar[@]}"; do
+            sum+=i
+        done
+    done
+
+    # echo "Base36 numbers of $str01 are: ${(j:,:)nums_base36[@]}"
+    reply=( "${nums_base36[@]}" )
+}
+
 # $1 - zcode's letters
 # $reply - ( "zcode's letters after division" "remainder 0 or 1" )
 div2() {
@@ -113,6 +148,98 @@ div2() {
     #
 
     reply=( "$REPLY" "$subtracted" )
+
+    return 0
+}
+
+
+#
+# Takes STRING of 0 and 1 and converts it to array of numbers
+# that are 8-bit packs taken from right to left, from the string
+#
+str_01_to_8-bit_pack_numbers() {
+    local -a bits
+    bits=( "${(@s::)1}" )
+    arr_01_to_8-bit_pack_numbers "${bits[@]}"
+
+    return 0
+}
+
+#
+# Takes ARRAY (@) of 0 and 1 and converts it to array of numbers
+# that are 8-bit packs taken from right to left, from the string
+#
+arr_01_to_8-bit_pack_numbers() {
+    local -a bits pack numbers
+    bits=( "$@" )
+    integer count=0 i size="${#bits}"
+
+    # Take packs of 8 bits, convert each to number and store in array
+    for (( i=size; i>=1; i-- )); do
+        pack=( "$bits[i]" "${pack[@]}" )
+        count+=1
+        (( count < 8 && i != 1 )) && continue
+        count=0
+
+        # Convert the max. 8 bit pack to number
+        integer result=0 p
+        for p in "${pack[@]}"; do
+            result=result*2+p
+        done
+
+        numbers=( "$result" "${numbers[@]}" )
+        pack=( )
+    done
+
+    reply=( "${numbers[@]}" )
+    return 0
+}
+
+# $1 - series of 0 and 1 (bits marking which zekyll is active)
+# $reply - ( "series of 0 and 1, result of division" "remainder 0 ... 35" )
+div_8-bit_pack_numbers_36() {
+    local -a numbers
+    numbers=( "$@" )
+
+    # echo "Dividing numbers: " "${numbers[@]}"
+
+    #
+    # Now operate on the array performing long-division
+    #
+
+    integer cur last
+    cur=1
+    last="${#numbers}"
+
+    local -a result
+    result=()
+
+    integer prepared_for_division="${numbers[cur]}"
+    while (( 1 )); do
+        integer quotient=prepared_for_division/36
+
+        result+=( "$quotient" )
+
+        integer recovered=quotient*36
+        integer subtracted=prepared_for_division-recovered
+
+        cur+=1
+        if (( cur > last )); then
+            break
+        fi
+
+        prepared_for_division=256*subtracted+${numbers[cur]}
+    done
+
+    # echo "Result of division: " "${result[@]}"
+    # echo "Remainder: $subtracted"
+
+    #
+    # Return
+    #
+
+    reply=( "${result[@]}" )
+    REPLY="$subtracted"
 
     return 0
 }
