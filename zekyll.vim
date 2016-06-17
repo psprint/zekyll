@@ -800,7 +800,6 @@ fun! s:arr_01_to_8_bit_pack_numbers(arr)
     while i >= 0
         " Insert bits[i] at start of the list pack
         call insert( pack, bits[ i ] )
-        echom pack[0]
         let bcount = bcount + 1
         if bcount < 8 && i != 0
             let i = i - 1
