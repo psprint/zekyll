@@ -713,7 +713,7 @@ fun! s:SetupSelectionCodes( text )
     if s:prev_index != s:cur_index
         call s:ResetCodeSelectors()
     elseif len( s:code_selectors ) > len( s:lzsd )
-        let s:code_selectors = s:code_selectors[1:len(s:lzsd)]
+        let s:code_selectors = s:code_selectors[0:len(s:lzsd)-1]
     elseif len( s:code_selectors ) < len( s:lzsd )
         let diff = len( s:lzsd ) - len( s:code_selectors )
         let i = 0
