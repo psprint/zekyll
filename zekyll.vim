@@ -115,7 +115,7 @@ fun! s:Render()
 
     let text = s:SetupSelectionCodes( text )
     let text = text . s:RPad("-", s:longest_lzsd, "-")
-    let resu = s:encode_zcode_arr01( reverse( s:code_selectors ) )
+    let resu = s:encode_zcode_arr01( reverse( copy(s:code_selectors) ) )
 
     " Set the line again, this time with actual code
     call setline( s:line_code, "Code: " . s:cur_index . "/" . resu[1] . "~" )
