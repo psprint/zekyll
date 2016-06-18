@@ -193,11 +193,12 @@ resolve_repo() {
 
     if (( ask )); then
         # Will propose the repo (if it's set)
-        read_repo "$repo" || exit 1
+        read_repo "$repo" || return 1
         repo="$REPLY"
     fi
 
     get_path_from_repo "$repo"
+    [ -d "$REPLY" ] && return 0 || return 1
 }
 
 #
