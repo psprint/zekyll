@@ -110,7 +110,7 @@ fun! s:Render( ... )
     end
     call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 18 ) . " | " . "Errors: " . s:are_errors )
     call setline( s:line_index,      s:RPad( "Current index: " . s:cur_index, 18). " | " . "Index size: " . s:index_size )
-    call setline( s:line_code,               "Code: .......~" )
+    call setline( s:line_code,               "Code: .......  ~" )
     call setline( s:line_apply,      s:RPad( "Apply: yes",      18 )             . " | " . "Reset: " . s:do_reset )
     call setline( s:line_rule,       s:RPad("-", s:longest_lzsd, "-") )
     call cursor(s:last_line+1,1)
@@ -125,7 +125,7 @@ fun! s:Render( ... )
     let resu = s:encode_zcode_arr01( reverse( copy(s:code_selectors) ) )
 
     " Set the line again, this time with actual code
-    call setline( s:line_code, "Code: " . s:cur_index . "/" . resu[1] . "~" )
+    call setline( s:line_code, "Code: " . s:cur_index . "/" . resu[1] . "  ~" )
 
     let @l = text
     silent put l
