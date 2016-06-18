@@ -918,12 +918,19 @@ endfun
 " 2}}}
 " FUNCTION: RewriteZekylls() {{{2
 fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
+    if len( a:src_zekylls ) == 0 && len( a:dst_zekylls ) == 0
+        " No actual work to do - index is empty
+        return 1
+    endif
+
     let cmd = "zkrewrite --noansi -w -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -z " . a:src_zekylls . " -Z " . a:dst_zekylls
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     let cmd_output = join( arr, "\n" )
 
     call s:DebugMsg( "Command [" . v:shell_error . "]: " . cmd, arr )
+
+    return 1
 endfun
 " 2}}}
 " FUNCTION: RemoveLZSD() {{{2
