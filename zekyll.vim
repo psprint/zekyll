@@ -406,22 +406,6 @@ fun! s:GatherDeletedEntries(new_lzsd)
         let i = i + 1
     endwhile
 
-    " Message
-    let size = len( deleted )
-    let i = 0
-    let delarr = []
-    while i < size
-        call add( delarr, "{" . deleted[i][1] . "." . deleted[i][2] . "} " . deleted[i][3] )
-        let i = i + 1
-    endwhile
-
-    if len( delarr ) == 1
-        call s:AppendMessageT( "*Deleted:* " . delarr[0] )
-    elseif len( delarr ) >= 2
-        call map( delarr, '"*>* " . v:val' )
-        call s:AppendMessageT( "*Deleted:* ", delarr )
-    end
-
     return deleted
 endfun
 " 2}}}
@@ -1053,13 +1037,24 @@ endfun
 " FUNCTION: RemoveLZSD() {{{2
 fun! s:RemoveLZSD(lzsd)
     let result = 0
+    let delarr = []
     for entry in a:lzsd
         let entry[3] = substitute( entry[3], " ", "_", "g" )
         let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
         let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv " . shellescape(file_name) . " _" . shellescape(file_name)
         call system( cmd )
         let result = result + v:shell_error
+
+        " Message
+        call add( delarr, "|exit:" . v:shell_error . "| {" . entry[1] . "." . entry[2] . "} " . entry[3] )
     endfor
+
+    if len( delarr ) == 1
+        call s:AppendMessageT( "*Deleted:* " . delarr[0] )
+    elseif len( delarr ) >= 2
+        call map( delarr, '"*>* " . v:val' )
+        call s:AppendMessageT( "*Deleted:* ", delarr )
+    end
 
     return result
 endfun
