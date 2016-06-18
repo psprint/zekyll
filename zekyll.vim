@@ -67,6 +67,10 @@ let s:last_line = s:line_rule
 
 let s:messages = [ "<Messages>" ]
 
+let s:savedLine = 1
+let s:savedCol = 1
+let s:zeroLine = 1
+
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
 fun! s:StartZekyll()
@@ -91,10 +95,8 @@ fun! s:Render( ... )
     if a:0 == 1
         let light = a:1
     end
-    " save the view
-    let savedLine = line(".")
-    let savedCol = col(".")
-    let zeroLine = line("w0")
+
+    call s:SaveView()
 
     " Remember to have information whether index size has changed
     let s:index_size_prev = s:index_size
@@ -144,13 +146,7 @@ fun! s:Render( ... )
 
     call s:OutputMessages(1)
 
-    " restore the view
-    let savedScrolloff=&scrolloff
-    let &scrolloff=0
-    call cursor(zeroLine, 1)
-    normal! zt
-    call cursor(savedLine, savedCol)
-    let &scrolloff = savedScrolloff
+    call s:RestoreView()
 endfun
 " 2}}}
 " 1}}}
@@ -217,9 +213,13 @@ endfun
 " FUNCTION: ProcessBuffer() {{{2
 fun! s:ProcessBuffer()
 
+    call s:SaveView()
+
     " Only this function processes buffer, and we
     " should get the boundaries right before processing
     let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
+
+    call s:RestoreView()
 
     "
     " Read new index?
@@ -1048,6 +1048,24 @@ fun! s:Space()
     return 1
 endfun
 " 1}}}
+" FUNCTION: SaveView() {{{2
+fun! s:SaveView()
+    let s:savedLine = line(".")
+    let s:savedCol = col(".")
+    let s:zeroLine = line("w0")
+endfun
+" 2}}}
+" FUNCTION: RestoreView() {{{2
+fun! s:RestoreView()
+    " restore the view
+    let savedScrolloff=&scrolloff
+    let &scrolloff=0
+    call cursor(s:zeroLine, 1)
+    normal! zt
+    call cursor(s:savedLine, s:savedCol)
+    let &scrolloff = savedScrolloff
+endfun
+" 2}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
 fun! s:ReadRepo()
