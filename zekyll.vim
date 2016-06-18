@@ -65,7 +65,7 @@ fun! s:StartZekyll()
     nmap <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
     nmap <silent> o :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
     imap <silent> <CR> <C-O>:call <SID>NoOp()<CR>
-    nnoremap <expr> <space> <SID>Space()?"":"\<space>"
+    nnoremap <space> :call <SID>Space()<CR>
 
     setlocal buftype=nofile
     setlocal ft=help
@@ -855,6 +855,11 @@ fun! s:Space()
     let linenr = line(".")
     let line = getline( linenr )
     let ZCSD = s:BufferLineToZCSD( line )
+
+    if len( ZCSD ) == 0
+        return 0
+    end
+
     if ZCSD[1] != " "
         let selector = 0
     else
@@ -864,6 +869,7 @@ fun! s:Space()
     let listing = s:ZSDToListing( s:ZcsdToZsd( ZCSD ) )
     let line = s:BuildLineFromFullEntry( s:ZcsdToLzds( ZCSD, listing ), selector )
 
+    let line = substitute( line, '\n$', "", "" )
     call setline( linenr, line )
     return 1
 endfun
