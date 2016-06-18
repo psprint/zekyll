@@ -703,7 +703,7 @@ endfun
 " 2}}}
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
-    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '\[.\]' .
+    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<.>' .
                             \ '[[:space:]]\+' . '\*\([A-Z]\)\*' . '[[:space:]]\+' . '\(.*\)$' )
     if len( result ) > 0
         let zekyll = result[1]
@@ -717,7 +717,7 @@ endfun
 " The same as BufferLineToZSD but also
 " returns state of code selector
 fun! s:BufferLineToZCSD(line)
-    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '\[\(.\)\]' .
+    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
                             \ '[[:space:]]\+' . '\*\([A-Z]\)\*' . '[[:space:]]\+' . '\(.*\)$' )
     if len( result ) > 0
         let zekyll = result[1]
@@ -803,14 +803,14 @@ fun! s:BuildLineFromFullEntry(entry, ...)
     let selector = "x"
     if a:0 > 0
         if a:1 == 1
-            let selector = "v"
+            let selector = "x"
         else
             let selector = " "
         end
     end
 
     let desc = substitute( a:entry[3], "_", " ", "g" )
-    let text = "|".a:entry[1]."|" . s:after_zekyll_spaces . "[" . selector . "]" . s:after_switch_spaces .
+    let text = "|".a:entry[1]."|" . s:after_zekyll_spaces . "<" . selector . ">" . s:after_switch_spaces .
                     \ "*".a:entry[2]."*" . s:after_section_spaces . desc . "\n"
     return text
 endfun
