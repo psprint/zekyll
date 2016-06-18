@@ -113,7 +113,7 @@ fun! s:Render( ... )
 
     call setline( s:line_welcome-1, ">" )
     call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
-    if s:consistent == "no" || s:are_errors == "yes"
+    if s:consistent ==? "no" || s:are_errors ==? "yes"
         call setline( s:line_welcome+1, ">" )
         let s:prefix = " "
     else
