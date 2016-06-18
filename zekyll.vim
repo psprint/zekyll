@@ -235,7 +235,8 @@ fun! s:ProcessBuffer()
             return
         end
     else
-        call s:AppendMessageT( "*Error:* control lines have been modified, cannot use document (1)" )
+        call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
+        call s:Render( 1 )
         return
     end
 
@@ -253,7 +254,8 @@ fun! s:ProcessBuffer()
             return
         end
     else
-        call s:AppendMessageT( "*Error:* control lines have been modified, cannot use document (2)" )
+        call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (2)" )
+        call s:Render( 1 )
         return
     end
 
