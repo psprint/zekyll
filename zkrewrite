@@ -50,9 +50,15 @@ if [ "$ZKL_HELP" = "1" ]; then
     print "will move ab -> ef and cd -> gh, preserving descriptions of files."
     print
     help-opts
+    help-quiet
+    help-nansi
+    help-verb
     help-dry
     help-path
+    help-repo
     help-dft
+    help-zkls
+    help-zkld
     print "Git mode is deterimed from existence of .git directory"
 
     exit 0

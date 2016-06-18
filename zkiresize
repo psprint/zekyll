@@ -57,8 +57,19 @@ if [ "$ZKL_HELP" = "1" ]; then
     print "Resizes given index (-i) to given size (-s)"
     print
     help-opts
+    help-quiet
+    help-nansi
+    help-verb
+    help-dry
+    help-path
+    help-repo
+    help-dft
     help-index
     help-rsize
+    help-list
+    help-cons
+    help-sect
+    help-desc
 
     exit 0
 fi

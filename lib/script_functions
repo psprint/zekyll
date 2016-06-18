@@ -28,10 +28,19 @@ help-dry()   { print -- "-w/--write          -- actual operation mode - else it 
 help-git()   { print -- "-g/--git            -- perform operations with git (to update repository not just files)"; }
 help-path()  { print -- "-p/--path [path]    -- work in given path (don't ask for it)"; }
 help-zkl()   { print -- "-z/--zkl [zekylls]  -- process given zekylls"; }
-help-dft()   { print -- "-d/--default        -- use ZEKYLL_DEFAULT_REPO if available as working directory (don't ask)"; }
-help-repo()  { print -- "-r/--repo           -- use given repo as path specification"; }
+help-zkls()  { print -- "-z/--zkl [zekylls]  -- source zekylls"; }
+help-zkld()  { print -- "-Z/--Zkl [zekylls]  -- destination zekylls"; }
+help-dft()   { print -- "-d/--default        -- use \$ZEKYLL_DEFAULT_REPO if available as path specification (don't ask)"; }
+help-repo()  { print -- "-r/--repo           -- use given repo as path specification (don't ask)"; }
 help-index() { print -- "-i/--index [index]  -- work on given index"; }
 help-rsize() { print -- "-s/--size [size]    -- resize to given size"; }
+help-quiet() { print -- "-q/--quiet          -- try to not output any messages, just do the job"; }
+help-verb()  { print -- "-v/--verbose        -- be more verbose"; }
+help-nansi() { print -- "-n/--noansi         -- don't use colors in output"; }
+help-sect()  { print -- "--section           -- use given section name when e.g. creating zekylls"; }
+help-desc()  { print -- "--desc              -- use given description when e.g. creating zekylls"; }
+help-cons()  { print -- "--consistent        -- check if index is consistent, output inconsistent files/zekylls"; }
+help-list()  { print -- "--list              -- list files belonging to index, even inconsistent ones"; }
 
 #
 # Returns if quiet mode

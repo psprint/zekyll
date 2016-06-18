@@ -55,11 +55,17 @@ if [ "$ZKL_HELP" = "1" ]; then
     print "existing files."
     print
     help-opts
+    help-quiet
+    help-nansi
+    help-verb
     help-dry
     help-git
     help-path
+    help-repo
     help-dft
     help-zkl
+    help-sect
+    help-desc
 
     exit 0
 fi
