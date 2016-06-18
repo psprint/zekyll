@@ -195,9 +195,6 @@ endfun
 " 2}}}
 " FUNCTION: ProcessBuffer() {{{2
 fun! s:ProcessBuffer()
-
-    let s:prev_index = s:cur_index
-
     "
     " Read new index?
     "
@@ -673,6 +670,8 @@ fun! s:SetupSelectionCodes( text )
             let i = i + 1
         endwhile
     end
+
+    let s:prev_index = s:cur_index
 
     let text2 = ""
     let arr = split( a:text, '\n\+' )
