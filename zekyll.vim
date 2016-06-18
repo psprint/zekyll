@@ -169,7 +169,7 @@ fun! s:ParseListingIntoArrays()
         " zekylls entry
         let result = matchlist( line, '\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)\.[A-Z].*' )
         if len( result ) == 0
-            call s:DebugMsgT( "Skipped processing of improper line: " . line )
+            call s:DebugMsgT( 1, "Skipped processing of improper line: " . line )
             let s:are_errors = "YES"
             continue
         end
@@ -178,7 +178,7 @@ fun! s:ParseListingIntoArrays()
         " sections entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.\([A-Z]\).*' )
         if len( result ) == 0
-            call s:DebugMsgT( "Skipped processing of improper line: " . line )
+            call s:DebugMsgT( 1, "Skipped processing of improper line: " . line )
             let s:are_errors = "YES"
             continue
         end
@@ -187,7 +187,7 @@ fun! s:ParseListingIntoArrays()
         " descriptions entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.[A-Z]--\(.*\)' )
         if len( result ) == 0
-            call s:DebugMsgT( "Skipped processing of improper line: " . line )
+            call s:DebugMsgT( 1, "Skipped processing of improper line: " . line )
             let s:are_errors = "YES"
             continue
         end
@@ -485,10 +485,8 @@ fun! s:GetNewIndexSize()
     let result = matchlist( line, 'Index size:[[:space:]]*\(\d\+\)' )
     if len( result ) > 0
         let index_size_new = result[1]
-        call s:DebugMsgT( "Got new index size " . index_size_new )
     else
         let index_size_new = -1
-        call s:DebugMsgT( "Couldn't get index new size" )
     end
     return index_size_new
 endfun
@@ -497,8 +495,10 @@ endfun
 " Prepends current time in format *HH:MM* to first line
 " The first line must be thus a string. It will be appended
 " to s:messages here, rest will be routed to s:DebugMsgT()
-fun! s:DebugMsgT(...)
-    if exists("g:zekyll_debug") && g:zekyll_debug == 1
+fun! s:DebugMsgT( is_error, ... )
+    " zekyll_debug == 1 - log level 1, will be displayed when is_error == true
+    " zekyll_debug > 1 - log level 2, will be displayed also for is_error == false
+    if exists("g:zekyll_debug") && ( (g:zekyll_debug == 1 && a:is_error > 0) || g:zekyll_debug > 1 )
         if len( a:000 ) > 0
 
             if exists("*strftime")
@@ -507,6 +507,7 @@ fun! s:DebugMsgT(...)
                 let T = ""
             end
 
+            " Case 1: first argument is a string, following can be list
             if type( a:000[0] ) == type( "" )
                 " Remaining arguments, e.g. list
                 let remaining = deepcopy( a:000 )
@@ -521,12 +522,13 @@ fun! s:DebugMsgT(...)
                 call add( s:messages, T . a:000[0] . B )
 
                 if len( remaining ) > 0
-                    call s:DebugMsgReal( remaining )
+                    call s:DebugMsgReal( a:is_error, remaining )
                 end
+            " Case 2: list is first argument
             elseif len( a:000 ) > 0 && type( a:000[0] ) == type( [] )
                 let all = deepcopy( a:000 )
                 if len( all[0] ) > 0
-                    let skipfirst = all[0][1:] " shallow copy, following map will update 'all[0]'
+                    let skipfirst = all[0][1:]
                     let B2 = ""
                     if len( skipfirst ) > 0
                         call map( skipfirst, '" " . v:val' )
@@ -534,18 +536,19 @@ fun! s:DebugMsgT(...)
                         let all[0][0] = all[0][0] . " >"
                     end
 
-                    call s:DebugMsgReal( all )
+                    call s:DebugMsgReal( a:is_error, all )
                 end
+            " Case 3: don't interfere with unrecognized content, just display
             else
-                call s:DebugMsgReal( a:000 )
+                call s:DebugMsgReal( a:is_error, a:000 )
             end
         end
     end
 endfun
 " 2}}}
 " FUNCTION: DebugMsgReal() {{{2
-fun! s:DebugMsgReal( ZERO )
-    if exists("g:zekyll_debug") && g:zekyll_debug == 1
+fun! s:DebugMsgReal( is_error, ZERO )
+    if exists("g:zekyll_debug") && ( (g:zekyll_debug == 1 && a:is_error > 0) || g:zekyll_debug > 1 )
         let argsize = len( a:ZERO )
         let a = 0
         while a < argsize
@@ -867,7 +870,7 @@ fun! s:ZcsdToZsd( zcsd )
     if len( a:zcsd ) == 4
         return [ a:zcsd[0], a:zcsd[2], a:zcsd[3] ]
     else
-        call s:DebugMsgT( "ZcsdToZsd given list of size: " . len( a:zcsd ) )
+        call s:DebugMsgT( 1, "ZcsdToZsd given list of size: " . len( a:zcsd ) )
         return []
     end
 endfun
@@ -1074,8 +1077,8 @@ fun! s:ReadRepo()
         let s:inconsistent_listing= s:inconsistent_listing[1:]
         let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -q -l")
         let s:listing = split(listing_text, '\n\+')
-        call s:DebugMsgT( "Inconsistent Listing: ", s:inconsistent_listing )
-        call s:DebugMsgT( "All Listing: ", s:listing )
+        call s:DebugMsgT( 1, "Inconsistent Listing: ", s:inconsistent_listing )
+        call s:DebugMsgT( 0, "All Listing: ", s:listing )
         let s:consistent = "NO"
     else
         let s:listing = split(listing_text, '\n\+')
@@ -1098,7 +1101,7 @@ fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
 
-    call s:DebugMsgT( "Command [" . v:shell_error . "]: " . cmd, arr )
+    call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr )
 
     return 1
 endfun
@@ -1126,7 +1129,7 @@ fun! s:RemoveLZSD(lzsd)
         let cmd_output = system( cmd )
         let arr = split( cmd_output, '\n\+' )
 
-        call s:DebugMsgT( "Command [" . v:shell_error . "]: " . cmd, arr )
+        call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr )
         let result = result + v:shell_error
 
         " Message
@@ -1161,7 +1164,7 @@ fun! s:Rename2LZSD(lzsd_lzsd)
         let cmd_output = system( cmd )
         let arr = split( cmd_output, '\n\+' )
 
-        call s:DebugMsgT( "Command [" . v:shell_error . "]: " . cmd, arr )
+        call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr )
         let result = result + v:shell_error
 
         " Message
@@ -1241,7 +1244,7 @@ fun! s:IndexChangeSize()
         call s:AppendMessageT( msg . " index {" . s:cur_index . "} from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls" )
     end
 
-    call s:DebugMsgT( "Command [" . v:shell_error . "]: " . cmd, arr, error_decode )
+    call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr, error_decode )
 endfun
 " 2}}}
 " ------------------------------------------------------------------------------
