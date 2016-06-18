@@ -248,11 +248,19 @@ else
         fi
     fi
 
+    integer ts
+    if type date 2>/dev/null 1>&2; then
+        ts="$( date +%s )"
+    else
+        zmodload zsh/datetime
+        ts="$EPOCHSECONDS"
+    fi
+
     local f
     for f in "${del_zekylls[@]}"; do
         qprint "mv ${ZKLCOL[info2]}$f${ZKLCOL[rst]} _$f"
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
-            command mv "$f" "_$f"
+            command mv "$f" "_${f}-$ts"
         fi
     done
 fi
