@@ -172,7 +172,9 @@ resolve_path() {
 
     [[ -n "$ZEKYLL_DEFAULT_REPO" && -z "$ZKL_PATH" ]] && { get_path_from_repo "$ZEKYLL_DEFAULT_REPO"; ZKL_PATH="$REPLY"; }
 
-    (( ask )) && { read_destination_path "$ZKL_PATH" || exit 1 }
+    (( ask )) && { read_destination_path "$ZKL_PATH" || return 1 }
+
+    return 0
 }
 
 #
