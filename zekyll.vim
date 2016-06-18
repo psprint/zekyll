@@ -553,7 +553,7 @@ fun! s:DebugMsgReal( ZERO )
         let argsize = len( a:ZERO )
         let a = 0
         while a < argsize
-            if type(a:ZERO[a]) == type("")
+            if type( a:ZERO[a] ) == type( "" ) && len( a:ZERO[a] ) > 0
                 call add( s:messages, a:ZERO[a] )
             end
 
