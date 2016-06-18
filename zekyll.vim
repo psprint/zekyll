@@ -173,7 +173,7 @@ fun! s:ParseListingIntoArrays()
         " zekylls entry
         let result = matchlist( line, '\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)\.[A-Z].*' )
         if len( result ) == 0
-            call s:DebugMsgT( "Skipped processing of line: " . line )
+            call s:DebugMsgT( "Skipped processing of improper line: " . line )
             let s:are_errors = "YES"
             continue
         end
@@ -182,7 +182,7 @@ fun! s:ParseListingIntoArrays()
         " sections entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.\([A-Z]\).*' )
         if len( result ) == 0
-            call s:DebugMsgT( "Skipped processing of line: " . line )
+            call s:DebugMsgT( "Skipped processing of improper line: " . line )
             let s:are_errors = "YES"
             continue
         end
@@ -191,7 +191,7 @@ fun! s:ParseListingIntoArrays()
         " descriptions entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.[A-Z]--\(.*\)' )
         if len( result ) == 0
-            call s:DebugMsgT( "Skipped processing of line: " . line )
+            call s:DebugMsgT( "Skipped processing of improper line: " . line )
             let s:are_errors = "YES"
             continue
         end
@@ -1080,7 +1080,6 @@ fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
     let cmd = "zkrewrite --noansi -w -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -z " . a:src_zekylls . " -Z " . a:dst_zekylls
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
-    let cmd_output = join( arr, "\n" )
 
     call s:DebugMsgT( "Command [" . v:shell_error . "]: " . cmd, arr )
 
@@ -1106,8 +1105,11 @@ fun! s:RemoveLZSD(lzsd)
     for entry in a:lzsd
         let entry[3] = substitute( entry[3], " ", "_", "g" )
         let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
-        let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv " . shellescape(file_name) . " _" . shellescape(file_name) . "-" . ts
-        call system( cmd )
+        let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv -f " . shellescape(file_name) . " _" . shellescape(file_name) . "-" . ts
+        let cmd_output = system( cmd )
+        let arr = split( cmd_output, '\n\+' )
+
+        call s:DebugMsgT( "Command [" . v:shell_error . "]: " . cmd, arr )
         let result = result + v:shell_error
 
         " Message
@@ -1175,7 +1177,6 @@ fun! s:IndexChangeSize()
                 \ " -q -w -n -s " . s:index_size_new . " --desc 'New Zekyll' --section A"
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
-    let cmd_output = join( arr, "\n" )
 
     let error_decode = ""
     if v:shell_error == 1
