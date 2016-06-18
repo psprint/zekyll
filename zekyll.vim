@@ -65,6 +65,7 @@ fun! s:StartZekyll()
     nmap <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
     nmap <silent> o :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
     imap <silent> <CR> <C-O>:call <SID>NoOp()<CR>
+    nnoremap <expr> <space> <SID>Space()?"":"\<space>"
 
     setlocal buftype=nofile
     setlocal ft=help
@@ -849,6 +850,23 @@ fun! s:encode_zcode_8_bit_pack_numbers(nums)
     return [ nums_base36, str ]
 endfun
 " 2}}}
+" FUNCTION: Space() {{{2
+fun! s:Space()
+    let linenr = line(".")
+    let line = getline( linenr )
+    let ZCSD = s:BufferLineToZCSD( line )
+    if ZCSD[1] != " "
+        let selector = 0
+    else
+        let selector = 1
+    end
+
+    let listing = s:ZSDToListing( s:ZcsdToZsd( ZCSD ) )
+    let line = s:BuildLineFromFullEntry( s:ZcsdToLzds( ZCSD, listing ), selector )
+
+    call setline( linenr, line )
+    return 1
+endfun
 " 1}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
