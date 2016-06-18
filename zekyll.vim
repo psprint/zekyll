@@ -34,6 +34,7 @@ let s:index_size_prev = -1
 
 let s:consistent = "yes"
 let s:are_errors = "no"
+let s:apply = "no"
 let s:do_reset = "no"
 
 let s:working_area_beg = 1
@@ -132,7 +133,7 @@ fun! s:Render( ... )
     call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 18 ) . " | " . "Errors: " . s:are_errors )
     call setline( s:line_index,      s:RPad( "Current index: " . s:cur_index, 18). " | " . "Index size: " . s:index_size )
     call setline( s:line_code,               "Code: .......  ~" )
-    call setline( s:line_apply,      s:RPad( "Apply: yes",      18 )             . " | " . "Reset: " . s:do_reset )
+    call setline( s:line_apply,      s:RPad( "Apply: <" . s:apply . ">",      18). " | " . "Reset: <" . s:do_reset . ">" )
     call setline( s:line_rule,       s:RPad( s:beg_of_warea_char, s:longest_lzsd, s:beg_of_warea_char ) )
     call cursor(s:last_line+1,1)
 
@@ -1030,28 +1031,53 @@ fun! s:Space()
     let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
     call s:RestoreView()
 
-    let linenr = line(".")
-    let entrynr = linenr - s:working_area_beg - 1
+    let linenr = line( "." )
     let line = getline( linenr )
-    let ZCSD = s:BufferLineToZCSD( line )
 
-    if len( ZCSD ) == 0
-        return 0
+    if linenr < s:working_area_beg
+        let result = matchlist( line, 'Apply:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?[[:blank:]]\+|[[:blank:]]\+Reset:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?' )
+        if len( result ) > 0
+            let pos = stridx( line, "|" ) + 1
+            let col = col( "." )
+            if col < pos
+                if result[1] ==? "yes"
+                    let s:apply = "no"
+                else
+                    let s:apply = "yes"
+                    let s:do_reset = "no"
+                end
+            else
+                if result[2] ==? "yes"
+                    let s:do_reset = "no"
+                else
+                    let s:do_reset = "yes"
+                    let s:apply = "no"
+                end
+            end
+        end
+    elseif linenr > s:working_area_beg
+        let entrynr = linenr - s:working_area_beg - 1
+        let ZCSD = s:BufferLineToZCSD( line )
+
+        if len( ZCSD ) == 0
+            return 0
+        end
+
+        if ZCSD[1] != " "
+            let selector = 0
+        else
+            let selector = 1
+        end
+
+        let listing = s:ZSDToListing( s:ZcsdToZsd( ZCSD ) )
+        let line = s:BuildLineFromFullEntry( s:ZcsdToLzds( ZCSD, listing ), selector )
+        let prev = s:code_selectors[entrynr]
+        let s:code_selectors[entrynr] = selector
+
+        let line = substitute( line, '\n$', "", "" )
+        call setline( linenr, line )
     end
 
-    if ZCSD[1] != " "
-        let selector = 0
-    else
-        let selector = 1
-    end
-
-    let listing = s:ZSDToListing( s:ZcsdToZsd( ZCSD ) )
-    let line = s:BuildLineFromFullEntry( s:ZcsdToLzds( ZCSD, listing ), selector )
-    let prev = s:code_selectors[entrynr]
-    let s:code_selectors[entrynr] = selector
-
-    let line = substitute( line, '\n$', "", "" )
-    call setline( linenr, line )
     call s:Render( 1 )
 
     return 1
