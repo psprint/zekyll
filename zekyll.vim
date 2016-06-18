@@ -548,7 +548,7 @@ endfun
 " The first line must be thus a string. It will be appended
 " to s:messages here, rest will be routed to s:AppendMessage()
 fun! s:AppendMessageT(...)
-    if exists("g:zekyll_messages") && g:zekyll_messages == 1
+    if exists("g:zekyll_messages") == 0 || g:zekyll_messages == 1
         if len( a:000 ) > 0
             if type(a:000[0]) == type("")
                 if exists("*strftime")
@@ -572,7 +572,7 @@ endfun
 " 2}}}
 " FUNCTION: AppendMessageReal() {{{2
 fun! s:AppendMessageReal( ZERO )
-    if exists("g:zekyll_messages") && g:zekyll_messages == 1
+    if exists("g:zekyll_messages") == 0 || g:zekyll_messages == 1
         let argsize = len( a:ZERO )
         let a = 0
         while a < argsize
