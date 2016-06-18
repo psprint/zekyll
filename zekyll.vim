@@ -436,13 +436,11 @@ fun! s:GatherSecDescChanges(new_lzsd)
 
             " Section changed?
             if s:lzsd[j][2] != a:new_lzsd[i][2]
-                echom "Something changed 1 " . s:lzsd[j][2] . " vs " . a:new_lzsd[i][2]
                 let changed = 1
             end
 
             " Description changed?
             if s:lzsd[j][3] != a:new_lzsd[i][3]
-                echom "Something changed 2 " . s:lzsd[j][3] . " vs " . a:new_lzsd[i][3]
                 let changed = 2
             end
 
@@ -1062,6 +1060,7 @@ endfun
 " FUNCTION: Rename2LZSD() {{{2
 fun! s:Rename2LZSD(lzsd_lzsd)
     let result = 0
+    let renarr = []
     for entry in a:lzsd_lzsd 
         let entry[0][3] = substitute( entry[0][3], " ", "_", "g" )
         let old_file_name = entry[0][1] . "." . entry[0][2] . "--" . entry[0][3]
@@ -1073,7 +1072,18 @@ fun! s:Rename2LZSD(lzsd_lzsd)
 
         call s:DebugMsg( "Command [" . v:shell_error . "]: " . cmd, arr )
         let result = result + v:shell_error
+
+        " Message
+        call add( renarr, "|exit:" . v:shell_error . "| {" . entry[0][1] . "." . entry[0][2] . "} " . entry[0][3] .
+                \ " -> {" . entry[1][1] . "." . entry[1][2] . "} " . entry[1][3] )
     endfor
+
+    if len( renarr ) == 1
+        call s:AppendMessageT( "*Renamed:* " . renarr[0] )
+    elseif len( renarr ) >= 2
+        call map( renarr, '"*>* " . v:val' )
+        call s:AppendMessageT( "*Renamed:* ", renarr )
+    end
 
     return result
 endfun
