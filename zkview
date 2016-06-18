@@ -90,20 +90,20 @@ else
     zekylls_string_vis="$ZKL_ZEKYLLS"
 fi
 
-print
+qprint
 zekylls_string="${zekylls_string_vis//_/}"
-pinfo2 "Read: $zekylls_string"
-print
+qinfo2 "Read: $zekylls_string"
+qprint
 
 local -a zekylls1
 zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-pinfo "Checking current zekyll for duplicates..."
+qinfo "Checking current zekyll for duplicates..."
 if ! detect_duplicates "${zekylls1[@]}"; then
-    perror "Duplicates found, restaring, but continuing to listing the zekylls"
+    qerror "Duplicates found, restaring, but continuing to listing the zekylls"
 fi
 
-print
+qprint
 
 #
 # Skip incomplete zekyll
@@ -119,13 +119,13 @@ fi
 
 filter_for_existing_zekylls "${zekylls1[@]}"
 
-[[ "${#reply}" -eq 0 ]] && print && exit 0
+[[ "${#reply}" -eq 0 ]] && qprint && exit 0
 
 three_to_section_order "${#reply}" "${reply[@]}" "${reply2[@]}" "${reply3[@]}"
 
 local file
 for file in "${reply2[@]}"; do
-    pinfo2 "-> $file"
+    qinfo2 "-> $file"
 done
 
 #
@@ -139,7 +139,7 @@ while (( 1 )); do
     local selection=""
     selection=$( "$REPO_DIR/zsh-select-zekyll" "${files[@]}" "END SELECTION" )
 
-    [[ "$selection" = "" || "$selection" = "END SELECTION" ]] && print && break
+    [[ "$selection" = "" || "$selection" = "END SELECTION" ]] && qprint && break
 
     "${EDITOR:-vim}" "$selection"
 done
