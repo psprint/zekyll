@@ -1048,10 +1048,10 @@ fun! s:RemoveLZSD(lzsd)
     endfor
 
     if len( delarr ) == 1
-        call s:AppendMessageT( "*Deleted:* " . delarr[0] )
+        call s:AppendMessageT( "Deleted: " . delarr[0] )
     elseif len( delarr ) >= 2
         call map( delarr, '"*>* " . v:val' )
-        call s:AppendMessageT( "*Deleted:* ", delarr )
+        call s:AppendMessageT( "Deleted: ", delarr )
     end
 
     return result
@@ -1079,10 +1079,10 @@ fun! s:Rename2LZSD(lzsd_lzsd)
     endfor
 
     if len( renarr ) == 1
-        call s:AppendMessageT( "*Renamed:* " . renarr[0] )
+        call s:AppendMessageT( "Renamed: " . renarr[0] )
     elseif len( renarr ) >= 2
         call map( renarr, '"*>* " . v:val' )
-        call s:AppendMessageT( "*Renamed:* ", renarr )
+        call s:AppendMessageT( "Renamed: ", renarr )
     end
 
     return result
@@ -1137,9 +1137,9 @@ fun! s:IndexChangeSize()
         call s:AppendMessage( "*>* |exit:" . v:shell_error . "|" . error_decode )
     else
         if s:index_size_new > s:index_size
-            let msg="*Extended*"
+            let msg="Extended"
         else
-            let msg="*Shrinked*"
+            let msg="Shrinked"
         end
         call s:AppendMessageT( msg . " index {" . s:cur_index . "} from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls" )
     end
