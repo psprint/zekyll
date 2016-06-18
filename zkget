@@ -44,9 +44,9 @@ noansi
 [ -z "$ZKL_VERBOSE" ] && ZKL_SILENT="0"
 
 if [ "$ZKL_HELP" = "1" ]; then
-    qinfo "Usage: zkl-get [options]"
-    qprint "Asks for zekylls and displays contents of associated files, in the same order as found in zekylls"
-    qprint
+    pinfo "Usage: zkl-get [options]"
+    print "Asks for zekylls and displays contents of associated files, in the same order as found in zekylls"
+    print
     help-opts
     help-path
     help-zkl
