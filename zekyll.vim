@@ -214,11 +214,7 @@ endfun
 fun! s:ProcessBuffer()
 
     call s:SaveView()
-
-    " Only this function processes buffer, and we
-    " should get the boundaries right before processing
     let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
-
     call s:RestoreView()
 
     "
@@ -1020,9 +1016,12 @@ endfun
 " 2}}}
 " FUNCTION: Space() {{{2
 fun! s:Space()
+    call s:SaveView()
+    let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
+    call s:RestoreView()
+
     let linenr = line(".")
-    " TODO: robust detection
-    let entrynr = linenr - s:last_line - 1
+    let entrynr = linenr - s:working_area_beg - 1
     let line = getline( linenr )
     let ZCSD = s:BufferLineToZCSD( line )
 
