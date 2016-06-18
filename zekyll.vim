@@ -551,7 +551,11 @@ fun! s:AppendMessageT(...)
     if exists("g:zekyll_messages") && g:zekyll_messages == 1
         if len( a:000 ) > 0
             if type(a:000[0]) == type("")
-                let T = "*".strftime("%H:%M")."* "
+                if exists("*strftime")
+                    let T = "*".strftime("%H:%M")."* "
+                else
+                    let T = ""
+                end
                 call add( s:messages, T . a:000[0] )
                 let remaining = copy(a:000)
                 let remaining = remaining[1:] 
