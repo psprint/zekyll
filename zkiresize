@@ -27,8 +27,9 @@ ZKL_SECTION=""
 ZKL_CONSISTENT=""
 ZKL_LIST=""
 ZKL_REPO=""
-zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: s: -size: v -verbose w -write n \
-                 -noansi -section: -desc: -consistent l -list r: -repo: || exit 1
+zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: \
+            s: -size: v -verbose w -write n -noansi -section: -desc: -consistent \
+            l -list r: -repo: || exit 1
 
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
