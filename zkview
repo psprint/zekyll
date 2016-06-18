@@ -60,10 +60,13 @@ if [ -n "$ZKL_REPO" ]; then
         ZKL_PATH="$REPLY"
     else
         qerror "Provided repository doesn't exist (path: $REPLY)"
-        # Next try with path if user gave it
-        if [ -n "$bkp_zkl_path" ]; then
+        # Next try with path if user gave it, or when user gave
+        # -d and ZEKYLL_DEFAULT_REPO is not empty
+        if [[ -n "$bkp_zkl_path" ]]; then
             ZKL_PATH="$bkp_zkl_path"
             qerror "Trying with provided path: $ZKL_PATH"
+        elif [[ "$ZKL_DEFAULT" = "1" && -n "$ZEKYLL_DEFAULT_REPO" ]]; then
+            qerror "Trying with ZEKYLL_DEFAULT_REPO: $ZEKYLL_DEFAULT_REPO"
         else
             exit 27
         fi
