@@ -174,7 +174,7 @@ fun! s:ParseListingIntoArrays()
         let result = matchlist( line, '\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)\.[A-Z].*' )
         if len( result ) == 0
             call s:DebugMsg( "Skipped processing of line: " . line )
-            let s:are_errors = "yes"
+            let s:are_errors = "YES"
             continue
         end
         let zekylls_entry = result[1]
@@ -183,7 +183,7 @@ fun! s:ParseListingIntoArrays()
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.\([A-Z]\).*' )
         if len( result ) == 0
             call s:DebugMsg( "Skipped processing of line: " . line )
-            let s:are_errors = "yes"
+            let s:are_errors = "YES"
             continue
         end
         let sections_entry = result[1]
@@ -192,7 +192,7 @@ fun! s:ParseListingIntoArrays()
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.[A-Z]--\(.*\)' )
         if len( result ) == 0
             call s:DebugMsg( "Skipped processing of line: " . line )
-            let s:are_errors = "yes"
+            let s:are_errors = "YES"
             continue
         end
         let descriptions_entry = result[1]
@@ -340,6 +340,7 @@ fun! s:BufferToLZSD()
         else
             call s:AppendMessageT( "*Problem* occured in line {#" . i . "}. The problematic line is: >" )
             call s:AppendMessage( " " . line )
+            let s:are_errors = "YES"
         end
 
         let i = i + 1
@@ -1004,7 +1005,7 @@ fun! s:ReadRepo()
         let s:listing = split(listing_text, '\n\+')
         call s:DebugMsg( "Inconsistent Listing: ", s:inconsistent_listing )
         call s:DebugMsg( "All Listing: ", s:listing )
-        let s:consistent = "no"
+        let s:consistent = "NO"
     else
         let s:listing = split(listing_text, '\n\+')
         let s:listing= s:listing[1:]
@@ -1047,6 +1048,11 @@ fun! s:RemoveLZSD(lzsd)
         call add( delarr, "|exit:" . v:shell_error . "| {" . entry[1] . "." . entry[2] . "} " . entry[3] )
     endfor
 
+    if result > 0
+        let s:are_errors = "YES"
+    end
+
+    " Message
     if len( delarr ) == 1
         call s:AppendMessageT( "Deleted: " . delarr[0] )
     elseif len( delarr ) >= 2
@@ -1078,6 +1084,11 @@ fun! s:Rename2LZSD(lzsd_lzsd)
                 \ " -> {" . entry[1][1] . "." . entry[1][2] . "} " . entry[1][3] )
     endfor
 
+    if result > 0
+        let s:are_errors = "YES"
+    end
+
+    " Message
     if len( renarr ) == 1
         call s:AppendMessageT( "Renamed: " . renarr[0] )
     elseif len( renarr ) >= 2
@@ -1128,6 +1139,8 @@ fun! s:IndexChangeSize()
     end
 
     if v:shell_error != 0
+        let s:are_errors = "YES"
+
         if s:index_size_new > s:index_size
             let msg="extension"
         else
