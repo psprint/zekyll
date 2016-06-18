@@ -79,9 +79,16 @@ fun! s:StartZekyll()
     "nmap <silent> gf :set lz<CR>:silent! call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <silent> gf :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
-    nmap <silent> o :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
-    imap <silent> <CR> <C-O>:call <SID>NoOp()<CR>
     nnoremap <space> :call <SID>Space()<CR>
+
+    nmap <silent> o <Nop>
+    nmap <silent> p <Nop>
+    nmap <silent> P <Nop>
+
+    vmap <silent> p <Nop>
+    vmap <silent> P <Nop>
+
+    imap <silent> <CR> <Nop>
 
     setlocal buftype=nofile
     setlocal ft=help
