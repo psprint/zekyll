@@ -275,6 +275,7 @@ endfun
 " 2}}}
 " FUNCTION: NoOp() {{{2
 fun! s:NoOp()
+    return 0
 endfun
 " 2}}}
 " 1}}}
