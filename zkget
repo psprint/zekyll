@@ -44,9 +44,9 @@ noansi
 [ -z "$ZKL_VERBOSE" ] && ZKL_SILENT="0"
 
 if [ "$ZKL_HELP" = "1" ]; then
-    pinfo "Usage: zkl-get [options]"
-    print "Asks for zekylls and displays contents of associated files, in the same order as found in zekylls"
-    print
+    qinfo "Usage: zkl-get [options]"
+    qprint "Asks for zekylls and displays contents of associated files, in the same order as found in zekylls"
+    qprint
     help-opts
     help-path
     help-zkl
@@ -134,24 +134,24 @@ fi
 zekylls_string="${zekylls_string_vis//_/}"
 
 if [ "$ZKL_SILENT" = "0" ]; then
-    print
-    pinfo2 "Read: $zekylls_string"
-    print
+    qprint
+    qinfo2 "Read: $zekylls_string"
+    qprint
 fi
 
 local -a zekylls1
 zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
 if [ "$ZKL_SILENT" = "0" ]; then
-    pinfo "Checking current zekyll for duplicates..."
+    qinfo "Checking current zekyll for duplicates..."
 fi
 
 if ! detect_duplicates "${zekylls1[@]}"; then
-    perror "Duplicates found. Continuing to displaying the zekylls"
+    qerror "Duplicates found. Continuing to displaying the zekylls"
 fi
 
 if [ "$ZKL_SILENT" = "0" ]; then
-    print
+    qprint
 fi
 
 #
@@ -172,7 +172,7 @@ local zekyll
 for zekyll in "${zekylls1[@]}"; do
     zekyll_file=( ${zekyll}.[A-Z]--*(N.) )
     if [[ "$#zekyll_file" -eq 0 ]]; then
-        perror "No such zekyll $zekyll"
+        qerror "No such zekyll $zekyll"
     else
         existing+=( "$zekyll" )
     fi
@@ -181,7 +181,7 @@ done
 for zekyll in "${existing[@]}"; do
     zekyll_file=( ${zekyll}.[A-Z]--*(N.) )
     if [[ "$#zekyll_file" -eq 0 ]]; then
-        perror "No such zekyll $zekyll"
+        qerror "No such zekyll $zekyll"
     else
         cat "${zekyll_file[1]}"
     fi
