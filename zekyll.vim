@@ -1068,6 +1068,34 @@ fun! s:RestoreView()
     let &scrolloff = savedScrolloff
 endfun
 " 2}}}
+" FUNCTION: GetUniqueNumber() {{{2
+fun! s:GetUniqueNumber()
+    " Establish the time stamp seed used to protect file name collisions
+    " The seed is used only for removed file names
+    if exists("*strftime")
+        let ts = strftime("%s")
+    else
+        let ts = system( 'date +%s' )
+        let ts_arr = split( ts, '\n\+' )
+        let ts = ""
+        if len( ts_arr ) > 0
+            let ts = ts_arr[0]
+        end
+
+        let res = matchlist( ts, '^\([0-9]\+\)' )
+        if len( res ) == 0
+            let ts = system( 'echo $RANDOM' )
+            let ts_arr = split( ts, '\n\+' )
+            let ts = ""
+            if len( ts_arr ) > 0
+                let ts = ts_arr[0]
+            end
+        end
+    end
+
+    return ts
+endfun
+" 2}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
 fun! s:ReadRepo()
@@ -1108,24 +1136,14 @@ endfun
 " 2}}}
 " FUNCTION: RemoveLZSD() {{{2
 fun! s:RemoveLZSD(lzsd)
-    " Establish the time stamp seed used to protect file name collisions
-    " The seed is used only for removed file names
-    if exists("*strftime") == 0
-        let ts = strftime("%s")
-    else
-        let ts = system( 'date +%s' )
-        let res = matchlist( ts, '^\([0-9]\+\)' )
-        if len( res ) == 0
-            let ts = system( 'echo $RANDOM' )
-        end
-    end
+    let ts = s:GetUniqueNumber()
 
     let result = 0
     let delarr = []
     for entry in a:lzsd
         let entry[3] = substitute( entry[3], " ", "_", "g" )
         let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
-        let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv -f " . shellescape(file_name) . " _" . shellescape(file_name) . "-" . ts
+        let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv -f " . shellescape(file_name) . " _" . shellescape(file_name) . "-" . shellescape(ts)
         let cmd_output = system( cmd )
         let arr = split( cmd_output, '\n\+' )
 
