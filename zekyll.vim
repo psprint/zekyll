@@ -1127,8 +1127,21 @@ fun! s:IndexChangeSize()
         let error_decode = "[inconsistent-l]"
     end
 
-    if error_decode != ""
-        echom "Error occured: " . error_decode
+    if v:shell_error != 0
+        if s:index_size_new > s:index_size
+            let msg="extension"
+        else
+            let msg="shrink"
+        end
+        call s:AppendMessageT( "*Error* during index {" . s:cur_index . "} " . msg . " (from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls):" )
+        call s:AppendMessage( "*>* |exit:" . v:shell_error . "|" . error_decode )
+    else
+        if s:index_size_new > s:index_size
+            let msg="*Extended*"
+        else
+            let msg="*Shrinked*"
+        end
+        call s:AppendMessageT( msg . " index {" . s:cur_index . "} from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls" )
     end
 
     call s:DebugMsg( "Command [" . v:shell_error . "]: " . cmd, arr, error_decode )
