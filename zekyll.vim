@@ -74,7 +74,11 @@ endfun
 
 " UI management functions {{{1
 " FUNCTION: Render() {{{2
-fun! s:Render()
+fun! s:Render( ... )
+    let light = 0
+    if a:0 == 1
+        let light = a:1
+    end
     " save the view
     let savedLine = line(".")
     let savedCol = col(".")
@@ -83,14 +87,17 @@ fun! s:Render()
     " Remember to have information whether index size has changed
     let s:index_size_prev = s:index_size
 
-    call s:ResetState()
+    call s:ResetState( light )
+
     %d_
 
-    call s:SetIndex(s:cur_index)
-    call s:ReadRepo()
-    let s:index_size = len(s:listing)
-    call s:ParseListingIntoArrays()
-    let s:longest_lzsd = s:LongestLZSD( s:lzsd )
+    if light == 0
+        call s:SetIndex(s:cur_index)
+        call s:ReadRepo()
+        let s:index_size = len(s:listing)
+        call s:ParseListingIntoArrays()
+        let s:longest_lzsd = s:LongestLZSD( s:lzsd )
+    end
 
     call setline( s:line_welcome-1, ">" )
     call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
@@ -259,15 +266,22 @@ fun! s:ProcessBuffer()
 endfun
 " 2}}}
 " FUNCTION: ResetState() {{{2
-fun! s:ResetState()
-    let s:lzsd = []
-    let s:listing = []
-    let s:inconsistent_listing = []
-    let s:index_size = -1
-    let s:index_size_new = -1
-    let s:consistent = "yes"
-    let s:are_errors = "no"
-    let s:do_reset = "no"
+fun! s:ResetState( ... )
+    let light = 0
+    if a:0 == 1
+        let light = a:1
+    end
+
+    if light == 0
+        let s:lzsd = []
+        let s:listing = []
+        let s:inconsistent_listing = []
+        let s:index_size = -1
+        let s:index_size_new = -1
+        let s:consistent = "yes"
+        let s:are_errors = "no"
+        let s:do_reset = "no"
+    end
 endfun
 " 2}}}
 " FUNCTION: NoOp() {{{2
@@ -853,6 +867,8 @@ endfun
 " FUNCTION: Space() {{{2
 fun! s:Space()
     let linenr = line(".")
+    " TODO: robust detection
+    let entrynr = linenr - s:last_line - 1
     let line = getline( linenr )
     let ZCSD = s:BufferLineToZCSD( line )
 
@@ -868,9 +884,13 @@ fun! s:Space()
 
     let listing = s:ZSDToListing( s:ZcsdToZsd( ZCSD ) )
     let line = s:BuildLineFromFullEntry( s:ZcsdToLzds( ZCSD, listing ), selector )
+    let prev = s:code_selectors[entrynr]
+    let s:code_selectors[entrynr] = selector
 
     let line = substitute( line, '\n$', "", "" )
     call setline( linenr, line )
+    call s:Render( 1 )
+
     return 1
 endfun
 " 1}}}
