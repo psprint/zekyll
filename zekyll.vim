@@ -21,25 +21,37 @@ map <silent> <unique> <script> <Plug>StartZekyll :set lz<CR>:call <SID>StartZeky
 let s:cur_repo = "psprint/zkl"
 let s:cur_repo_path = $HOME."/.zekyll/repos/psprint---zkl"
 let s:repos_paths = [ $HOME."/.zekyll/repos" ]
+
+let s:lzsd = []
 let s:listing = []
 let s:inconsistent_listing = []
+
 let s:cur_index = 1
 let s:prev_index = -1
 let s:index_size = -1
 let s:index_size_new = -1
 let s:index_size_prev = -1
-let s:longest_lzsd = 0
+
 let s:consistent = "yes"
 let s:are_errors = "no"
 let s:do_reset = "no"
+
+let s:working_area_beg = 1
+let s:working_area_end = 1
+
+let s:longest_lzsd = 0
+
+let s:code_selectors = []
 let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
                  \   "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
 
-let s:code_selectors = []
 
 let s:after_zekyll_spaces = "    "
 let s:after_section_spaces = "    "
 let s:after_switch_spaces = "    "
+
+let s:beg_of_warea_char = '-'
+let s:end_of_warea_char = '-'
 
 let s:line_welcome = 2
 let s:line_consistent   = 4
@@ -53,7 +65,7 @@ let s:line_git_reset    = 7
 let s:line_rule         = 8
 let s:last_line = s:line_rule
 
-let s:lzsd = []
+let s:messages = [ "<Messages>" ]
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -112,7 +124,7 @@ fun! s:Render( ... )
     call setline( s:line_index,      s:RPad( "Current index: " . s:cur_index, 18). " | " . "Index size: " . s:index_size )
     call setline( s:line_code,               "Code: .......  ~" )
     call setline( s:line_apply,      s:RPad( "Apply: yes",      18 )             . " | " . "Reset: " . s:do_reset )
-    call setline( s:line_rule,       s:RPad("-", s:longest_lzsd, "-") )
+    call setline( s:line_rule,       s:RPad( s:beg_of_warea_char, s:longest_lzsd, s:beg_of_warea_char ) )
     call cursor(s:last_line+1,1)
 
     let text = ""
@@ -129,6 +141,8 @@ fun! s:Render( ... )
 
     let @l = text
     silent put l
+
+    call s:OutputMessages(1)
 
     " restore the view
     let savedScrolloff=&scrolloff
@@ -202,6 +216,11 @@ endfun
 " 2}}}
 " FUNCTION: ProcessBuffer() {{{2
 fun! s:ProcessBuffer()
+
+    " Only this function processes buffer, and we
+    " should get the boundaries right before processing
+    let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
+
     "
     " Read new index?
     "
@@ -215,6 +234,9 @@ fun! s:ProcessBuffer()
             call s:Render()
             return
         end
+    else
+        call s:AppendMessageT( "*Error:* control lines have been modified, cannot use document (1)" )
+        return
     end
 
     "
@@ -231,7 +253,7 @@ fun! s:ProcessBuffer()
             return
         end
     else
-        echom "Improper document, control lines have been modified"
+        call s:AppendMessageT( "*Error:* control lines have been modified, cannot use document (2)" )
         return
     end
 
@@ -298,12 +320,11 @@ fun! s:BufferToLZSD()
     " Convert buffer into lzsd
     "
 
-    let last_line = line( "$" )
-    let i = s:last_line + 1
+    let last_line = s:working_area_end - 1
+    let i = s:working_area_beg + 1
     let new_lzsd = []
     while i <= last_line
         let line = getline(i)
-        let i = i + 1
 
         let result = s:BufferLineToZSD( line )
         if len( result ) > 0
@@ -314,7 +335,12 @@ fun! s:BufferToLZSD()
 
             let new_entry = [ file_name, zekyll, section, description ]
             call add( new_lzsd, new_entry )
+        else
+            call s:AppendMessageT( "*Problem* occured in line {#" . i . "}. The problematic line is: >" )
+            call s:AppendMessage( " " . line )
         end
+
+        let i = i + 1
     endwhile
 
     return new_lzsd
@@ -379,15 +405,19 @@ fun! s:GatherDeletedEntries(new_lzsd)
     endwhile
 
     " Message
-    if 1
-        let size = len( deleted )
-        let i = 0
-        let delstr = ""
-        while i < size
-            let delstr = delstr . deleted[i][1]
-            let i = i + 1
-        endwhile
-        echom "Deleted: " . delstr
+    let size = len( deleted )
+    let i = 0
+    let delarr = []
+    while i < size
+        call add( delarr, "{" . deleted[i][1] . "." . deleted[i][2] . "} " . deleted[i][3] )
+        let i = i + 1
+    endwhile
+
+    if len( delarr ) == 1
+        call s:AppendMessageT( "*Deleted:* " . delarr[0] )
+    elseif len( delarr ) >= 2
+        call map( delarr, '"*>* " . v:val' )
+        call s:AppendMessageT( "*Deleted:* ", delarr )
     end
 
     return deleted
@@ -506,6 +536,75 @@ fun! s:DebugMsg(...)
     end
 endfun
 " 2}}}
+" FUNCTION: OutputMessages() {{{2
+fun! s:OutputMessages( delta )
+    if exists("g:zekyll_messages") && g:zekyll_messages == 1
+        let last_line = line( "$" )
+
+        let a = 1
+        while a <= a:delta
+            let last_line = last_line + 1
+            call setline( last_line, "" )
+            let a = a + 1
+        endwhile
+
+        let msgsize = len( s:messages )
+        let a = 0
+        while a < msgsize
+            let last_line = last_line + 1
+            call setline( last_line, s:messages[a] )
+            let a = a + 1
+        endwhile
+    end
+endfun
+" 2}}}
+" FUNCTION: AppendMessageT() {{{2
+" Prepends current time in format *HH:MM* to first line
+" The first line must be thus a string. It will be appended
+" to s:messages here, rest will be routed to s:AppendMessage()
+fun! s:AppendMessageT(...)
+    if exists("g:zekyll_messages") && g:zekyll_messages == 1
+        if len( a:000 ) > 0
+            if type(a:000[0]) == type("")
+                let T = "*".strftime("%H:%M")."* "
+                call add( s:messages, T . a:000[0] )
+                let remaining = copy(a:000)
+                let remaining = remaining[1:] 
+                call s:AppendMessageReal( remaining )
+            end
+        end
+    end
+endfun
+" 2}}}
+" FUNCTION: AppendMessage() {{{2
+fun! s:AppendMessage(...)
+    call s:AppendMessageReal( a:000 )
+endfun
+" 2}}}
+" FUNCTION: AppendMessageReal() {{{2
+fun! s:AppendMessageReal( ZERO )
+    if exists("g:zekyll_messages") && g:zekyll_messages == 1
+        let argsize = len( a:ZERO )
+        let a = 0
+        while a < argsize
+            if type(a:ZERO[a]) == type("")
+                call add( s:messages, a:ZERO[a] )
+            end
+
+            if type(a:ZERO[a]) == type([])
+                let size = len( a:ZERO[a] )
+                let i = 0
+                while i < size
+                    call add( s:messages, a:ZERO[a][i] )
+                    let i = i + 1
+                endwhile
+            end
+
+            let a = a + 1
+        endwhile
+    end
+endfun
+" 2}}}
 " FUNCTION: SetIndex() {{{2
 "
 " Sets s:index_zekylls array which contains all
@@ -548,6 +647,22 @@ endfun
 " 2}}}
 "1}}}
 " Utility functions {{{1
+" FUNCTION: DiscoverWorkArea() {{{2
+" This function is needed to not rely on remembered numbers of lines
+" denoting where working area starts. This is needed because e.g. an
+" user might, just to check program's robustness, enter some new line
+" to see what happens.
+" Cursor position is saved, we can move it
+fun! s:DiscoverWorkArea()
+    let rule_beg = s:RPad( s:beg_of_warea_char, s:longest_lzsd - 10, s:beg_of_warea_char )
+    let rule_end = s:RPad( s:end_of_warea_char, s:longest_lzsd - 10, s:end_of_warea_char )
+    normal! G$
+    let [lnum_beg, col_beg] = searchpos(rule_beg, 'w')
+    let [lnum_end, col_end] = searchpos(rule_end, 'W')
+
+    return [ lnum_beg, lnum_end ]
+endfun
+" 2}}}
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
     let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '\[.\]' .
