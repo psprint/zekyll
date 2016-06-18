@@ -406,9 +406,12 @@ get_zekylls_for_code() {
     local zekylls
     integer i size="${#reply}"
 
-    for (( i=1; i<=size; i++ )); do
+    # Last zekyll from $reply is first zekyll
+    # in ZKL_INDEX_ZEKYLLS, thus the size-i+1
+    # Less significant bit is first zekyll
+    for (( i=size; i>=1; i-- )); do
         if [ "${reply[i]}" = "1" ]; then
-            zekylls+="${ZKL_INDEX_ZEKYLLS[i]}"
+            zekylls+="${ZKL_INDEX_ZEKYLLS[size-i+1]}"
         fi
     done
 
