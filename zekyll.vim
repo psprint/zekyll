@@ -1039,12 +1039,24 @@ endfun
 " 2}}}
 " FUNCTION: RemoveLZSD() {{{2
 fun! s:RemoveLZSD(lzsd)
+    " Establish the time stamp seed used to protect file name collisions
+    " The seed is used only for removed file names
+    if exists("*strftime") == 0
+        let ts = strftime("%s")
+    else
+        let ts = system( 'date +%s' )
+        let res = matchlist( ts, '^\([0-9]\+\)' )
+        if len( res ) == 0
+            let ts = system( 'echo $RANDOM' )
+        end
+    end
+
     let result = 0
     let delarr = []
     for entry in a:lzsd
         let entry[3] = substitute( entry[3], " ", "_", "g" )
         let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
-        let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv " . shellescape(file_name) . " _" . shellescape(file_name)
+        let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv " . shellescape(file_name) . " _" . shellescape(file_name) . "-" . ts
         call system( cmd )
         let result = result + v:shell_error
 
