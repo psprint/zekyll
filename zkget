@@ -22,8 +22,9 @@ ZKL_NOANSI="0"
 ZKL_CODE=""
 ZKL_REPO=""
 ZKL_QUIET="0"
+ZKL_VERBOSE="-s"
 zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default n -noansi \
-           r: -repo: q -quiet || exit 60
+           r: -repo: q -quiet v -verbose || exit 60
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
@@ -35,10 +36,12 @@ zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default n -noansi \
 (( ${+opthash[-r]} )) && ZKL_REPO="${opthash[-r]}"
 (( ${+opthash[--repo]} )) && ZKL_REPO="${opthash[--repo]}"
 (( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
+(( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
 
 noansi
 
 [ -n "$ZKL_ZEKYLLS" ] && ZKL_SILENT="1"
+[ -z "$ZKL_VERBOSE" ] && ZKL_SILENT="0"
 
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-get [options]"
@@ -96,7 +99,7 @@ if [ "$ZKL_SILENT" = "1" ]; then
     cd_will_work_on "$REPLY" -s || exit 62
 else
     # Not silent
-    cd_will_work_on "$REPLY" || exit 63
+    cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 63
 fi
 
 #
