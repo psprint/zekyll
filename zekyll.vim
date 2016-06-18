@@ -132,60 +132,6 @@ fun! s:Render()
 endfun
 " 2}}}
 " 1}}}
-" Functionality functions {{{1
-" FUNCTION: InterfaceHeader() {{{2
-fun! s:InterfaceHeader()
-endfun
-" 2}}}
-" FUNCTION: ReadRepos() {{{2
-fun! s:ReadRepos()
-endfun
-" 2}}}
-" FUNCTION: OpenRepo() {{{2
-fun! s:OpenRepo()
-endfun
-" 2}}}
-" FUNCTION: OpenZekyll() {{{2
-fun! s:OpenZekyll()
-endfun
-" 2}}}
-" FUNCTION: ChangeDescriptionOfZekyll() {{{2
-fun! s:ChangeDescriptionOfZekyll()
-endfun
-" 2}}}
-" FUNCTION: ExchangeZekylls() {{{2
-fun! s:ExchangeZekylls()
-endfun
-" 2}}}
-" FUNCTION: AddZekyll() {{{2
-fun! s:AddZekyll()
-endfun
-" 2}}}
-" FUNCTION: DeleteZekyll() {{{2
-fun! s:DeleteZekyll()
-endfun
-" 2}}}
-" FUNCTION: ChangeZekyllsSection() {{{2
-fun! s:ChangeZekyllsSection()
-endfun
-" 2}}}
-" FUNCTION: SectionSortOrder() {{{2
-fun! s:SectionSortOrder()
-endfun
-" 2}}}
-" FUNCTION: ZekyllSortOrder() {{{2
-fun! s:ZekyllSortOrder()
-endfun
-" 2}}}
-" FUNCTION: CreateTag() {{{2
-fun! s:CreateTag()
-endfun
-" 2}}}
-" FUNCTION: CommitChanges() {{{2
-fun! s:CommitChanges()
-endfun
-" 2}}}
-" }}}
 " Low level functions {{{1
 " FUNCTION: ParseListingIntoArrays() {{{2
 fun! s:ParseListingIntoArrays()
