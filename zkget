@@ -20,7 +20,10 @@ ZKL_SILENT="0"
 ZKL_DEFAULT="0"
 ZKL_NOANSI="0"
 ZKL_CODE=""
-zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default n -noansi || exit 60
+ZKL_REPO=""
+ZKL_QUIET="0"
+zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default n -noansi \
+           r: -repo: q -quiet || exit 60
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
@@ -29,6 +32,9 @@ zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default n -noansi || e
 (( ${+opthash[--zkl]} )) && ZKL_ZEKYLLS="${opthash[--zkl]}"
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 (( ${+opthash[-n]} + ${+opthash[--noansi]} )) && ZKL_NOANSI="1"
+(( ${+opthash[-r]} )) && ZKL_REPO="${opthash[-r]}"
+(( ${+opthash[--repo]} )) && ZKL_REPO="${opthash[--repo]}"
+(( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
 
 noansi
 
@@ -60,7 +66,24 @@ fi
 
 #
 # Read destination path
+# Much of pure control code
 #
+
+if [ -n "$ZKL_REPO" ]; then
+    local bkp_zkl_path="$ZKL_PATH"
+    if resolve_repo; then
+        ZKL_PATH="$REPLY"
+    else
+        qerror "Provided repository doesn't exist (path: $REPLY)"
+        # Next try with path if user gave it
+        if [ -n "$bkp_zkl_path" ]; then
+            ZKL_PATH="$bkp_zkl_path"
+            qerror "Trying with provided path: $ZKL_PATH"
+        else
+            exit 27
+        fi
+    fi
+fi
 
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
