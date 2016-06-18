@@ -23,7 +23,9 @@ ZKL_QUIET="0"
 ZKL_NOANSI="0"
 ZKL_DESCRIPTION="[]"
 ZKL_SECTION=""
-zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl: v -verbose n -noansi q -quiet -desc: -section: || exit 21
+ZKL_REPO=""
+zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl: v -verbose \
+                    n -noansi q -quiet -desc: -section: r: -repo: || exit 21
 
 # No dry run
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
@@ -39,6 +41,8 @@ zparseopts -E -D -A opthash w -write g -git h -help p: -path: d -default z: -zkl
 (( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
 (( ${+opthash[--desc]} )) && ZKL_DESCRIPTION="${opthash[--desc]}"
 (( ${+opthash[--section]} )) && ZKL_SECTION="${opthash[--section]}"
+(( ${+opthash[-r]} )) && ZKL_REPO="${opthash[-r]}"
+(( ${+opthash[--repo]} )) && ZKL_REPO="${opthash[--repo]}"
 
 noansi
 
@@ -78,7 +82,24 @@ fi
 
 #
 # Read destination path
+# Much of pure control code
 #
+
+if [ -n "$ZKL_REPO" ]; then
+    local bkp_zkl_path="$ZKL_PATH"
+    if resolve_repo; then
+        ZKL_PATH="$REPLY"
+    else
+        qerror "Provided repository doesn't exist (path: $REPLY)"
+        # Next try with path if user gave it
+        if [ -n "$bkp_zkl_path" ]; then
+            ZKL_PATH="$bkp_zkl_path"
+            qerror "Trying with provided path: $ZKL_PATH"
+        else
+            exit 27
+        fi
+    fi
+fi
 
 REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
