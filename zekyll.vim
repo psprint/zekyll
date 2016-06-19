@@ -81,36 +81,9 @@ let s:pattern_zcsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
 fun! s:StartZekyll()
-    " content here
+    tabnew 
 
-    "nmap <buffer> <silent> gf :set lz<CR>:silent! call <SID>GoToFile()<CR>:set nolz<CR>
-    nmap <buffer> <silent> gf :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
-    nmap <buffer> <silent> <C-]> :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
-    nmap <buffer> <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
-    nnoremap <buffer> <space> :call <SID>Space()<CR>
-
-    nmap <buffer> <silent> o <Nop>
-    nmap <buffer> <silent> p <Nop>
-    nmap <buffer> <silent> P <Nop>
-    nmap <buffer> <silent> D <Nop>
-    nmap <buffer> <silent> v <Nop>
-
-    vmap <buffer> <silent> p <Nop>
-    vmap <buffer> <silent> P <Nop>
-    vmap <buffer> <silent> D <Nop>
-
-    imap <buffer> <silent> <CR> <Nop>
-
-    setlocal buftype=nofile
-    setlocal ft=help
-
-    for i in range( char2nr('a'), char2nr('z') )
-        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
-    endfor
-    for i in range( char2nr('A'), char2nr('Z') )
-        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
-    endfor
-    exec 'inoremap <buffer> <expr> ' . nr2char(8211) . ' <SID>IsEditAllowed() ? "' . nr2char(8211) . '" : ""'
+    call s:DoMappings()
 
     call s:DeepRender()
 endfun
@@ -809,6 +782,39 @@ endfun
 " FUNCTION: IsEditAllowed() {{{2
 fun! s:IsEditAllowed()
     return col(".") >= 18
+endfun
+" 2}}}
+" FUNCTION: DoMappings() {{{2
+fun! s:DoMappings()
+    "nmap <buffer> <silent> gf :set lz<CR>:silent! call <SID>GoToFile()<CR>:set nolz<CR>
+    nmap <buffer> <silent> gf :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
+    nmap <buffer> <silent> <C-]> :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
+    nmap <buffer> <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
+    nnoremap <buffer> <space> :call <SID>Space()<CR>
+
+    nmap <buffer> <silent> o <Nop>
+    nmap <buffer> <silent> p <Nop>
+    nmap <buffer> <silent> P <Nop>
+    nmap <buffer> <silent> D <Nop>
+    nmap <buffer> <silent> v <Nop>
+
+    vmap <buffer> <silent> p <Nop>
+    vmap <buffer> <silent> P <Nop>
+    vmap <buffer> <silent> D <Nop>
+
+    imap <buffer> <silent> <CR> <Nop>
+
+    setlocal buftype=nofile
+    setlocal ft=help
+    setlocal wrap
+
+    for i in range( char2nr('a'), char2nr('z') )
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+    for i in range( char2nr('A'), char2nr('Z') )
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+    exec 'inoremap <buffer> <expr> ' . nr2char(8211) . ' <SID>IsEditAllowed() ? "' . nr2char(8211) . '" : ""'
 endfun
 " 2}}}
 "1}}}
