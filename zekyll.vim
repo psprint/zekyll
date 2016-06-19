@@ -66,7 +66,7 @@ let s:line_git_reset    = 7
 let s:line_rule         = 8
 let s:last_line = s:line_rule
 
-let s:messages = [ "<Messages>" ]
+let s:messages = [ ]
 
 let s:savedLine = 1
 let s:savedCol = 1
@@ -555,6 +555,8 @@ fun! s:DebugMsgT( is_error, ... )
     " zekyll_debug > 1 - log level 2, will be displayed also for is_error == false
     if exists("g:zekyll_debug") && ( (g:zekyll_debug == 1 && a:is_error > 0) || g:zekyll_debug > 1 )
         if len( a:000 ) > 0
+            " Message pack
+            let pack = []
 
             if exists("*strftime")
                 let T = "*".strftime("%H:%M")."* "
@@ -574,10 +576,11 @@ fun! s:DebugMsgT( is_error, ... )
                     call map( remaining[0], '" " . v:val' )
                 end
 
-                call add( s:messages, T . a:000[0] . B )
+                " One place here where pack is addressed directly
+                call add( pack, T . a:000[0] . B )
 
                 if len( remaining ) > 0
-                    call s:DebugMsgReal( a:is_error, remaining )
+                    call s:DebugMsgReal( a:is_error, pack, remaining )
                 end
             " Case 2: list is first argument
             elseif len( a:000 ) > 0 && type( a:000[0] ) == type( [] )
@@ -591,37 +594,39 @@ fun! s:DebugMsgT( is_error, ... )
                         let all[0][0] = all[0][0] . " >"
                     end
 
-                    call s:DebugMsgReal( a:is_error, all )
+                    call s:DebugMsgReal( a:is_error, pack, all )
                 end
             " Case 3: don't interfere with unrecognized content, just display
             else
-                call s:DebugMsgReal( a:is_error, a:000 )
+                call s:DebugMsgReal( a:is_error, pack, a:000 )
             end
         end
     end
 endfun
 " 2}}}
 " FUNCTION: DebugMsgReal() {{{2
-fun! s:DebugMsgReal( is_error, ZERO )
+fun! s:DebugMsgReal( is_error, pack, ZERO )
     if exists("g:zekyll_debug") && ( (g:zekyll_debug == 1 && a:is_error > 0) || g:zekyll_debug > 1 )
         let argsize = len( a:ZERO )
         let a = 0
         while a < argsize
             if type( a:ZERO[a] ) == type( "" ) && len( a:ZERO[a] ) > 0
-                call add( s:messages, a:ZERO[a] )
+                call add( a:pack, a:ZERO[a] )
             end
 
             if type(a:ZERO[a]) == type([])
                 let size = len( a:ZERO[a] )
                 let i = 0
                 while i < size
-                    call add( s:messages, a:ZERO[a][i] )
+                    call add( a:pack, a:ZERO[a][i] )
                     let i = i + 1
                 endwhile
             end
 
             let a = a + 1
         endwhile
+
+        call add( s:messages, a:pack )
     end
 endfun
 " 2}}}
@@ -637,11 +642,18 @@ fun! s:OutputMessages( delta )
             let a = a + 1
         endwhile
 
+        let last_line = last_line + 1
+        call setline( last_line, "<Messages>" )
         let msgsize = len( s:messages )
         let a = 0
         while a < msgsize
-            let last_line = last_line + 1
-            call setline( last_line, s:messages[a] )
+            let pack = s:messages[msgsize-a-1]
+
+            for p in pack
+                let last_line = last_line + 1
+                call setline( last_line, p )
+            endfor
+
             let a = a + 1
         endwhile
     end
@@ -653,17 +665,23 @@ endfun
 " to s:messages here, rest will be routed to s:AppendMessage()
 fun! s:AppendMessageT(...)
     if exists("g:zekyll_messages") == 0 || g:zekyll_messages == 1
+        " Message pack
         if len( a:000 ) > 0
+            let pack = []
+            " Pre-process first element if it's string
             if type(a:000[0]) == type("")
                 if exists("*strftime")
                     let T = "*".strftime("%H:%M")."* "
                 else
                     let T = ""
                 end
-                call add( s:messages, T . a:000[0] )
+                call add( pack, T . a:000[0] )
                 let remaining = copy(a:000)
                 let remaining = remaining[1:] 
-                call s:AppendMessageReal( remaining )
+                call s:AppendMessageReal( pack, remaining )
+            else
+                " No pre-processing
+                call s:AppendMessageReal( pack, a:000 )
             end
         end
     end
@@ -671,30 +689,35 @@ endfun
 " 2}}}
 " FUNCTION: AppendMessage() {{{2
 fun! s:AppendMessage(...)
-    call s:AppendMessageReal( a:000 )
+    " Message pack
+    let pack = []
+    call s:AppendMessageReal( pack, a:000 )
 endfun
 " 2}}}
 " FUNCTION: AppendMessageReal() {{{2
-fun! s:AppendMessageReal( ZERO )
+fun! s:AppendMessageReal( pack, ZERO )
     if exists("g:zekyll_messages") == 0 || g:zekyll_messages == 1
         let argsize = len( a:ZERO )
         let a = 0
         while a < argsize
             if type(a:ZERO[a]) == type("")
-                call add( s:messages, a:ZERO[a] )
+                call add( a:pack, a:ZERO[a] )
             end
 
             if type(a:ZERO[a]) == type([])
                 let size = len( a:ZERO[a] )
                 let i = 0
                 while i < size
-                    call add( s:messages, a:ZERO[a][i] )
+                    call add( a:pack, a:ZERO[a][i] )
                     let i = i + 1
                 endwhile
             end
 
             let a = a + 1
         endwhile
+
+        " Store the message pack
+        call add( s:messages, a:pack )
     end
 endfun
 " 2}}}
