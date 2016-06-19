@@ -327,30 +327,33 @@ fun! s:ProcessBuffer()
     end
 
     " Compute reference to all operations - current buffer's LZSD
-    let new_lzsd = s:BufferToLZSD()
+    let [ new_lzsd, error ] = s:BufferToLZSD()
 
-    " Compute renames, removals, rewrite, codes change, index size change
-    let lzsd2_renames = s:GatherSecDescChanges(new_lzsd)
-    let lzsd_deleted = s:GatherDeletedEntries(new_lzsd)
-    " cnss - current, new, string, string
-    let cnss = s:ComputeNewZekylls(new_lzsd)
-    " Read buffer looking for state of Code Switches (codes)
-    call s:ReadCodes()
-    " Parse new index size
-    let s:index_size_new = s:GetNewIndexSize()
+    if( error == 0 )
+        " Compute renames, removals, rewrite, codes change, index size change
+        let lzsd2_renames = s:GatherSecDescChanges(new_lzsd)
+        let lzsd_deleted = s:GatherDeletedEntries(new_lzsd)
+        " cnss - current, new, string, string
+        let cnss = s:ComputeNewZekylls(new_lzsd)
+        " Read buffer looking for state of Code Switches (codes)
+        call s:ReadCodes()
+        " Parse new index size
+        let s:index_size_new = s:GetNewIndexSize()
 
-    " Perform renames
-    call s:Rename2LZSD( lzsd2_renames )
+        " Perform renames
+        call s:Rename2LZSD( lzsd2_renames )
 
-    " Perform removals
-    call s:RemoveLZSD( lzsd_deleted )
+        " Perform removals
+        call s:RemoveLZSD( lzsd_deleted )
 
-    " Perform rewrite (order change)
-    call s:RewriteZekylls( cnss[2], cnss[3] )
+        " Perform rewrite (order change)
+        call s:RewriteZekylls( cnss[2], cnss[3] )
 
-    " Perform index size change
-    call s:IndexChangeSize()
-
+        " Perform index size change
+        call s:IndexChangeSize()
+    else
+        call s:AppendMessageT("*Errors* during data processing, rereading state from disk")
+    end
 
     " Refresh buffer (e.g. set Apply back to "no")
     call s:DeepRender()
@@ -389,6 +392,7 @@ fun! s:BufferToLZSD()
     " Convert buffer into lzsd
     "
 
+    let error = 0
     let last_line = s:working_area_end - 1
     let i = s:working_area_beg + 1
     let new_lzsd = []
@@ -405,14 +409,15 @@ fun! s:BufferToLZSD()
             let new_entry = [ file_name, zekyll, section, description ]
             call add( new_lzsd, new_entry )
         else
-            call s:AppendMessageT( "*Problem* occured in line {#" . i . "}. The problematic line is: >", [ "  " . line ] )
+            call s:AppendMessageT( "*Problem* occured in line {#" . i . "}. The problematic line: >", [ "  " . line ] )
             let s:are_errors = "YES"
+            let error = 1
         end
 
         let i = i + 1
     endwhile
 
-    return new_lzsd
+    return [ new_lzsd, error ]
 endfun
 " 1}}}
 " FUNCTION: BufferToLZCSD() {{{2
