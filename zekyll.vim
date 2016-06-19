@@ -1271,7 +1271,7 @@ fun! s:RemoveLZSD(lzsd)
         let result = result + v:shell_error
 
         " Message
-        call add( delarr, "|(error:" . v:shell_error . ")| {" . entry[1] . "." . entry[2] . "} " . entry[3] )
+        call add( delarr, "|(err:" . v:shell_error . ")| {" . entry[1] . "." . entry[2] . "} " . entry[3] )
     endfor
 
     if result > 0
@@ -1306,7 +1306,7 @@ fun! s:Rename2LZSD(lzsd_lzsd)
         let result = result + v:shell_error
 
         " Message
-        call add( renarr, "|(error:" . v:shell_error . ")| {" . entry[0][1] . "." . entry[0][2] . "} " . entry[0][3] .
+        call add( renarr, "|(err:" . v:shell_error . ")| {" . entry[0][1] . "." . entry[0][2] . "} " . entry[0][3] .
                 \ " -> {" . entry[1][1] . "." . entry[1][2] . "} " . entry[1][3] )
     endfor
 
@@ -1372,7 +1372,7 @@ fun! s:IndexChangeSize()
             let msg="shrink"
         end
         call s:AppendMessageT( "*Error* during index {" . s:cur_index . "} " . msg . " (from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls):" )
-        call s:AppendMessage( "*>* |(error:" . v:shell_error . ")|" . error_decode )
+        call s:AppendMessage( "*>* |(err:" . v:shell_error . ")|" . error_decode )
     else
         if s:index_size_new > s:index_size
             let msg="Extended"
@@ -1392,9 +1392,9 @@ fun! s:ResetRepo()
     let arr = split( cmd_output, '\n\+' )
 
     if v:shell_error == 0
-        call s:AppendMessageT( "|(error:" . v:shell_error . ")| Repository reset successfully" )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Repository reset successfully" )
     else
-        call s:AppendMessageT( "|(error:" . v:shell_error . ")| Problem occured during repository reset" )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem occured during repository reset" )
     end
 
     call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
