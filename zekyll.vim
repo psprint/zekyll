@@ -85,6 +85,7 @@ fun! s:StartZekyll()
 
     "nmap <silent> gf :set lz<CR>:silent! call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <silent> gf :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
+    nmap <buffer> <silent> <C-]> :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
     nnoremap <space> :call <SID>Space()<CR>
 
@@ -250,15 +251,27 @@ endfun
 " 2}}}
 " FUNCTION: GoToFile() {{{2
 fun! s:GoToFile()
+    let line = line( "." )
+    call s:AppendMessageT( "Comparing " . line . " <= " . s:working_area_beg . ", " . line . " >= " . s:working_area_end )
+    if line <= s:working_area_beg || line >= s:working_area_end
+        return 0
+    end
+
     let result = s:BufferLineToZSD( getline( "." ) )
-    let zekyll = result[0]
-    let section = result[1]
-    let description = substitute( result[2], " ", "_", "g" )
+    if len( result ) > 0
+        let zekyll = result[0]
+        let section = result[1]
+        let description = substitute( result[2], " ", "_", "g" )
 
-    let dir = substitute( s:cur_repo_path, '/$', "", "" )
+        let dir = substitute( s:cur_repo_path, '/$', "", "" )
 
-    let file_name = zekyll.".".section."--".description
-    exec "edit " . dir . "/" . file_name
+        let file_name = zekyll . "." . section . "--" . description
+        exec "edit " . dir . "/" . file_name
+
+        return 1
+    end
+
+    return 0
 endfun
 " 2}}}
 " FUNCTION: ProcessBuffer() {{{2
