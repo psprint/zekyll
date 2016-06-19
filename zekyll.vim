@@ -139,8 +139,8 @@ fun! s:NormalRender( ... )
             call setline( s:line_welcome+1, "" )
             let s:prefix = ""
         end
-        call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 18 ) . " | " . "Errors: " . s:are_errors )
-        call setline( s:line_index,      s:RPad( "Current index: " . s:cur_index, 18). " | " . "Index size: " . s:index_size )
+        call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 20 ) . " | " . "Errors: " . s:are_errors )
+        call setline( s:line_index,      s:RPad( "Current index: <" . s:cur_index . ">", 20) . " | " . "Index size: <" . s:index_size . ">" )
         call setline( s:line_code,               "Code: .......  ~" )
         call setline( s:line_apply,      s:BuildApplyLine() )
         call setline( s:line_rule,       s:RPad( s:beg_of_warea_char, s:longest_lzsd, s:beg_of_warea_char ) )
@@ -279,7 +279,7 @@ fun! s:ProcessBuffer()
     "
 
     let line = getline( s:line_index )
-    let result = matchlist( line, 'Current index:[[:space:]]*\(\d\+\)' )
+    let result = matchlist( line, 'Current index:[[:space:]]*<\?\(\d\+\)>\?' )
     if len( result ) > 0
         if s:cur_index != result[1]
             let s:cur_index = result[1]
@@ -539,7 +539,7 @@ endfun
 " FUNCTION: GetNewIndexSize() {{{2
 fun! s:GetNewIndexSize()
     let line = getline( s:line_index_size )
-    let result = matchlist( line, 'Index size:[[:space:]]*\(\d\+\)' )
+    let result = matchlist( line, 'Index size:[[:space:]]*<\?\(\d\+\)>\?' )
     if len( result ) > 0
         let index_size_new = result[1]
     else
@@ -772,7 +772,7 @@ endfun
 " 2}}}
 " FUNCTION: GatherCodeSelectors() {{{2
 fun! s:BuildApplyLine()
-    return s:RPad( "Apply: <" . s:apply . ">",      18). " | " . "Reset: <" . s:do_reset . ">"
+    return s:RPad( "Apply: <" . s:apply . ">",      20). " | " . "Reset: <" . s:do_reset . ">"
 endfun
 " 2}}}
 "1}}}
