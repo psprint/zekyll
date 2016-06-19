@@ -807,8 +807,8 @@ endfun
 " to see what happens.
 " Cursor position is saved, we can move it
 fun! s:DiscoverWorkArea()
-    let rule_beg = s:RPad( s:beg_of_warea_char, s:longest_lzsd - 10, s:beg_of_warea_char )
-    let rule_end = s:RPad( s:end_of_warea_char, s:longest_lzsd - 10, s:end_of_warea_char )
+    let rule_beg = s:GenerateRule(1, -10)
+    let rule_end = s:GenerateRule(0, -10)
     normal! G$
     let [lnum_beg, col_beg] = searchpos(rule_beg, 'w')
     let [lnum_end, col_end] = searchpos(rule_end, 'W')
@@ -1252,11 +1252,16 @@ fun! s:GetUniqueNumber()
 endfun
 " 2}}}
 " FUNCTION: GenerateRule() {{{2
-fun! s:GenerateRule( top )
+fun! s:GenerateRule( top, ... )
+    let delta = 0
+    if a:0 > 0
+        let delta = a:1
+    end
+
     if( a:top == 1 )
-        return s:RPad( s:beg_of_warea_char, s:longest_lzsd, s:beg_of_warea_char )
+        return s:RPad( s:beg_of_warea_char, s:longest_lzsd + delta, s:beg_of_warea_char )
     else
-        return s:RPad( s:end_of_warea_char, s:longest_lzsd, s:end_of_warea_char )
+        return s:RPad( s:end_of_warea_char, s:longest_lzsd + delta, s:end_of_warea_char )
     end
 endfun
 " 2}}}
