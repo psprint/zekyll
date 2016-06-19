@@ -249,12 +249,13 @@ fun! s:ProcessBuffer()
     "
 
     let line = getline( s:line_apply )
-    let result = matchlist( line, 'Apply:[[:space:]]*\([a-zA-Z0-9]\+\)' )
+    let result = matchlist( line, 'Apply:[[:space:]]*<\?\([a-zA-Z]\+\)\>\?' )
     if len( result ) > 0
         if result[1] ==? "yes"
             " Continue below
         else
-            echom "Set \"Apply:\" line to \"yes\" to write changes to disk"
+            call s:AppendMessageT("Set \"Apply:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
+            call s:Render( 1 )
             return
         end
     else
