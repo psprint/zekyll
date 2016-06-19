@@ -99,11 +99,15 @@ fun! s:StartZekyll()
 endfun
 
 " UI management functions {{{1
+" depth - how much should be rendered
+"         0 - nothing, just some data gathered from buffer
+"         1 - whole content but without reading from disk
+"         2 - whole content after reading from disk
 " FUNCTION: Render() {{{2
 fun! s:Render( ... )
-    let light = 0
+    let depth = 2
     if a:0 == 1
-        let light = a:1
+        let depth = a:1
     end
 
     call s:SaveView()
@@ -111,11 +115,9 @@ fun! s:Render( ... )
     " Remember to have information whether index size has changed
     let s:index_size_prev = s:index_size
 
-    call s:ResetState( light )
+    call s:ResetState( depth )
 
-    %d_
-
-    if light == 0
+    if depth >= 2
         call s:SetIndex(s:cur_index)
         call s:ReadRepo()
         let s:index_size = len(s:listing)
@@ -123,38 +125,51 @@ fun! s:Render( ... )
         let s:longest_lzsd = s:LongestLZSD( s:lzsd )
     end
 
-    call setline( s:line_welcome-1, ">" )
-    call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
-    if s:consistent ==? "no" || s:are_errors ==? "yes"
-        call setline( s:line_welcome+1, ">" )
-        let s:prefix = " "
-    else
-        call setline( s:line_welcome+1, "" )
-        let s:prefix = ""
+    if depth >= 1
+        %d_
+        call setline( s:line_welcome-1, ">" )
+        call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
+        if s:consistent ==? "no" || s:are_errors ==? "yes"
+            call setline( s:line_welcome+1, ">" )
+            let s:prefix = " "
+        else
+            call setline( s:line_welcome+1, "" )
+            let s:prefix = ""
+        end
+        call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 18 ) . " | " . "Errors: " . s:are_errors )
+        call setline( s:line_index,      s:RPad( "Current index: " . s:cur_index, 18). " | " . "Index size: " . s:index_size )
+        call setline( s:line_code,               "Code: .......  ~" )
+        call setline( s:line_apply,      s:BuildApplyLine() )
+        call setline( s:line_rule,       s:RPad( s:beg_of_warea_char, s:longest_lzsd, s:beg_of_warea_char ) )
+        call cursor(s:last_line+1,1)
+
+        let text = ""
+        for entry in s:lzsd
+            let text = text . s:BuildLineFromFullEntry( entry )
+        endfor
+
+        let text = s:SetupSelectionCodes( text )
+        let text = text . s:RPad("-", s:longest_lzsd, "-")
+        let resu = s:encode_zcode_arr01( reverse( copy(s:code_selectors) ) )
+
+        " Set the line again, this time with actual code
+        call setline( s:line_code, "Code: " . s:cur_index . "/" . resu[1] . "  ~" )
+
+        let @l = text
+        silent put l
+
     end
-    call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 18 ) . " | " . "Errors: " . s:are_errors )
-    call setline( s:line_index,      s:RPad( "Current index: " . s:cur_index, 18). " | " . "Index size: " . s:index_size )
-    call setline( s:line_code,               "Code: .......  ~" )
-    call setline( s:line_apply,      s:RPad( "Apply: <" . s:apply . ">",      18). " | " . "Reset: <" . s:do_reset . ">" )
-    call setline( s:line_rule,       s:RPad( s:beg_of_warea_char, s:longest_lzsd, s:beg_of_warea_char ) )
-    call cursor(s:last_line+1,1)
 
-    let text = ""
-    for entry in s:lzsd
-        let text = text . s:BuildLineFromFullEntry( entry )
-    endfor
-
-    let text = s:SetupSelectionCodes( text )
-    let text = text . s:RPad("-", s:longest_lzsd, "-")
-    let resu = s:encode_zcode_arr01( reverse( copy(s:code_selectors) ) )
-
-    " Set the line again, this time with actual code
-    call setline( s:line_code, "Code: " . s:cur_index . "/" . resu[1] . "  ~" )
-
-    let @l = text
-    silent put l
-
-    call s:OutputMessages(1)
+    if depth >= 0
+        let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
+        call cursor(s:working_area_end+1,1)
+        if line(".") != s:working_area_end+1 
+            call setline(s:working_area_end+1, "")
+            call cursor(s:working_area_end+1,1)
+        end
+        normal! dG
+        call s:OutputMessages(1)
+    end
 
     call s:RestoreView()
 endfun
@@ -237,7 +252,7 @@ fun! s:ProcessBuffer()
         if result[2] ==? "yes"
             let s:do_reset = "no"
             call s:ResetRepo()
-            call s:Render()
+            call s:Render( 2 )
             return
         end
     else
@@ -256,7 +271,7 @@ fun! s:ProcessBuffer()
         if s:cur_index != result[1]
             let s:cur_index = result[1]
             call s:ResetCodeSelectors()
-            call s:Render()
+            call s:Render( 2 )
             return
         end
     else
@@ -276,7 +291,7 @@ fun! s:ProcessBuffer()
             " Continue below
         else
             call s:AppendMessageT("Set \"Apply:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
-            call s:Render( 1 )
+            call s:Render( 0 )
             return
         end
     else
@@ -312,17 +327,17 @@ fun! s:ProcessBuffer()
 
 
     " Refresh buffer (e.g. set Apply back to "no")
-    call s:Render()
+    call s:Render( 2 )
 endfun
 " 2}}}
 " FUNCTION: ResetState() {{{2
 fun! s:ResetState( ... )
-    let light = 0
+    let depth = 0
     if a:0 == 1
-        let light = a:1
+        let depth = a:1
     end
 
-    if light == 0
+    if depth >= 2
         let s:lzsd = []
         let s:listing = []
         let s:inconsistent_listing = []
@@ -713,6 +728,11 @@ endfun
 fun! s:GatherCodeSelectors()
 endfun
 " 2}}}
+" FUNCTION: GatherCodeSelectors() {{{2
+fun! s:BuildApplyLine()
+    return s:RPad( "Apply: <" . s:apply . ">",      18). " | " . "Reset: <" . s:do_reset . ">"
+endfun
+" 2}}}
 "1}}}
 " Utility functions {{{1
 " FUNCTION: DiscoverWorkArea() {{{2
@@ -1076,6 +1096,9 @@ fun! s:Space()
                     let s:apply = "no"
                 end
             end
+
+            let line = s:BuildApplyLine()
+            call setline( linenr, line )
         end
     elseif linenr > s:working_area_beg
         let entrynr = linenr - s:working_area_beg - 1
@@ -1100,7 +1123,7 @@ fun! s:Space()
         call setline( linenr, line )
     end
 
-    call s:Render( 1 )
+    call s:Render( 0 )
 
     return 1
 endfun
