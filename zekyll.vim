@@ -72,7 +72,11 @@ let s:savedLine = 1
 let s:savedCol = 1
 let s:zeroLine = 1
 
-let s:apply_reset_pattern = 'Apply:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?[[:blank:]]\+|[[:blank:]]\+Reset:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?'
+let s:pattern_apply_reset = 'Apply:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?[[:blank:]]\+|[[:blank:]]\+Reset:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?'
+let s:pattern_zsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<.>' .
+                            \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
+let s:pattern_zcsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
+                            \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -269,7 +273,7 @@ fun! s:ProcessBuffer()
     "
 
     let line = getline( s:line_git_reset )
-    let result = matchlist( line, s:apply_reset_pattern )
+    let result = matchlist( line, s:pattern_apply_reset )
     if len( result ) > 0
         if result[2] ==? "yes"
             let s:do_reset = "no"
@@ -809,8 +813,7 @@ endfun
 " 2}}}
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
-    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<.>' .
-                            \ '[[:space:]]\+' . '\*\([A-Z]\)\*' . '[[:space:]]\+' . '\(.*\)$' )
+    let result = matchlist( a:line, s:pattern_zsd )
     if len( result ) > 0
         let zekyll = result[1]
         let section = result[2]
@@ -823,8 +826,7 @@ endfun
 " The same as BufferLineToZSD but also
 " returns state of code selector
 fun! s:BufferLineToZCSD(line)
-    let result = matchlist( a:line, '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
-                            \ '[[:space:]]\+' . '\*\([A-Z]\)\*' . '[[:space:]]\+' . '\(.*\)$' )
+    let result = matchlist( a:line, s:pattern_zcsd )
     if len( result ) > 0
         let zekyll = result[1]
         let codes = result[2]
@@ -1133,7 +1135,7 @@ fun! s:Space()
     let line = getline( linenr )
 
     if linenr < s:working_area_beg
-        let result = matchlist( line, s:apply_reset_pattern )
+        let result = matchlist( line, s:pattern_apply_reset )
         if len( result ) > 0
             let pos = stridx( line, "|" ) + 1
             let col = col( "." )
