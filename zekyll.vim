@@ -72,11 +72,12 @@ let s:savedLine = 1
 let s:savedCol = 1
 let s:zeroLine = 1
 
-let s:pattern_apply_reset = 'Apply:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?[[:blank:]]\+|[[:blank:]]\+Reset:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?'
 let s:pattern_zsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<.>' .
                             \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
 let s:pattern_zcsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
                             \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
+let s:pattern_apply_reset2 = 'Apply:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?' . '[[:blank:]]\+|[[:blank:]]\+' . 'Reset:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?'
+let s:pattern_index_current_size2 = 'Current index:[[:space:]]*<\?\(\d\+\)>\?' . '[[:space:]]\+|[[:space:]]\+' . 'Index size:[[:space:]]*<\?\(\d\+\)>\?'
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -262,7 +263,7 @@ fun! s:ProcessBuffer()
     "
 
     let line = getline( s:line_git_reset )
-    let result = matchlist( line, s:pattern_apply_reset )
+    let result = matchlist( line, s:pattern_apply_reset2 )
     if len( result ) > 0
         if result[2] ==? "yes"
             let s:do_reset = "no"
@@ -281,7 +282,7 @@ fun! s:ProcessBuffer()
     "
 
     let line = getline( s:line_index )
-    let result = matchlist( line, 'Current index:[[:space:]]*<\?\(\d\+\)>\?' )
+    let result = matchlist( line, s:pattern_index_current_size2 )
     if len( result ) > 0
         if s:cur_index != result[1]
             let s:cur_index = result[1]
@@ -300,7 +301,7 @@ fun! s:ProcessBuffer()
     "
 
     let line = getline( s:line_apply )
-    let result = matchlist( line, 'Apply:[[:space:]]*<\?\([a-zA-Z]\+\)\>\?' )
+    let result = matchlist( line, s:pattern_apply_reset2 )
     if len( result ) > 0
         if result[1] ==? "yes"
             " Continue below
@@ -546,9 +547,9 @@ endfun
 " FUNCTION: GetNewIndexSize() {{{2
 fun! s:GetNewIndexSize()
     let line = getline( s:line_index_size )
-    let result = matchlist( line, 'Index size:[[:space:]]*<\?\(\d\+\)>\?' )
+    let result = matchlist( line, s:pattern_index_current_size2 )
     if len( result ) > 0
-        let index_size_new = result[1]
+        let index_size_new = result[2]
     else
         let index_size_new = -1
     end
@@ -1234,7 +1235,7 @@ fun! s:Space()
         end
         call setline( linenr, s:GenerateRule( 0 ) )
     elseif linenr < s:working_area_beg
-        let result = matchlist( line, s:pattern_apply_reset )
+        let result = matchlist( line, s:pattern_apply_reset2 )
         if len( result ) > 0
             let pos = stridx( line, "|" ) + 1
             let col = col( "." )
