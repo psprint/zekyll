@@ -81,7 +81,7 @@ let s:pattern_zcsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
 fun! s:StartZekyll()
-    tabnew 
+    call s:Opener()
 
     call s:DoMappings()
 
@@ -784,6 +784,48 @@ fun! s:IsEditAllowed()
     return col(".") >= 18
 endfun
 " 2}}}
+" FUNCTION: Opener() {{{2
+fun! s:Opener()
+    let retval = 0
+    if !exists("g:_zekyll_bufnr") || g:_zekyll_bufnr == -1
+        tabnew
+        exec "file Zekyll_Manager"
+        let g:_zekyll_bufname = bufname("%")
+        let g:_zekyll_bufnr = bufnr("%")
+        let retval = 1
+    else
+        " Try current tab
+        let [winnr, all] = s:FindOurWindow( g:_zekyll_bufnr )
+        if all > 0
+            call s:AppendMessageT( " Welcome back! Using current tab" )
+            exec winnr . "wincmd w"
+            let retval = 1
+        else
+            " Try other tab
+            let tabpagenr = s:FindOurTab( g:_zekyll_bufnr )
+            if tabpagenr != -1
+                exec 'normal! ' . tabpagenr . 'gt'
+                let [winnr, all] = s:FindOurWindow( g:_zekyll_bufnr )
+                if all > 0
+                    call s:AppendMessageT( " Welcome back! Switched to already used tab" )
+                    exec  winnr . "wincmd w"
+                    let retval = 1
+                else
+                    call s:AppendMessageT( " Unexpected *error* occured, running second instance of Zekyll" . winnr )
+                    let retval = 0
+                end
+            else
+                tabnew
+                exec ":silent! buffer " . g:_zekyll_bufnr
+                call s:AppendMessageT(" Welcome back! Restored our buffer")
+                let retval = 1
+            end
+        end
+    end
+
+    return retval
+endfun
+" 2}}}
 " FUNCTION: DoMappings() {{{2
 fun! s:DoMappings()
     "nmap <buffer> <silent> gf :set lz<CR>:silent! call <SID>GoToFile()<CR>:set nolz<CR>
@@ -1288,6 +1330,47 @@ fun! s:GenerateRule( top, ... )
     else
         return s:RPad( s:end_of_warea_char, s:longest_lzsd + delta, s:end_of_warea_char )
     end
+endfun
+" 2}}}
+" FUNCTION: FindOurWindow() {{{2
+fun! s:FindOurWindow( bufnr )
+    let ourwin = -1
+    let all = 0
+    let win = 1
+    while 1 == 1
+        let bufnr = winbufnr(win)
+        if bufnr < 0
+            break
+        endif
+        if bufnr == a:bufnr
+            if ourwin == -1
+                let ourwin = win
+            end
+            let all = all + 1
+        endif
+        let win = win + 1
+    endwhile
+
+    return [ ourwin, all ]
+endfun
+" 2}}}
+" FUNCTION: FindOurTab() {{{2
+fun! s:FindOurTab( bufnr )
+    let found = -1
+    for i in range(tabpagenr('$'))
+        let tabs = tabpagebuflist(i + 1)
+
+        let j = 0
+        let size = len( tabs )
+        while j < size
+            if tabs[j] == a:bufnr
+                let found = i + 1
+                break
+            end
+            let j = j + 1
+        endwhile
+    endfor
+    return found
 endfun
 " 2}}}
 " 1}}}
