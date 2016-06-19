@@ -207,7 +207,7 @@ fun! s:ParseListingIntoArrays()
         " zekylls entry
         let result = matchlist( line, '\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)\.[A-Z].*' )
         if len( result ) == 0
-            call s:DebugMsgT( 1, "Skipped processing of improper line: " . line )
+            call s:DebugMsgT( 1, " Skipped processing of improper line: " . line )
             let s:are_errors = "YES"
             continue
         end
@@ -216,7 +216,7 @@ fun! s:ParseListingIntoArrays()
         " sections entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.\([A-Z]\).*' )
         if len( result ) == 0
-            call s:DebugMsgT( 1, "Skipped processing of improper line: " . line )
+            call s:DebugMsgT( 1, " Skipped processing of improper line: " . line )
             let s:are_errors = "YES"
             continue
         end
@@ -225,7 +225,7 @@ fun! s:ParseListingIntoArrays()
         " descriptions entry
         let result = matchlist( line, '[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\.[A-Z]--\(.*\)' )
         if len( result ) == 0
-            call s:DebugMsgT( 1, "Skipped processing of improper line: " . line )
+            call s:DebugMsgT( 1, " Skipped processing of improper line: " . line )
             let s:are_errors = "YES"
             continue
         end
@@ -303,7 +303,7 @@ fun! s:ProcessBuffer()
         if result[1] ==? "yes"
             " Continue below
         else
-            call s:AppendMessageT("Set \"Apply:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
+            call s:AppendMessageT(" Set \"Apply:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
             call s:ShallowRender()
             return
         end
@@ -962,7 +962,7 @@ fun! s:ZcsdToZsd( zcsd )
     if len( a:zcsd ) == 4
         return [ a:zcsd[0], a:zcsd[2], a:zcsd[3] ]
     else
-        call s:DebugMsgT( 1, "ZcsdToZsd given list of size: " . len( a:zcsd ) )
+        call s:DebugMsgT( 1, "*Error:* ZcsdToZsd given list of size: " . len( a:zcsd ) )
         return []
     end
 endfun
@@ -1225,8 +1225,8 @@ fun! s:ReadRepo()
         let s:inconsistent_listing= s:inconsistent_listing[1:]
         let listing_text = system( "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index . " -q -l")
         let s:listing = split(listing_text, '\n\+')
-        call s:DebugMsgT( 1, "Inconsistent Listing: ", s:inconsistent_listing )
-        call s:DebugMsgT( 0, "All Listing: ", s:listing )
+        call s:DebugMsgT( 1, " Inconsistent Listing: ", s:inconsistent_listing )
+        call s:DebugMsgT( 0, " All Listing: ", s:listing )
         let s:consistent = "NO"
     else
         let s:listing = split(listing_text, '\n\+')
@@ -1249,7 +1249,7 @@ fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
 
-    call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr )
+    call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
 
     return 1
 endfun
@@ -1267,7 +1267,7 @@ fun! s:RemoveLZSD(lzsd)
         let cmd_output = system( cmd )
         let arr = split( cmd_output, '\n\+' )
 
-        call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr )
+        call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
         let result = result + v:shell_error
 
         " Message
@@ -1280,10 +1280,10 @@ fun! s:RemoveLZSD(lzsd)
 
     " Message
     if len( delarr ) == 1
-        call s:AppendMessageT( "Deleted: " . delarr[0] )
+        call s:AppendMessageT( " Deleted: " . delarr[0] )
     elseif len( delarr ) >= 2
         call map( delarr, '" *>* " . v:val' )
-        call s:AppendMessageT( "Deleted: ", delarr )
+        call s:AppendMessageT( " Deleted: ", delarr )
     end
 
     return result
@@ -1302,7 +1302,7 @@ fun! s:Rename2LZSD(lzsd_lzsd)
         let cmd_output = system( cmd )
         let arr = split( cmd_output, '\n\+' )
 
-        call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr )
+        call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
         let result = result + v:shell_error
 
         " Message
@@ -1316,10 +1316,10 @@ fun! s:Rename2LZSD(lzsd_lzsd)
 
     " Message
     if len( renarr ) == 1
-        call s:AppendMessageT( "Renamed: " . renarr[0] )
+        call s:AppendMessageT( " Renamed: " . renarr[0] )
     elseif len( renarr ) >= 2
         call map( renarr, '" *>* " . v:val' )
-        call s:AppendMessageT( "Renamed: ", renarr )
+        call s:AppendMessageT( " Renamed: ", renarr )
     end
 
     return result
@@ -1379,10 +1379,10 @@ fun! s:IndexChangeSize()
         else
             let msg="Shrinked"
         end
-        call s:AppendMessageT( msg . " index {" . s:cur_index . "} from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls" )
+        call s:AppendMessageT( " " . msg . " index {" . s:cur_index . "} from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls" )
     end
 
-    call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr, error_decode )
+    call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr, error_decode )
 endfun
 " 2}}}
 " FUNCTION: ResetRepo() {{{2
@@ -1397,7 +1397,7 @@ fun! s:ResetRepo()
         call s:AppendMessageT( "|exit:" . v:shell_error . "| Problem occured during repository reset" )
     end
 
-    call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr )
+    call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
 
     return 1
 endfun
