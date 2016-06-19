@@ -153,10 +153,6 @@ fun! s:NormalRender( ... )
 
         let text = s:SetupSelectionCodes( text )
         let text = text . s:RPad("-", s:longest_lzsd, "-")
-        let resu = s:encode_zcode_arr01( reverse( copy(s:code_selectors) ) )
-
-        " Set the line again, this time with actual code
-        call setline( s:line_code, "Code: " . s:cur_index . "/" . resu[1] . "  ~" )
 
         let @l = text
         silent put l
@@ -164,6 +160,10 @@ fun! s:NormalRender( ... )
     end
 
     if depth >= 0
+        " Code line
+        let resu = s:encode_zcode_arr01( reverse( copy(s:code_selectors) ) )
+        call setline( s:line_code, "Code: " . s:cur_index . "/" . resu[1] . "  ~" )
+
         let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
         call cursor(s:working_area_end+1,1)
         if line(".") != s:working_area_end+1 
