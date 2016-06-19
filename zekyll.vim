@@ -573,7 +573,7 @@ fun! s:DebugMsgT( is_error, ... )
                 let B=""
                 if len( remaining ) > 0 && type( remaining[0] ) == type( [] )
                     let B=" >"
-                    call map( remaining[0], '" " . v:val' )
+                    call map( remaining[0], '"  " . v:val' )
                 end
 
                 " One place here where pack is addressed directly
@@ -589,7 +589,7 @@ fun! s:DebugMsgT( is_error, ... )
                     let skipfirst = all[0][1:]
                     let B2 = ""
                     if len( skipfirst ) > 0
-                        call map( skipfirst, '" " . v:val' )
+                        call map( skipfirst, '"  " . v:val' )
                         let all[0][1:] = skipfirst
                         let all[0][0] = all[0][0] . " >"
                     end
@@ -1273,7 +1273,7 @@ fun! s:RemoveLZSD(lzsd)
     if len( delarr ) == 1
         call s:AppendMessageT( "Deleted: " . delarr[0] )
     elseif len( delarr ) >= 2
-        call map( delarr, '"*>* " . v:val' )
+        call map( delarr, '" *>* " . v:val' )
         call s:AppendMessageT( "Deleted: ", delarr )
     end
 
@@ -1309,7 +1309,7 @@ fun! s:Rename2LZSD(lzsd_lzsd)
     if len( renarr ) == 1
         call s:AppendMessageT( "Renamed: " . renarr[0] )
     elseif len( renarr ) >= 2
-        call map( renarr, '"*>* " . v:val' )
+        call map( renarr, '" *>* " . v:val' )
         call s:AppendMessageT( "Renamed: ", renarr )
     end
 
