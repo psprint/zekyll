@@ -19,8 +19,8 @@ map <silent> <unique> <script> <Plug>StartZekyll :set lz<CR>:call <SID>StartZeky
 
 " Script Variables:
 let s:cur_repo = "psprint/zkl"
-let s:cur_repo_path = $HOME."/.zekyll/repos/psprint---zkl"
-let s:repos_paths = [ $HOME."/.zekyll/repos" ]
+let s:cur_repo_path = fnameescape( $HOME )."/.zekyll/repos/psprint---zkl"
+let s:repos_paths = [ fnameescape( $HOME )."/.zekyll/repos" ]
 
 let s:lzsd = []
 let s:listing = []
@@ -789,8 +789,8 @@ fun! s:Opener()
     let retval = 0
     if !exists("g:_zekyll_bufnr") || g:_zekyll_bufnr == -1
         tabnew
-        exec "lcd " . $HOME . "/.zekyll"
-        exec "file Zekyll_Manager"
+        exec "lcd " . fnameescape( $HOME ) . "/.zekyll"
+        exec "file Zekyll\\ Manager"
         let g:_zekyll_bufname = bufname("%")
         let g:_zekyll_bufnr = bufnr("%")
         let retval = 1
