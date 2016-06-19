@@ -60,7 +60,7 @@ let s:line_errors       = 4
 let s:line_index        = 5
 let s:line_index_size   = 5
 let s:line_code         = 6
-let s:line_xxxx         = 6
+let s:line_code2         = 6
 let s:line_apply        = 7
 let s:line_git_reset    = 7
 let s:line_rule         = 8
@@ -1295,8 +1295,8 @@ fun! s:Space()
                 end
             end
 
-            let line = s:GenerateBuildApplyLine()
-            call setline( linenr, line )
+            let line3 = s:GenerateBuildApplyLine()
+            call setline( linenr, line3 )
         end
     elseif linenr > s:working_area_beg
         let entrynr = linenr - s:working_area_beg - 1
