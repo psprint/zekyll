@@ -155,8 +155,8 @@ fun! s:NormalRender( ... )
         call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 20 ) . " | " . "Errors: " . s:are_errors )
         call setline( s:line_index,      s:RPad( "Current index: <" . s:cur_index . ">", 20) . " | " . "Index size: <" . s:index_size . ">" )
         call setline( s:line_code,               "Code: .......  ~" )
-        call setline( s:line_apply,      s:BuildApplyLine() )
-        call setline( s:line_rule,       s:RPad( s:beg_of_warea_char, s:longest_lzsd, s:beg_of_warea_char ) )
+        call setline( s:line_apply,      s:GenerateBuildApplyLine() )
+        call setline( s:line_rule,       s:GenerateRule( 1 ) )
         call cursor(s:last_line+1,1)
 
         let text = ""
@@ -165,7 +165,7 @@ fun! s:NormalRender( ... )
         endfor
 
         let text = s:SetupSelectionCodes( text )
-        let text = text . s:RPad("-", s:longest_lzsd, "-")
+        let text = text . s:GenerateRule( 0 )
 
         let @l = text
         silent put l
@@ -788,8 +788,8 @@ endfun
 fun! s:GatherCodeSelectors()
 endfun
 " 2}}}
-" FUNCTION: BuildApplyLine() {{{2
-fun! s:BuildApplyLine()
+" FUNCTION: GenerateBuildApplyLine() {{{2
+fun! s:GenerateBuildApplyLine()
     return s:RPad( "Apply: <" . s:apply . ">",      20). " | " . "Reset: <" . s:do_reset . ">"
 endfun
 " 2}}}
@@ -1139,7 +1139,21 @@ fun! s:Space()
     let linenr = line( "." )
     let line = getline( linenr )
 
-    if linenr < s:working_area_beg
+    if linenr == s:working_area_beg
+        if s:beg_of_warea_char == '-'
+            let s:beg_of_warea_char = '='
+        else
+            let s:beg_of_warea_char = '-'
+        end
+        call setline( linenr, s:GenerateRule( 1 ) )
+    elseif linenr == s:working_area_end
+        if s:end_of_warea_char == '-'
+            let s:end_of_warea_char = '='
+        else
+            let s:end_of_warea_char = '-'
+        end
+        call setline( linenr, s:GenerateRule( 0 ) )
+    elseif linenr < s:working_area_beg
         let result = matchlist( line, s:pattern_apply_reset )
         if len( result ) > 0
             let pos = stridx( line, "|" ) + 1
@@ -1160,7 +1174,7 @@ fun! s:Space()
                 end
             end
 
-            let line = s:BuildApplyLine()
+            let line = s:GenerateBuildApplyLine()
             call setline( linenr, line )
         end
     elseif linenr > s:working_area_beg
@@ -1237,6 +1251,16 @@ fun! s:GetUniqueNumber()
     return ts
 endfun
 " 2}}}
+" FUNCTION: GenerateRule() {{{2
+fun! s:GenerateRule( top )
+    if( a:top == 1 )
+        return s:RPad( s:beg_of_warea_char, s:longest_lzsd, s:beg_of_warea_char )
+    else
+        return s:RPad( s:end_of_warea_char, s:longest_lzsd, s:end_of_warea_char )
+    end
+endfun
+" 2}}}
+" 1}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
 fun! s:ReadRepo()
