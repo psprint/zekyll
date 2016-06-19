@@ -392,8 +392,7 @@ fun! s:BufferToLZSD()
             let new_entry = [ file_name, zekyll, section, description ]
             call add( new_lzsd, new_entry )
         else
-            call s:AppendMessageT( "*Problem* occured in line {#" . i . "}. The problematic line is: >" )
-            call s:AppendMessage( " " . line )
+            call s:AppendMessageT( "*Problem* occured in line {#" . i . "}. The problematic line is: >", [ "  " . line ] )
             let s:are_errors = "YES"
         end
 
