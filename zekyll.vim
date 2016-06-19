@@ -225,7 +225,6 @@ endfun
 " FUNCTION: GoToFile() {{{2
 fun! s:GoToFile()
     let line = line( "." )
-    call s:AppendMessageT( "Comparing " . line . " <= " . s:working_area_beg . ", " . line . " >= " . s:working_area_end )
     if line <= s:working_area_beg || line >= s:working_area_end
         return 0
     end
