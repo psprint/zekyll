@@ -95,7 +95,7 @@ fun! s:StartZekyll()
 
     setlocal buftype=nofile
     setlocal ft=help
-    call s:Render()
+    call s:DeepRender()
 endfun
 
 " UI management functions {{{1
@@ -103,9 +103,9 @@ endfun
 "         0 - nothing, just some data gathered from buffer
 "         1 - whole content but without reading from disk
 "         2 - whole content after reading from disk
-" FUNCTION: Render() {{{2
-fun! s:Render( ... )
-    let depth = 2
+" FUNCTION: NormalRender() {{{2
+fun! s:NormalRender( ... )
+    let depth = 1
     if a:0 == 1
         let depth = a:1
     end
@@ -172,6 +172,16 @@ fun! s:Render( ... )
     end
 
     call s:RestoreView()
+endfun
+" 2}}}
+" FUNCTION: ShallowRender() {{{2
+fun! s:ShallowRender()
+    return s:NormalRender(0)
+endfun
+" 2}}}
+" FUNCTION: DeepRender() {{{2
+fun! s:DeepRender()
+    return s:NormalRender(2)
 endfun
 " 2}}}
 " 1}}}
@@ -252,12 +262,12 @@ fun! s:ProcessBuffer()
         if result[2] ==? "yes"
             let s:do_reset = "no"
             call s:ResetRepo()
-            call s:Render( 2 )
+            call s:DeepRender()
             return
         end
     else
         call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
-        call s:Render( 1 )
+        call s:NormalRender()
         return
     end
 
@@ -271,12 +281,12 @@ fun! s:ProcessBuffer()
         if s:cur_index != result[1]
             let s:cur_index = result[1]
             call s:ResetCodeSelectors()
-            call s:Render( 2 )
+            call s:DeepRender()
             return
         end
     else
         call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
-        call s:Render( 1 )
+        call s:NormalRender()
         return
     end
 
@@ -291,12 +301,12 @@ fun! s:ProcessBuffer()
             " Continue below
         else
             call s:AppendMessageT("Set \"Apply:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
-            call s:Render( 0 )
+            call s:ShallowRender()
             return
         end
     else
         call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (2)" )
-        call s:Render( 1 )
+        call s:NormalRender()
         return
     end
 
@@ -327,7 +337,7 @@ fun! s:ProcessBuffer()
 
 
     " Refresh buffer (e.g. set Apply back to "no")
-    call s:Render( 2 )
+    call s:DeepRender()
 endfun
 " 2}}}
 " FUNCTION: ResetState() {{{2
@@ -1123,7 +1133,7 @@ fun! s:Space()
         call setline( linenr, line )
     end
 
-    call s:Render( 0 )
+    call s:ShallowRender()
 
     return 1
 endfun
