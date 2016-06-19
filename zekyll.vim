@@ -83,34 +83,34 @@ let s:pattern_zcsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+
 fun! s:StartZekyll()
     " content here
 
-    "nmap <silent> gf :set lz<CR>:silent! call <SID>GoToFile()<CR>:set nolz<CR>
-    nmap <silent> gf :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
+    "nmap <buffer> <silent> gf :set lz<CR>:silent! call <SID>GoToFile()<CR>:set nolz<CR>
+    nmap <buffer> <silent> gf :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <buffer> <silent> <C-]> :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
-    nmap <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
-    nnoremap <space> :call <SID>Space()<CR>
+    nmap <buffer> <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
+    nnoremap <buffer> <space> :call <SID>Space()<CR>
 
-    nmap <silent> o <Nop>
-    nmap <silent> p <Nop>
-    nmap <silent> P <Nop>
-    nmap <silent> D <Nop>
-    nmap <silent> v <Nop>
+    nmap <buffer> <silent> o <Nop>
+    nmap <buffer> <silent> p <Nop>
+    nmap <buffer> <silent> P <Nop>
+    nmap <buffer> <silent> D <Nop>
+    nmap <buffer> <silent> v <Nop>
 
-    vmap <silent> p <Nop>
-    vmap <silent> P <Nop>
-    vmap <silent> D <Nop>
+    vmap <buffer> <silent> p <Nop>
+    vmap <buffer> <silent> P <Nop>
+    vmap <buffer> <silent> D <Nop>
 
-    imap <silent> <CR> <Nop>
+    imap <buffer> <silent> <CR> <Nop>
 
     setlocal buftype=nofile
     setlocal ft=help
 
     for i in range( char2nr('a'), char2nr('z') )
-        exec 'inoremap <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
     endfor
     for i in range( char2nr('A'), char2nr('Z') )
-        exec 'inoremap <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
     endfor
-    exec 'inoremap <expr> ' . nr2char(8211) . ' <SID>IsEditAllowed() ? "' . nr2char(8211) . '" : ""'
+    exec 'inoremap <buffer> <expr> ' . nr2char(8211) . ' <SID>IsEditAllowed() ? "' . nr2char(8211) . '" : ""'
 
     call s:DeepRender()
 endfun
