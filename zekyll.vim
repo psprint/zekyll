@@ -649,9 +649,16 @@ fun! s:OutputMessages( delta )
         while a < msgsize
             let pack = s:messages[msgsize-a-1]
 
+            let frst = 1
             for p in pack
                 let last_line = last_line + 1
-                call setline( last_line, p )
+                if frst
+                    let line = "{" . (msgsize-a) . "}" . p
+                    call setline( last_line, line )
+                    let frst = 0
+                else
+                    call setline( last_line, p )
+                end
             endfor
 
             let a = a + 1
