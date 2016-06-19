@@ -224,6 +224,10 @@ endfun
 " 2}}}
 " FUNCTION: GoToFile() {{{2
 fun! s:GoToFile()
+    call s:SaveView()
+    let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
+    call s:RestoreView()
+
     let line = line( "." )
     if line <= s:working_area_beg || line >= s:working_area_end
         return 0
@@ -857,6 +861,21 @@ fun! s:DoMappings()
         exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
     endfor
     exec 'inoremap <buffer> <expr> ' . nr2char(8211) . ' <SID>IsEditAllowed() ? "' . nr2char(8211) . '" : ""'
+endfun
+" 2}}}
+" FUNCTION: Enter() {{{2
+fun! s:Enter()
+    call s:SaveView()
+    let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
+    call s:RestoreView()
+
+    let line = line( "." )
+    if line <= s:working_area_beg 
+        call s:ProcessBuffer()
+        return 0
+    elseif line < s:working_area_end
+       call s:GoToFile()
+    end
 endfun
 " 2}}}
 "1}}}
