@@ -72,6 +72,8 @@ let s:savedLine = 1
 let s:savedCol = 1
 let s:zeroLine = 1
 
+let s:apply_reset_pattern = 'Apply:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?[[:blank:]]\+|[[:blank:]]\+Reset:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?'
+
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
 fun! s:StartZekyll()
@@ -224,6 +226,25 @@ fun! s:ProcessBuffer()
     call s:SaveView()
     let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
     call s:RestoreView()
+
+    "
+    " Reset ?
+    "
+
+    let line = getline( s:line_git_reset )
+    let result = matchlist( line, s:apply_reset_pattern )
+    if len( result ) > 0
+        if result[2] ==? "yes"
+            let s:do_reset = "no"
+            call s:ResetRepo()
+            call s:Render()
+            return
+        end
+    else
+        call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
+        call s:Render( 1 )
+        return
+    end
 
     "
     " Read new index?
@@ -1036,7 +1057,7 @@ fun! s:Space()
     let line = getline( linenr )
 
     if linenr < s:working_area_beg
-        let result = matchlist( line, 'Apply:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?[[:blank:]]\+|[[:blank:]]\+Reset:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?' )
+        let result = matchlist( line, s:apply_reset_pattern )
         if len( result ) > 0
             let pos = stridx( line, "|" ) + 1
             let col = col( "." )
@@ -1159,7 +1180,7 @@ fun! s:RewriteZekylls(src_zekylls, dst_zekylls)
         return 1
     endif
 
-    let cmd = "zkrewrite --noansi -w -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -z " . a:src_zekylls . " -Z " . a:dst_zekylls
+    let cmd = "zkrewrite --noansi -w -p " . shellescape( s:cur_repo_path ) . " -z " . a:src_zekylls . " -Z " . a:dst_zekylls
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
 
@@ -1299,6 +1320,24 @@ fun! s:IndexChangeSize()
     call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr, error_decode )
 endfun
 " 2}}}
+" FUNCTION: ResetRepo() {{{2
+fun! s:ResetRepo()
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " reset --hard"
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+
+    if v:shell_error == 0
+        call s:AppendMessageT( "|exit:" . v:shell_error . "| Repository reset successfully" )
+    else
+        call s:AppendMessageT( "|exit:" . v:shell_error . "| Problem occured during repository reset" )
+    end
+
+    call s:DebugMsgT( v:shell_error > 0, "Command [" . v:shell_error . "]: " . cmd, arr )
+
+    return 1
+endfun
+" 2}}
+" 1}}}
 " ------------------------------------------------------------------------------
 let &cpo=s:keepcpo
 unlet s:keepcpo
