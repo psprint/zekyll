@@ -1237,7 +1237,8 @@ fun! s:Space()
     elseif linenr < s:working_area_beg
         let result = matchlist( line, s:pattern_apply_reset2 )
         if len( result ) > 0
-            let pos = stridx( line, "|" ) + 1
+            let line2 = substitute( line, '[^|]', "x", "g" )
+            let pos = stridx( line2, "|" ) + 1
             let col = col( "." )
             if col < pos
                 if result[1] ==? "yes"
