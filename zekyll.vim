@@ -79,6 +79,13 @@ let s:pattern_zcsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+
 let s:pattern_apply_reset2 = 'Apply:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?' . '[[:blank:]]\+|[[:blank:]]\+' . 'Reset:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?'
 let s:pattern_index_current_size2 = 'Current index:[[:space:]]*<\?\(\d\+\)>\?' . '[[:space:]]\+|[[:space:]]\+' . 'Index size:[[:space:]]*<\?\(\d\+\)>\?'
 
+let s:ACTIVE_NONE = 0
+let s:ACTIVE_CURRENT_INDEX = 1
+let s:ACTIVE_INDEX_SIZE = 2
+let s:ACTIVE_CODE = 3
+let s:ACTIVE_APPLY = 4
+let s:ACTIVE_RESET = 4
+
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
 fun! s:StartZekyll()
@@ -252,7 +259,8 @@ fun! s:GoToFile()
 endfun
 " 2}}}
 " FUNCTION: ProcessBuffer() {{{2
-fun! s:ProcessBuffer()
+fun! s:ProcessBuffer( active )
+
 
     call s:SaveView()
     let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
@@ -262,58 +270,64 @@ fun! s:ProcessBuffer()
     " Reset ?
     "
 
-    let line = getline( s:line_git_reset )
-    let result = matchlist( line, s:pattern_apply_reset2 )
-    if len( result ) > 0
-        if result[2] ==? "yes"
-            let s:do_reset = "no"
-            call s:ResetRepo()
-            call s:DeepRender()
+    if a:active == s:ACTIVE_RESET
+        let line = getline( s:line_git_reset )
+        let result = matchlist( line, s:pattern_apply_reset2 )
+        if len( result ) > 0
+            if result[2] ==? "yes"
+                let s:do_reset = "no"
+                call s:ResetRepo()
+                call s:DeepRender()
+                return
+            end
+        else
+            call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
+            call s:NormalRender()
             return
         end
-    else
-        call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
-        call s:NormalRender()
-        return
     end
 
     "
     " Read new index?
     "
 
-    let line = getline( s:line_index )
-    let result = matchlist( line, s:pattern_index_current_size2 )
-    if len( result ) > 0
-        if s:cur_index != result[1]
-            let s:cur_index = result[1]
-            call s:ResetCodeSelectors()
-            call s:DeepRender()
+    if a:active == s:ACTIVE_CURRENT_INDEX
+        let line = getline( s:line_index )
+        let result = matchlist( line, s:pattern_index_current_size2 )
+        if len( result ) > 0
+            if s:cur_index != result[1]
+                let s:cur_index = result[1]
+                call s:ResetCodeSelectors()
+                call s:DeepRender()
+                return
+            end
+        else
+            call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
+            call s:NormalRender()
             return
         end
-    else
-        call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
-        call s:NormalRender()
-        return
     end
 
     "
     " Perform changes? Apply is "yes"?
     "
 
-    let line = getline( s:line_apply )
-    let result = matchlist( line, s:pattern_apply_reset2 )
-    if len( result ) > 0
-        if result[1] ==? "yes"
-            " Continue below
+    if a:active == s:ACTIVE_APPLY || a:active == s:ACTIVE_INDEX_SIZE
+        let line = getline( s:line_apply )
+        let result = matchlist( line, s:pattern_apply_reset2 )
+        if len( result ) > 0
+            if result[1] ==? "yes"
+                " Continue below
+            else
+                call s:AppendMessageT(" Set \"Apply:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
+                call s:ShallowRender()
+                return
+            end
         else
-            call s:AppendMessageT(" Set \"Apply:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
-            call s:ShallowRender()
+            call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (2)" )
+            call s:NormalRender()
             return
         end
-    else
-        call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (2)" )
-        call s:NormalRender()
-        return
     end
 
     " Compute reference to all operations - current buffer's LZSD
@@ -870,12 +884,37 @@ fun! s:Enter()
     let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
     call s:RestoreView()
 
-    let line = line( "." )
-    if line <= s:working_area_beg 
-        call s:ProcessBuffer()
+    let linenr = line( "." )
+    let line = getline( linenr )
+    if linenr <= s:working_area_beg 
+        let line2 = substitute( line, '[^|]', "x", "g" )
+        let col = col( "." )
+        let pos = stridx( line2, "|" ) + 1
+        if pos == -1
+            return 0
+        end
+
+        if linenr == s:line_index
+            if col < pos
+                call s:ProcessBuffer( s:ACTIVE_CURRENT_INDEX )
+            else
+                call s:ProcessBuffer( s:ACTIVE_INDEX_SIZE )
+            end
+            return 1
+        elseif linenr == s:line_code
+            " TODO
+        elseif linenr == s:line_apply
+            if col < pos
+                call s:ProcessBuffer( s:ACTIVE_APPLY )
+            else
+                call s:ProcessBuffer( s:ACTIVE_RESET )
+            end
+            return 1
+        end
+
         return 0
-    elseif line < s:working_area_end
-       call s:GoToFile()
+    elseif linenr < s:working_area_end
+       return s:GoToFile()
     end
 endfun
 " 2}}}
