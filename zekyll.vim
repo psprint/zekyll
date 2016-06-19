@@ -98,6 +98,15 @@ fun! s:StartZekyll()
 
     setlocal buftype=nofile
     setlocal ft=help
+
+    for i in range( char2nr('a'), char2nr('z') )
+        exec 'inoremap <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+    for i in range( char2nr('A'), char2nr('Z') )
+        exec 'inoremap <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+    exec 'inoremap <expr> ' . nr2char(8211) . ' <SID>IsEditAllowed() ? "' . nr2char(8211) . '" : ""'
+
     call s:DeepRender()
 endfun
 
@@ -770,9 +779,14 @@ endfun
 fun! s:GatherCodeSelectors()
 endfun
 " 2}}}
-" FUNCTION: GatherCodeSelectors() {{{2
+" FUNCTION: BuildApplyLine() {{{2
 fun! s:BuildApplyLine()
     return s:RPad( "Apply: <" . s:apply . ">",      20). " | " . "Reset: <" . s:do_reset . ">"
+endfun
+" 2}}}
+" FUNCTION: IsEditAllowed() {{{2
+fun! s:IsEditAllowed()
+    return col(".") >= 18
 endfun
 " 2}}}
 "1}}}
