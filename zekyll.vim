@@ -916,7 +916,7 @@ fun! s:SetupSelectionCodes( text )
         let diff = len( s:lzsd ) - len( s:code_selectors )
         let i = 0
         while i < diff
-            call add( s:code_selectors, 0 )
+            call add( s:code_selectors, 1 )
             let i = i + 1
         endwhile
     end
