@@ -1258,15 +1258,21 @@ fun! s:GetUniqueNumber()
 
         let res = matchlist( ts, '^\([0-9]\+\)' )
         if len( res ) == 0
-            let ts = system( 'echo $RANDOM' )
-            let ts_arr = split( ts, '\n\+' )
-            let ts = ""
-            if len( ts_arr ) > 0
-                let ts = ts_arr[0]
-            end
+            let ts = s:GetRandomNumber()
         end
     end
 
+    return ts
+endfun
+" 2}}}
+" FUNCTION: GetRandomNumber() {{{2
+fun! s:GetRandomNumber()
+    let ts = system( 'echo $RANDOM' )
+    let ts_arr = split( ts, '\n\+' )
+    let ts = ""
+    if len( ts_arr ) > 0
+        let ts = ts_arr[0]
+    end
     return ts
 endfun
 " 2}}}
