@@ -87,9 +87,12 @@ fun! s:StartZekyll()
     nmap <silent> o <Nop>
     nmap <silent> p <Nop>
     nmap <silent> P <Nop>
+    nmap <silent> D <Nop>
+    nmap <silent> v <Nop>
 
     vmap <silent> p <Nop>
     vmap <silent> P <Nop>
+    vmap <silent> D <Nop>
 
     imap <silent> <CR> <Nop>
 
