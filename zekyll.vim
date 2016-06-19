@@ -129,7 +129,7 @@ fun! s:NormalRender( ... )
     end
 
     if depth >= 1
-        %d_
+        silent %d_
         call setline( s:line_welcome-1, ">" )
         call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
         if s:consistent ==? "no" || s:are_errors ==? "yes"
