@@ -1635,8 +1635,8 @@ fun! s:IndexChangeSize()
         else
             let msg="shrink"
         end
-        call s:AppendMessageT( "*Error* during index {" . s:cur_index . "} " . msg . " (from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls):" )
-        call s:AppendMessage( "*>* |(err:" . v:shell_error . ")|" . error_decode )
+        call s:AppendMessageT( "*Error* during index {" . s:cur_index . "} " . msg .  " (from |" . s:index_size .
+                               \ "| to |" . s:index_size_new . "| zekylls):", " *>* |(err:" . v:shell_error . ")|" . error_decode )
     else
         if s:index_size_new > s:index_size
             let msg="Extended"
