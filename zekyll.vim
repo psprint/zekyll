@@ -818,7 +818,8 @@ endfun
 " 2}}}
 " FUNCTION: IsEditAllowed() {{{2
 fun! s:IsEditAllowed()
-    return col(".") >= 18
+    let col = col( "." )
+    return col == 18 || col >= 24
 endfun
 " 2}}}
 " FUNCTION: Opener() {{{2
@@ -1713,7 +1714,7 @@ fun! s:ResetRepo()
 
     return 1
 endfun
-" 2}}
+" 2}}}
 " 1}}}
 " ------------------------------------------------------------------------------
 let &cpo=s:keepcpo
