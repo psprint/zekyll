@@ -30,7 +30,6 @@ let s:cur_index = 1
 let s:prev_index = -1
 let s:index_size = -1
 let s:index_size_new = -1
-let s:index_size_prev = -1
 
 let s:consistent = "yes"
 let s:are_errors = "no"
@@ -112,9 +111,6 @@ fun! s:NormalRender( ... )
 
     call s:SaveView()
 
-    " Remember to have information whether index size has changed
-    let s:index_size_prev = s:index_size
-
     call s:ResetState( depth )
 
     if depth >= 2
@@ -123,6 +119,13 @@ fun! s:NormalRender( ... )
         let s:index_size = len(s:listing)
         call s:ParseListingIntoArrays()
         let s:longest_lzsd = s:LongestLZSD( s:lzsd )
+    end
+
+    " s:index_size_new holds value that corresponds to buffer
+    " When first creating buffer we predict what the value will
+    " be and set it to s:index_size
+    if s:index_size_new == -1
+        let s:index_size_new = s:index_size
     end
 
     if depth >= 1
@@ -793,7 +796,7 @@ endfun
 " 2}}}
 " FUNCTION: GenerateSaveIndexSizeLine() {{{2
 fun! s:GenerateSaveIndexSizeLine()
-    return "[ Save (<" . s:save . ">) with index size <" . s:index_size . "> ]"
+    return "[ Save (<" . s:save . ">) with index size <" . s:index_size_new . "> ]"
 endfun
 " 2}}}
 " FUNCTION: GenerateIndexResetLine() {{{2
@@ -1337,6 +1340,9 @@ fun! s:Space()
                     let s:do_reset = "no"
                 end
 
+                " Get current index size so that it can be preserved
+                let s:index_size_new = s_result[2]
+
                 let save_line = s:GenerateSaveIndexSizeLine()
                 call setline( linenr, save_line )
                 let reset_line = s:GenerateIndexResetLine()
@@ -1362,6 +1368,9 @@ fun! s:Space()
                         let s:save = "no"
                     end
                 end
+
+                " Get current index size so that it can be preserved
+                let s:index_size_new = s_result[2]
 
                 let reset_line = s:GenerateIndexResetLine()
                 call setline( linenr, reset_line )
