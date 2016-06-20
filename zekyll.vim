@@ -85,7 +85,7 @@ let s:ACTIVE_NONE = 0
 let s:ACTIVE_CURRENT_INDEX = 1
 let s:ACTIVE_CODE = 2
 let s:ACTIVE_SAVE_INDEXSIZE = 3
-let s:ACTIVE_RESET = 3
+let s:ACTIVE_RESET = 4
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
