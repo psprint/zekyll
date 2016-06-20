@@ -818,6 +818,11 @@ endfun
 " 2}}}
 " FUNCTION: IsEditAllowed() {{{2
 fun! s:IsEditAllowed()
+    let line = line( "." )
+    if line == s:line_index || line == s:line_index_size || line == s:line_code
+        return 1
+    end
+
     let col = col( "." )
     return col == 18 || col >= 24
 endfun
