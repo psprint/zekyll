@@ -34,7 +34,7 @@ let s:index_size_prev = -1
 
 let s:consistent = "yes"
 let s:are_errors = "no"
-let s:apply = "no"
+let s:save = "no"
 let s:do_reset = "no"
 
 let s:working_area_beg = 1
@@ -58,11 +58,11 @@ let s:line_welcome = 2
 let s:line_consistent   = 4
 let s:line_errors       = 4
 let s:line_index        = 5
-let s:line_index_size   = 5
+let s:line_reset        = 5
 let s:line_code         = 6
-let s:line_code2         = 6
-let s:line_apply        = 7
-let s:line_git_reset    = 7
+let s:line_code2        = 6
+let s:line_save         = 7
+let s:line_index_size   = 7
 let s:line_rule         = 8
 let s:last_line = s:line_rule
 
@@ -72,19 +72,21 @@ let s:savedLine = 1
 let s:savedCol = 1
 let s:zeroLine = 1
 
-let s:pattern_zsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<.>' .
-                            \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
-let s:pattern_zcsd = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
-                            \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
-let s:pattern_apply_reset2 = 'Apply:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?' . '[[:blank:]]\+|[[:blank:]]\+' . 'Reset:[[:blank:]]\+<\?\([a-zA-Z]\+\)>\?'
-let s:pattern_index_current_size2 = 'Current index:[[:space:]]*<\?\(\d\+\)>\?' . '[[:space:]]\+|[[:space:]]\+' . 'Index size:[[:space:]]*<\?\(\d\+\)>\?'
+let s:pattern_zsd3              = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<.>' .
+                               \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
+
+let s:pattern_zcsd4             = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
+                               \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
+
+let s:pat_Save_IndexSize = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\+\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
+
+let s:pat_Index_Reset     = 'Current index:[[:space:]]*<\?\(\d\+\)>\?' . '[[:space:]]\+|[[:space:]]\+' . 'Reset:[[:space:]]*<\?\([a-zA-Z]\+\)>\?'
 
 let s:ACTIVE_NONE = 0
 let s:ACTIVE_CURRENT_INDEX = 1
-let s:ACTIVE_INDEX_SIZE = 2
-let s:ACTIVE_CODE = 3
-let s:ACTIVE_APPLY = 4
-let s:ACTIVE_RESET = 4
+let s:ACTIVE_CODE = 2
+let s:ACTIVE_SAVE_INDEXSIZE = 3
+let s:ACTIVE_RESET = 3
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -135,9 +137,9 @@ fun! s:NormalRender( ... )
             let s:prefix = ""
         end
         call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 20 ) . " | " . "Errors: " . s:are_errors )
-        call setline( s:line_index,      s:RPad( "Current index: <" . s:cur_index . ">", 20) . " | " . "Index size: <" . s:index_size . ">" )
+        call setline( s:line_index,      s:GenerateIndexResetLine() )
         call setline( s:line_code,               "Code: .......  ~" )
-        call setline( s:line_apply,      s:GenerateBuildApplyLine() )
+        call setline( s:line_save,       s:GenerateSaveIndexSizeLine() )
         call setline( s:line_rule,       s:GenerateRule( 1 ) )
         call cursor(s:last_line+1,1)
 
@@ -271,8 +273,7 @@ fun! s:ProcessBuffer( active )
     "
 
     if a:active == s:ACTIVE_RESET
-        let line = getline( s:line_git_reset )
-        let result = matchlist( line, s:pattern_apply_reset2 )
+        let result = matchlist( getline( s:line_reset ), s:pat_Index_Reset )
         if len( result ) > 0
             if result[2] ==? "yes"
                 let s:do_reset = "no"
@@ -292,8 +293,7 @@ fun! s:ProcessBuffer( active )
     "
 
     if a:active == s:ACTIVE_CURRENT_INDEX
-        let line = getline( s:line_index )
-        let result = matchlist( line, s:pattern_index_current_size2 )
+        let result = matchlist( getline( s:line_index ), s:pat_Index_Reset )
         if len( result ) > 0
             if s:cur_index != result[1]
                 let s:cur_index = result[1]
@@ -309,17 +309,16 @@ fun! s:ProcessBuffer( active )
     end
 
     "
-    " Perform changes? Apply is "yes"?
+    " Perform changes? Save is "yes"?
     "
 
-    if a:active == s:ACTIVE_APPLY || a:active == s:ACTIVE_INDEX_SIZE
-        let line = getline( s:line_apply )
-        let result = matchlist( line, s:pattern_apply_reset2 )
+    if a:active == s:ACTIVE_SAVE_INDEXSIZE
+        let result = matchlist( getline( s:line_save ), s:pat_Save_IndexSize )
         if len( result ) > 0
             if result[1] ==? "yes"
                 " Continue below
             else
-                call s:AppendMessageT(" Set \"Apply:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
+                call s:AppendMessageT(" Set \"Save:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
                 call s:ShallowRender()
                 return
             end
@@ -359,7 +358,7 @@ fun! s:ProcessBuffer( active )
         call s:AppendMessageT("*Errors* during data processing, rereading state from disk")
     end
 
-    " Refresh buffer (e.g. set Apply back to "no")
+    " Refresh buffer (e.g. set Save back to "no")
     call s:DeepRender()
 endfun
 " 2}}}
@@ -561,7 +560,7 @@ endfun
 " FUNCTION: GetNewIndexSize() {{{2
 fun! s:GetNewIndexSize()
     let line = getline( s:line_index_size )
-    let result = matchlist( line, s:pattern_index_current_size2 )
+    let result = matchlist( line, s:pat_Save_IndexSize )
     if len( result ) > 0
         let index_size_new = result[2]
     else
@@ -792,9 +791,14 @@ endfun
 fun! s:GatherCodeSelectors()
 endfun
 " 2}}}
-" FUNCTION: GenerateBuildApplyLine() {{{2
-fun! s:GenerateBuildApplyLine()
-    return s:RPad( "Apply: <" . s:apply . ">",      20). " | " . "Reset: <" . s:do_reset . ">"
+" FUNCTION: GenerateSaveIndexSizeLine() {{{2
+fun! s:GenerateSaveIndexSizeLine()
+    return "[ Save (<" . s:save . ">) with index size <" . s:index_size . "> ]"
+endfun
+" 2}}}
+" FUNCTION: GenerateIndexResetLine() {{{2
+fun! s:GenerateIndexResetLine()
+    return s:RPad( "Current index: <" . s:cur_index . ">", 20) . " | " . "Reset: <" . s:do_reset. ">"
 endfun
 " 2}}}
 " FUNCTION: IsEditAllowed() {{{2
@@ -944,17 +948,13 @@ fun! s:Enter()
             if col < pos
                 call s:ProcessBuffer( s:ACTIVE_CURRENT_INDEX )
             else
-                call s:ProcessBuffer( s:ACTIVE_INDEX_SIZE )
+                call s:ProcessBuffer( s:ACTIVE_RESET )
             end
             return 1
         elseif linenr == s:line_code
             " TODO
-        elseif linenr == s:line_apply
-            if col < pos
-                call s:ProcessBuffer( s:ACTIVE_APPLY )
-            else
-                call s:ProcessBuffer( s:ACTIVE_RESET )
-            end
+        elseif linenr == s:line_save
+            call s:ProcessBuffer( s:ACTIVE_SAVE_INDEXSIZE )
             return 1
         end
 
@@ -984,7 +984,7 @@ endfun
 " 2}}}
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
-    let result = matchlist( a:line, s:pattern_zsd )
+    let result = matchlist( a:line, s:pattern_zsd3 )
     if len( result ) > 0
         let zekyll = result[1]
         let section = result[2]
@@ -997,7 +997,7 @@ endfun
 " The same as BufferLineToZSD but also
 " returns state of code selector
 fun! s:BufferLineToZCSD(line)
-    let result = matchlist( a:line, s:pattern_zcsd )
+    let result = matchlist( a:line, s:pattern_zcsd4 )
     if len( result ) > 0
         let zekyll = result[1]
         let codes = result[2]
@@ -1320,29 +1320,56 @@ fun! s:Space()
         end
         call setline( linenr, s:GenerateRule( 0 ) )
     elseif linenr < s:working_area_beg
-        let result = matchlist( line, s:pattern_apply_reset2 )
-        if len( result ) > 0
-            let line2 = substitute( line, '[^|]', "x", "g" )
-            let pos = stridx( line2, "|" ) + 1
-            let col = col( "." )
-            if col < pos
-                if result[1] ==? "yes"
-                    let s:apply = "no"
+        " At reset line, or at save line?
+        let s_result = matchlist( line, s:pat_Save_IndexSize ) " Save line
+        let r_result = matchlist( line, s:pat_Index_Reset )     " Reset line
+
+        " Save line?
+        if len( s_result ) > 0
+            " Get Reset line
+            unlet r_result
+            let r_result = matchlist( getline( s:line_reset ), s:pat_Index_Reset ) " Reset line
+            if len( r_result ) > 0
+                if s_result[1] ==? "yes"
+                    let s:save = "no"
                 else
-                    let s:apply = "yes"
+                    let s:save = "yes"
                     let s:do_reset = "no"
                 end
+
+                let save_line = s:GenerateSaveIndexSizeLine()
+                call setline( linenr, save_line )
+                let reset_line = s:GenerateIndexResetLine()
+                call setline( s:line_reset, reset_line )
             else
-                if result[2] ==? "yes"
-                    let s:do_reset = "no"
-                else
-                    let s:do_reset = "yes"
-                    let s:apply = "no"
-                end
+                return 0
             end
 
-            let line3 = s:GenerateBuildApplyLine()
-            call setline( linenr, line3 )
+        " Reset line
+        elseif len( r_result ) > 0
+            " Get Save line
+            unlet s_result
+            let s_result = matchlist( getline( s:line_save ), s:pat_Save_IndexSize ) " Save line
+            if len( s_result ) > 0
+                let line2 = substitute( line, '[^|]', "x", "g" )
+                let pos = stridx( line2, "|" ) + 1
+                let col = col( "." )
+                if col > pos
+                    if r_result[2] ==? "yes"
+                        let s:do_reset = "no"
+                    else
+                        let s:do_reset = "yes"
+                        let s:save = "no"
+                    end
+                end
+
+                let reset_line = s:GenerateIndexResetLine()
+                call setline( linenr, reset_line )
+                let save_line = s:GenerateSaveIndexSizeLine()
+                call setline( s:line_save, save_line )
+            else
+                return 0
+            end
         end
     elseif linenr > s:working_area_beg
         let entrynr = linenr - s:working_area_beg - 1
