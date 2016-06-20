@@ -35,6 +35,8 @@ let s:consistent = "yes"
 let s:are_errors = "no"
 let s:save = "no"
 let s:do_reset = "no"
+let s:commit = "no"
+let s:ref = "master"
 
 let s:working_area_beg = 1
 let s:working_area_end = 1
@@ -56,6 +58,7 @@ let s:end_of_warea_char = '-'
 let s:line_welcome = 2
 let s:line_consistent   = 4
 let s:line_errors       = 4
+let s:line_commit       = 4
 let s:line_index        = 5
 let s:line_reset        = 5
 let s:line_code         = 6
@@ -77,8 +80,12 @@ let s:pat_ZSD             = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:spa
 let s:pat_ZCSD            = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
                                \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
 
-let s:pat_Index_Reset     = 'Current index:[[:space:]]*<\?\(\d\+\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
-                            \ '\[[[:space:]]\+Reset:[[:space:]]*<\?\([a-zA-Z]\+\)>\?'
+let s:pat_Commit          = 'Consistent:[[:space:]]\+[a-zA-Z]\+[[:space:]]\+|[[:space:]]\+Errors:[[:space:]]\+[a-zA-Z]\+' . '[[:space:]]\+|[[:space:]]\+' .
+                               \ '\[[[:space:]]\+Commit:[[:space:]]*<\?\([a-zA-Z]\+\)>\?[[:space:]]\+\]'
+
+let s:pat_Index_Reset_Checkout = 'Current index:[[:space:]]*<\?\(\d\+\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
+                                \ '\[[[:space:]]\+Reset:[[:space:]]*<\?\([a-zA-Z]\+\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
+                                \ '\[[[:space:]]\+Checkout:[[:space:]]*<\?\(.\+\)>\?[[:space:]]\+\]'
 
 let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\+\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
 
@@ -140,7 +147,7 @@ fun! s:NormalRender( ... )
             call setline( s:line_welcome+1, "" )
             let s:prefix = ""
         end
-        call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 22 ) . " | " . "Errors: " . s:are_errors )
+        call setline( s:line_consistent, s:GenerateCommitLine() )
         call setline( s:line_index,      s:GenerateIndexResetLine() )
         call setline( s:line_code,               "Code: .......  ~" )
         call setline( s:line_save,       s:GenerateSaveIndexSizeLine() )
@@ -277,7 +284,7 @@ fun! s:ProcessBuffer( active )
     "
 
     if a:active == s:ACTIVE_RESET
-        let result = matchlist( getline( s:line_reset ), s:pat_Index_Reset )
+        let result = matchlist( getline( s:line_reset ), s:pat_Index_Reset_Checkout )
         if len( result ) > 0
             if result[2] ==? "yes"
                 let s:do_reset = "no"
@@ -297,7 +304,7 @@ fun! s:ProcessBuffer( active )
     "
 
     if a:active == s:ACTIVE_CURRENT_INDEX
-        let result = matchlist( getline( s:line_index ), s:pat_Index_Reset )
+        let result = matchlist( getline( s:line_index ), s:pat_Index_Reset_Checkout )
         if len( result ) > 0
             if s:cur_index != result[1]
                 let s:cur_index = result[1]
@@ -808,7 +815,15 @@ fun! s:GenerateIndexResetLine()
     else
         let line = line . "  ]"
     end
+    let line = line . " | [ Checkout: <" . s:ref. "> ]"
     return line
+endfun
+" 2}}}
+" FUNCTION: GenerateCommitLine() {{{2
+fun! s:GenerateCommitLine()
+    return s:RPad( s:prefix . "Consistent: " . s:consistent, 22 ) . " | " .
+         \ s:RPad( "Errors: " . s:are_errors, 16 ) . " | " . 
+         \ s:RPad( "[ Commit: <" . s:commit . "> ]", 16 )
 endfun
 " 2}}}
 " FUNCTION: GenerateCodeLine() {{{2
@@ -1350,20 +1365,28 @@ fun! s:Space()
         call setline( linenr, s:GenerateRule( 0 ) )
     elseif linenr < s:working_area_beg
         " At reset line, or at save line?
-        let s_result = matchlist( line, s:pat_Save_IndexSize ) " Save line
-        let r_result = matchlist( line, s:pat_Index_Reset )     " Reset line
+        let s_result = matchlist( line, s:pat_Save_IndexSize )          " Save line
+        let r_result = matchlist( line, s:pat_Index_Reset_Checkout )    " Reset line
+        let c_result = matchlist( line, s:pat_Commit )                  " Commit line
 
         " Save line?
         if len( s_result ) > 0
+
             " Get Reset line
             unlet r_result
-            let r_result = matchlist( getline( s:line_reset ), s:pat_Index_Reset ) " Reset line
-            if len( r_result ) > 0
+            let r_result = matchlist( getline( s:line_reset ), s:pat_Index_Reset_Checkout ) " Reset line
+
+            " Get Commit line
+            unlet c_result
+            let c_result = matchlist( getline( s:line_commit ), s:pat_Commit ) " Commit line
+
+            if len( r_result ) > 0 && len( c_result ) > 0
                 if s_result[1] ==? "yes"
                     let s:save = "no"
                 else
                     let s:save = "yes"
                     let s:do_reset = "no"
+                    let s:commit = "no"
                 end
 
                 " Get current index size so that it can be preserved
@@ -1373,26 +1396,38 @@ fun! s:Space()
                 call setline( linenr, save_line )
                 let reset_line = s:GenerateIndexResetLine()
                 call setline( s:line_reset, reset_line )
+                let commit_line = s:GenerateCommitLine()
+                call setline( s:line_commit, commit_line )
             else
                 return 0
             end
 
         " Reset line
         elseif len( r_result ) > 0
+
             " Get Save line
             unlet s_result
             let s_result = matchlist( getline( s:line_save ), s:pat_Save_IndexSize ) " Save line
-            if len( s_result ) > 0
+
+            " Get Commit line
+            unlet c_result
+            let c_result = matchlist( getline( s:line_commit ), s:pat_Commit ) " Commit line
+
+            if len( s_result ) > 0 && len( c_result ) > 0
                 let line2 = substitute( line, '[^|]', "x", "g" )
-                let pos = stridx( line2, "|" ) + 1
+                let pos1 = stridx( line2, "|" ) + 1
+                let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
                 let col = col( "." )
-                if col > pos
+                if col > pos1 && col < pos2
                     if r_result[2] ==? "yes"
                         let s:do_reset = "no"
                     else
                         let s:do_reset = "yes"
                         let s:save = "no"
+                        let s:commit = "no"
                     end
+                elseif col > pos2
+                    let s:ref = s:ref . "_"
                 end
 
                 " Get current index size so that it can be preserved
@@ -1400,6 +1435,46 @@ fun! s:Space()
 
                 let reset_line = s:GenerateIndexResetLine()
                 call setline( linenr, reset_line )
+                let save_line = s:GenerateSaveIndexSizeLine()
+                call setline( s:line_save, save_line )
+                let commit_line = s:GenerateCommitLine()
+                call setline( s:line_commit, commit_line )
+            else
+                return 0
+            end
+        " Commit line
+        elseif len( c_result ) > 0
+
+            " Get Save line
+            unlet s_result
+            let s_result = matchlist( getline( s:line_save ), s:pat_Save_IndexSize ) " Save line
+            
+            " Get Reset line
+            unlet r_result
+            let r_result = matchlist( getline( s:line_reset ), s:pat_Index_Reset_Checkout ) " Reset line
+
+            if len( s_result ) > 0 && len( r_result ) > 0
+                let line2 = substitute( line, '[^|]', "x", "g" )
+                let pos1 = stridx( line2, "|" ) + 1
+                let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
+                let col = col( "." )
+                if col > pos2
+                    if c_result[1] ==? "yes"
+                        let s:commit = "no"
+                    else
+                        let s:commit = "yes"
+                        let s:do_reset = "no"
+                        let s:save = "no"
+                    end
+                end
+
+                " Get current index size so that it can be preserved
+                let s:index_size_new = s_result[2]
+
+                let commit_line = s:GenerateCommitLine()
+                call setline( linenr, commit_line )
+                let reset_line = s:GenerateIndexResetLine()
+                call setline( s:line_reset, reset_line )
                 let save_line = s:GenerateSaveIndexSizeLine()
                 call setline( s:line_save, save_line )
             else
