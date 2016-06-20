@@ -827,6 +827,15 @@ fun! s:IsEditAllowed()
     return col == 18 || col >= 24
 endfun
 " 2}}}
+" FUNCTION: IsCodeLine() {{{2
+fun! s:IsCodeLine()
+    if line( "." ) == s:line_code
+        return 1
+    else
+        return 0
+    end
+endfun
+" 2}}}
 " FUNCTION: Opener() {{{2
 fun! s:Opener()
     let retval = 0
@@ -879,18 +888,17 @@ fun! s:DoMappings()
     nnoremap <buffer> <space> :call <SID>Space()<CR>
 
     nmap <buffer> <silent> o <Nop>
-    "nmap <buffer> <silent> p <Nop>
-    "nmap <buffer> <silent> P <Nop>
+    nmap <buffer> <silent> v <Nop>
+    nmap <buffer> <silent> D <Nop>
     nmap <buffer> <silent> y <Nop>
     nmap <buffer> <silent> Y <Nop>
-    :noremap <buffer> <silent> <expr> p @" != "" ? 'p:let @"=""<cr>' : ""
-    :noremap <buffer> <silent> <expr> P @" != "" ? 'P:let @"=""<cr>' : ""
-    nmap <buffer> <silent> D <Nop>
-    nmap <buffer> <silent> v <Nop>
+    noremap <buffer> <silent> <expr> p @" != "" ? 'p:let @"=""<cr>' : ""
+    noremap <buffer> <silent> <expr> P @" != "" ? 'P:let @"=""<cr>' : ""
+    map <expr> i <SID>IsCodeLine() ? 'R' : 'i'
 
+    vmap <buffer> <silent> D <Nop>
     vmap <buffer> <silent> p <Nop>
     vmap <buffer> <silent> P <Nop>
-    vmap <buffer> <silent> D <Nop>
 
     imap <buffer> <silent> <CR> <Nop>
 
