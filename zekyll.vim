@@ -163,7 +163,7 @@ fun! s:NormalRender( ... )
     if depth >= 0
         " Code line
         let resu = s:encode_zcode_arr01( reverse( copy(s:code_selectors) ) )
-        call setline( s:line_code, "Code: " . s:cur_index . "/" . resu[1] . "  ~" )
+        call setline( s:line_code, s:GenerateCodeLine( resu[1] ) )
 
         let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
         call cursor(s:working_area_end+1,1)
@@ -802,7 +802,18 @@ endfun
 " 2}}}
 " FUNCTION: GenerateIndexResetLine() {{{2
 fun! s:GenerateIndexResetLine()
-    return s:RPad( "[ Current index: <" . s:cur_index . ">", 20) . " ] | " . "[ Reset: <" . s:do_reset . "> ]"
+    let line = s:RPad( "[ Current index: <" . s:cur_index . ">", 20) . " ] | " . "[ Reset: <" . s:do_reset . ">"
+    if s:do_reset ==? "yes"
+        let line = line . " ]"
+    else
+        let line = line . "  ]"
+    end
+    return line
+endfun
+" 2}}}
+" FUNCTION: GenerateCodeLine() {{{2
+fun! s:GenerateCodeLine( code )
+    return "[ Code:." . s:cur_index . "/" . s:RPad( a:code, 29, "." ) . " ] ~"
 endfun
 " 2}}}
 " FUNCTION: IsEditAllowed() {{{2
