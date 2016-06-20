@@ -77,9 +77,10 @@ let s:pat_ZSD             = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:spa
 let s:pat_ZCSD            = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
                                \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
 
-let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\+\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
+let s:pat_Index_Reset     = 'Current index:[[:space:]]*<\?\(\d\+\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
+                            \ '\[[[:space:]]\+Reset:[[:space:]]*<\?\([a-zA-Z]\+\)>\?'
 
-let s:pat_Index_Reset     = 'Current index:[[:space:]]*<\?\(\d\+\)>\?' . '[[:space:]]\+|[[:space:]]\+' . 'Reset:[[:space:]]*<\?\([a-zA-Z]\+\)>\?'
+let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\+\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
 
 let s:ACTIVE_NONE = 0
 let s:ACTIVE_CURRENT_INDEX = 1
@@ -139,7 +140,7 @@ fun! s:NormalRender( ... )
             call setline( s:line_welcome+1, "" )
             let s:prefix = ""
         end
-        call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 20 ) . " | " . "Errors: " . s:are_errors )
+        call setline( s:line_consistent, s:RPad( s:prefix . "Consistent: " . s:consistent, 22 ) . " | " . "Errors: " . s:are_errors )
         call setline( s:line_index,      s:GenerateIndexResetLine() )
         call setline( s:line_code,               "Code: .......  ~" )
         call setline( s:line_save,       s:GenerateSaveIndexSizeLine() )
@@ -801,7 +802,7 @@ endfun
 " 2}}}
 " FUNCTION: GenerateIndexResetLine() {{{2
 fun! s:GenerateIndexResetLine()
-    return s:RPad( "Current index: <" . s:cur_index . ">", 20) . " | " . "Reset: <" . s:do_reset. ">"
+    return s:RPad( "[ Current index: <" . s:cur_index . ">", 20) . " ] | " . "[ Reset: <" . s:do_reset . "> ]"
 endfun
 " 2}}}
 " FUNCTION: IsEditAllowed() {{{2
