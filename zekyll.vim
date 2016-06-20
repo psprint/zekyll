@@ -850,12 +850,16 @@ fun! s:DoMappings()
     "nmap <buffer> <silent> gf :set lz<CR>:silent! call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <buffer> <silent> gf :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <buffer> <silent> <C-]> :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
-    nmap <buffer> <silent> <CR> :set lz<CR>:call <SID>ProcessBuffer()<CR>:set nolz<CR>
+    nmap <buffer> <silent> <CR> :set lz<CR>:call <SID>Enter()<CR>:set nolz<CR>
     nnoremap <buffer> <space> :call <SID>Space()<CR>
 
     nmap <buffer> <silent> o <Nop>
-    nmap <buffer> <silent> p <Nop>
-    nmap <buffer> <silent> P <Nop>
+    "nmap <buffer> <silent> p <Nop>
+    "nmap <buffer> <silent> P <Nop>
+    nmap <buffer> <silent> y <Nop>
+    nmap <buffer> <silent> Y <Nop>
+    noremap <buffer> <silent> p p:let @"=""<cr>
+    noremap <buffer> <silent> P P:let @"=""<cr>
     nmap <buffer> <silent> D <Nop>
     nmap <buffer> <silent> v <Nop>
 
