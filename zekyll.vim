@@ -878,8 +878,8 @@ fun! s:DoMappings()
     "nmap <buffer> <silent> P <Nop>
     nmap <buffer> <silent> y <Nop>
     nmap <buffer> <silent> Y <Nop>
-    noremap <buffer> <silent> p p:let @"=""<cr>
-    noremap <buffer> <silent> P P:let @"=""<cr>
+    :noremap <silent> <expr> p @" != "" ? 'p:let @"=""<cr>' : ""
+    :noremap <silent> <expr> P @" != "" ? 'P:let @"=""<cr>' : ""
     nmap <buffer> <silent> D <Nop>
     nmap <buffer> <silent> v <Nop>
 
