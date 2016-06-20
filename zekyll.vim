@@ -71,13 +71,13 @@ let s:savedLine = 1
 let s:savedCol = 1
 let s:zeroLine = 1
 
-let s:pattern_zsd3              = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<.>' .
+let s:pat_ZSD             = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<.>' .
                                \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
 
-let s:pattern_zcsd4             = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
+let s:pat_ZCSD            = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:space:]]\+' . '<\(.\)>' .
                                \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
 
-let s:pat_Save_IndexSize = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\+\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
+let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\+\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
 
 let s:pat_Index_Reset     = 'Current index:[[:space:]]*<\?\(\d\+\)>\?' . '[[:space:]]\+|[[:space:]]\+' . 'Reset:[[:space:]]*<\?\([a-zA-Z]\+\)>\?'
 
@@ -987,7 +987,7 @@ endfun
 " 2}}}
 " FUNCTION: BufferLineToZSD() {{{2
 fun! s:BufferLineToZSD(line)
-    let result = matchlist( a:line, s:pattern_zsd3 )
+    let result = matchlist( a:line, s:pat_ZSD )
     if len( result ) > 0
         let zekyll = result[1]
         let section = result[2]
@@ -1000,7 +1000,7 @@ endfun
 " The same as BufferLineToZSD but also
 " returns state of code selector
 fun! s:BufferLineToZCSD(line)
-    let result = matchlist( a:line, s:pattern_zcsd4 )
+    let result = matchlist( a:line, s:pat_ZCSD )
     if len( result ) > 0
         let zekyll = result[1]
         let codes = result[2]
