@@ -873,12 +873,54 @@ fun! s:DoMappings()
     setlocal ft=help
     setlocal wrap
 
-    for i in range( char2nr('a'), char2nr('z') )
+    " Latin, todo few special characters
+    for i in range( char2nr('0'), char2nr('[') )
         exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
     endfor
-    for i in range( char2nr('A'), char2nr('Z') )
+
+    for i in range( char2nr(']'), char2nr('{') )
         exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
     endfor
+
+    inoremap <buffer> <expr> } <SID>IsEditAllowed() ? "}" : ""
+
+    " Greek and Coptic 0x370 0x3FF
+    for i in range( 880, 1023 )
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+
+    " Cyrillic 0x400 0x4FF
+    for i in range( 1024, 1279 )
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+
+    " Cyrillic Supplementary 0x500 - 0x52F
+    for i in range( 1280, 1327 )
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+
+    " Armenian 0x530 0x58F
+    for i in range( 1328, 1423 )
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+
+    " Hebrew 0x590 0x5FF
+    for i in range( 1424, 1535 )
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+
+    " Arabic 0x600 0x6FF
+    for i in range( 1536, 1791 )
+        exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+    endfor
+
+    if exists("g:zekyll_cjk") && g:zekyll_cjk == 1
+        " CJK Unified Ideographs Extension A 0x3400 0x4DBF
+        for i in range( 13312, 19903 )
+            exec 'inoremap <buffer> <expr> ' . nr2char(i) . ' <SID>IsEditAllowed() ? "' . nr2char(i) . '" : ""'
+        endfor
+    end
+
     exec 'inoremap <buffer> <expr> ' . nr2char(8211) . ' <SID>IsEditAllowed() ? "' . nr2char(8211) . '" : ""'
 endfun
 " 2}}}
