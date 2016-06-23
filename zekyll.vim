@@ -25,6 +25,7 @@ let s:repos_paths = [ fnameescape( $HOME )."/.zekyll/repos" ]
 let s:lzsd = []
 let s:listing = []
 let s:inconsistent_listing = []
+let s:refs = [ "master", 0, [] ]
 
 let s:cur_index = 1
 let s:prev_index = -1
@@ -134,6 +135,7 @@ fun! s:NormalRender( ... )
 
     if depth >= 2
         call s:SetIndex(s:cur_index)
+        let s:refs = s:ListAllRefs()
         call s:ReadRepo()
         let s:index_size = len(s:listing)
         call s:ParseListingIntoArrays()
@@ -884,7 +886,7 @@ fun! s:GenerateIndexResetLine()
     else
         let line = line . "  ]"
     end
-    let line = line . "   | [ Checkout: <" . s:ref. "> ]"
+    let line = line . "   | [ Checkout: <" . s:refs[0]. "> ]"
     return line
 endfun
 " 2}}}
@@ -2080,6 +2082,58 @@ fun! s:CheckGitState()
         return 1
     end
     return 1
+endfun
+" 2}}}
+" FUNCTION: ListAllRefs() {{{2
+fun! s:ListAllRefs()
+    "
+    " Branch
+    "
+
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " branch --list --no-color"
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+
+    if v:shell_error != 0
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with branch --list >", arr )
+    end
+    call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
+
+    "
+    " Tag
+    "
+
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " tag -l"
+    let cmd_output = system( cmd )
+    let arr2 = split( cmd_output, '\n\+' )
+
+    if v:shell_error != 0
+        call map( arr2, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with tag -l >", arr2 )
+    end
+    call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr2 )
+
+    "
+    " Post-processing
+    "
+
+    " Find active branch
+    let arr1 = []
+    let active = ""
+    let detached = 0
+    for ref in arr
+        if ref =~ "^\*.*"
+            let ref = substitute( ref, "^\* ", "", "" )
+            if ref =~ "(.*)"
+                let detached = 1
+                let ref = substitute( ref, '(HEAD detached at \(.*\))', '\1', "" )
+            end
+            let active = ref
+        end
+        call add( arr1, ref )
+    endfor
+    return [ active, detached, arr1 + arr2 ]
 endfun
 " 2}}}
 " 1}}}
