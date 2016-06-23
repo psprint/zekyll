@@ -1556,6 +1556,13 @@ fun! s:Space()
                     else
                         s:refs[0] = s:refs[2][0]
                     end
+
+                    " Only one button in use
+                    let s:commit = "no"
+                    let s:origin = "nop"
+                    let s:do_reset = "no"
+                    let s:do_status = "no"
+                    let s:save = "no"
                 end
 
                 " Get current index size so that it can be preserved
