@@ -103,6 +103,8 @@ let s:ACTIVE_SAVE_INDEXSIZE = 3
 let s:ACTIVE_RESET = 4
 let s:ACTIVE_COMMIT = 5
 let s:ACTIVE_CHECKOUT = 6
+let s:ACTIVE_STATUS = 7
+let s:ACTIVE_PULL = 8
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -288,6 +290,26 @@ fun! s:ProcessBuffer( active )
     call s:SaveView()
     let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
     call s:RestoreView()
+
+    "
+    " Status ?
+    "
+
+    if a:active == s:ACTIVE_STATUS
+        call s:DoStatus()
+        call s:NormalRender()
+        return
+    end
+
+    "
+    " Pull ?
+    "
+
+    if a:active == s:ACTIVE_PULL
+        call s:DoPull()
+        call s:NormalRender()
+        return
+    end
 
     "
     " Commit ?
@@ -1051,6 +1073,13 @@ fun! s:Enter()
                 call s:ProcessBuffer( s:ACTIVE_RESET )
             elseif col > pos2
                 call s:ProcessBuffer( s:ACTIVE_CHECKOUT )
+            end
+            return 1
+        elseif linenr == s:line_pull
+            if col < pos1
+                call s:ProcessBuffer( s:ACTIVE_STATUS )
+            elseif col > pos1
+                call s:ProcessBuffer( s:ACTIVE_PULL )
             end
             return 1
         elseif linenr == s:line_code
@@ -1968,6 +1997,36 @@ fun! s:DoCheckout(ref)
     else
         call map( arr, '" " . v:val' )
         call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with checkout >", arr )
+    end
+endfun
+" 2}}}
+" FUNCTION: DoStatus() {{{2
+fun! s:DoStatus()
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " status -u no"
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+    
+    if v:shell_error == 0
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Status successful >", arr )
+    else
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with status >", arr )
+    end
+endfun
+" 2}}}
+" FUNCTION: DoPull() {{{2
+fun! s:DoPull()
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " pull origin"
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+    
+    if v:shell_error == 0
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Pull successful >", arr )
+    else
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with pull >", arr )
     end
 endfun
 " 2}}}
