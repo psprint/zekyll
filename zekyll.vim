@@ -61,8 +61,8 @@ let s:line_errors       = 4
 let s:line_commit       = 4
 let s:line_index        = 5
 let s:line_reset        = 5
+let s:line_checkout     = 5
 let s:line_code         = 6
-let s:line_code2        = 6
 let s:line_save         = 7
 let s:line_index_size   = 7
 let s:line_rule         = 8
@@ -294,7 +294,15 @@ fun! s:ProcessBuffer( active )
     "
 
     if a:active == s:ACTIVE_CHECKOUT
-        call s:DoCheckout()
+        let result = matchlist( getline( s:line_checkout ), s:pat_Index_Reset_Checkout )
+        if len( result ) > 0
+            let s:ref = result[3]
+            call s:DoCheckout( s:ref )
+        else
+            call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (3)" )
+            call s:NormalRender()
+            return
+        end
     end
 
     "
@@ -1839,8 +1847,19 @@ fun! s:DoCommit()
     end
 endfun
 " 2}}}
-" FUNCTION: ResetRepo() {{{2
-fun! s:DoCheckout()
+" FUNCTION: DoCheckout() {{{2
+fun! s:DoCheckout(ref)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " checkout " . shellescape(a:ref)
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+    
+    if v:shell_error == 0
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Checkout successful >", arr )
+    else
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with checkout >", arr )
+    end
 endfun
 " 2}}}
 " 1}}}
