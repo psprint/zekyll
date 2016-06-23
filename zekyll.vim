@@ -133,9 +133,12 @@ fun! s:NormalRender( ... )
 
     call s:ResetState( depth )
 
+    if depth >= 1
+        let s:refs = s:ListAllRefs()
+    end
+
     if depth >= 2
         call s:SetIndex(s:cur_index)
-        let s:refs = s:ListAllRefs()
         call s:ReadRepo()
         let s:index_size = len(s:listing)
         call s:ParseListingIntoArrays()
