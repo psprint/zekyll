@@ -287,6 +287,7 @@ fun! s:ProcessBuffer( active )
 
     if a:active == s:ACTIVE_COMMIT
         call s:DoCommit()
+        call s:NormalRender()
         return
     end
 
@@ -301,6 +302,7 @@ fun! s:ProcessBuffer( active )
             if s:CheckGitState()
                 call s:DoCheckout( s:ref )
             end
+            call s:NormalRender()
             return
         else
             call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (3)" )
