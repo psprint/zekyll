@@ -1844,7 +1844,7 @@ endfun
 " 2}}}
 " FUNCTION: DoCommit() {{{2
 fun! s:DoCommit()
-    let cmd = ":!git -C " . shellescape( s:cur_repo_path ) . " commit"
+    let cmd = ":!echo \"===============================================\" && git -C " . shellescape( s:cur_repo_path ) . " commit"
     exec cmd
 
     if v:shell_error == 0
