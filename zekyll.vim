@@ -38,7 +38,7 @@ let s:do_reset = "no"
 let s:commit = "no"
 let s:ref = "master"
 let s:do_status = "no"
-let s:do_pull = "no"
+let s:origin = "nop"
 
 let s:working_area_beg = 1
 let s:working_area_end = 1
@@ -65,7 +65,7 @@ let s:line_index        = 5
 let s:line_reset        = 5
 let s:line_checkout     = 5
 let s:line_status       = 6
-let s:line_pull         = 6
+let s:line_origin       = 6
 let s:line_code         = 7
 let s:line_save         = 8
 let s:line_index_size   = 8
@@ -91,8 +91,8 @@ let s:pat_Index_Reset_Checkout = 'Current index:[[:space:]]*<\?\(\d\+\)>\?[[:spa
                                 \ '\[[[:space:]]\+Reset:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
                                 \ '\[[[:space:]]\+Checkout:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]'
 
-let s:pat_Status_Pull     = '\[[[:space:]]\+Status:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
-                               \ '\[[[:space:]]\+Pull:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]'
+let s:pat_Status_Origin     = '\[[[:space:]]\+Status:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
+                               \ '\[[[:space:]]\+Origin:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]'
 
 let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\{-1,}\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
 
@@ -104,7 +104,7 @@ let s:ACTIVE_RESET = 4
 let s:ACTIVE_COMMIT = 5
 let s:ACTIVE_CHECKOUT = 6
 let s:ACTIVE_STATUS = 7
-let s:ACTIVE_PULL = 8
+let s:ACTIVE_ORIGIN = 8
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -160,7 +160,7 @@ fun! s:NormalRender( ... )
         end
         call setline( s:line_consistent, s:GenerateCommitLine() )
         call setline( s:line_index,      s:GenerateIndexResetLine() )
-        call setline( s:line_pull,       s:GenerateStatusPullLine() )
+        call setline( s:line_origin,       s:GenerateStatusOriginLine() )
         call setline( s:line_code,               "Code: .......  ~" )
         call setline( s:line_save,       s:GenerateSaveIndexSizeLine() )
         call setline( s:line_rule,       s:GenerateRule( 1 ) )
@@ -302,11 +302,18 @@ fun! s:ProcessBuffer( active )
     end
 
     "
-    " Pull ?
+    " Pull / Push ?
     "
 
-    if a:active == s:ACTIVE_PULL
-        call s:DoPull()
+    if a:active == s:ACTIVE_ORIGIN
+        " Get Origin line
+        let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Origin ) " Origin line
+        if p_result[2] ==? "pull"
+            call s:DoPull()
+        elseif p_result[2] ==? "push"
+            call s:DoPush()
+        end
+
         call s:NormalRender()
         return
     end
@@ -877,14 +884,14 @@ fun! s:GenerateIndexResetLine()
     else
         let line = line . "  ]"
     end
-    let line = line . " | [ Checkout: <" . s:ref. "> ]"
+    let line = line . "   | [ Checkout: <" . s:ref. "> ]"
     return line
 endfun
 " 2}}}
 " FUNCTION: GenerateCommitLine() {{{2
 fun! s:GenerateCommitLine()
     return s:RPad( s:prefix . "Consistent: " . s:consistent, 22 ) . " | " .
-         \ s:RPad( "Errors: " . s:are_errors, 16 ) . " | " . 
+         \ s:RPad( "Errors: " . s:are_errors, 18 ) . " | " .
          \ s:RPad( "[ Commit: <" . s:commit . "> ]", 16 )
 endfun
 " 2}}}
@@ -893,10 +900,10 @@ fun! s:GenerateCodeLine( code )
     return "[ Code:." . s:cur_index . "/" . s:RPad( a:code, 29, "." ) . " ] ~"
 endfun
 " 2}}}
-" FUNCTION: GenerateStatusPullLine() {{{2
-fun! s:GenerateStatusPullLine( )
-    let line = s:RPad( "[ Status: <" . s:do_status. ">", 15) . " ]      | " . "[ Pull: <" . s:do_pull. ">"
-    if s:do_pull ==? "yes"
+" FUNCTION: GenerateStatusOriginLine() {{{2
+fun! s:GenerateStatusOriginLine( )
+    let line = s:RPad( "[ Status: <" . s:do_status. ">", 15) . " ]      | " . "[ Origin: <" . s:origin. ">"
+    if s:origin ==? "pull" || s:origin ==? "push"
         let line = line . " ]"
     else
         let line = line . "  ]"
@@ -1075,11 +1082,11 @@ fun! s:Enter()
                 call s:ProcessBuffer( s:ACTIVE_CHECKOUT )
             end
             return 1
-        elseif linenr == s:line_pull
+        elseif linenr == s:line_origin
             if col < pos1
                 call s:ProcessBuffer( s:ACTIVE_STATUS )
             elseif col > pos1
-                call s:ProcessBuffer( s:ACTIVE_PULL )
+                call s:ProcessBuffer( s:ACTIVE_ORIGIN )
             end
             return 1
         elseif linenr == s:line_code
@@ -1455,7 +1462,7 @@ fun! s:Space()
         let s_result = matchlist( line, s:pat_Save_IndexSize )          " Save line
         let r_result = matchlist( line, s:pat_Index_Reset_Checkout )    " Reset line
         let c_result = matchlist( line, s:pat_Commit )                  " Commit line
-        let p_result = matchlist( line, s:pat_Status_Pull )             " Pull line
+        let p_result = matchlist( line, s:pat_Status_Origin )             " Origin line
 
         " Save line?
         if len( s_result ) > 0
@@ -1468,16 +1475,16 @@ fun! s:Space()
             unlet c_result
             let c_result = matchlist( getline( s:line_commit ), s:pat_Commit ) " Commit line
 
-            " Get Pull line
+            " Get Origin line
             unlet p_result
-            let p_result = matchlist( getline( s:line_pull ), s:pat_Status_Pull ) " Pull line
+            let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Origin ) " Origin line
 
             if len( r_result ) > 0 && len( c_result ) > 0 && len( p_result ) > 0
                 if s_result[1] ==? "yes"
                     let s:save = "no"
                 else
                     let s:commit = "no"
-                    let s:do_pull = "no"
+                    let s:origin = "nop"
                     let s:do_reset = "no"
                     let s:do_status = "no"
                     let s:save = "yes"
@@ -1492,8 +1499,8 @@ fun! s:Space()
                 call setline( s:line_commit, commit_line )
                 let reset_line = s:GenerateIndexResetLine()
                 call setline( s:line_reset, reset_line )
-                let pull_line = s:GenerateStatusPullLine()
-                call setline( s:line_pull, pull_line )
+                let origin_line = s:GenerateStatusOriginLine()
+                call setline( s:line_origin, origin_line )
             else
                 return 0
             end
@@ -1509,9 +1516,9 @@ fun! s:Space()
             unlet c_result
             let c_result = matchlist( getline( s:line_commit ), s:pat_Commit ) " Commit line
 
-            " Get Pull line
+            " Get Origin line
             unlet p_result
-            let p_result = matchlist( getline( s:line_pull ), s:pat_Status_Pull ) " Pull line
+            let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Origin ) " Origin line
 
             if len( s_result ) > 0 && len( c_result ) > 0 && len( p_result ) > 0
                 let line2 = substitute( line, '[^|]', "x", "g" )
@@ -1523,7 +1530,7 @@ fun! s:Space()
                         let s:do_reset = "no"
                     else
                         let s:commit = "no"
-                        let s:do_pull = "no"
+                        let s:origin = "nop"
                         let s:do_reset = "yes"
                         let s:do_status = "no"
                         let s:save = "no"
@@ -1541,8 +1548,8 @@ fun! s:Space()
                 call setline( s:line_commit, commit_line )
                 let save_line = s:GenerateSaveIndexSizeLine()
                 call setline( s:line_save, save_line )
-                let pull_line = s:GenerateStatusPullLine()
-                call setline( s:line_pull, pull_line )
+                let origin_line = s:GenerateStatusOriginLine()
+                call setline( s:line_origin, origin_line )
             else
                 return 0
             end
@@ -1557,9 +1564,9 @@ fun! s:Space()
             unlet r_result
             let r_result = matchlist( getline( s:line_reset ), s:pat_Index_Reset_Checkout ) " Reset line
 
-            " Get Pull line
+            " Get Origin line
             unlet p_result
-            let p_result = matchlist( getline( s:line_pull ), s:pat_Status_Pull ) " Pull line
+            let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Origin ) " Origin line
 
             if len( s_result ) > 0 && len( r_result ) > 0 && len( p_result ) > 0
                 let line2 = substitute( line, '[^|]', "x", "g" )
@@ -1571,7 +1578,7 @@ fun! s:Space()
                         let s:commit = "no"
                     else
                         let s:commit = "yes"
-                        let s:do_pull = "no"
+                        let s:origin = "nop"
                         let s:do_reset = "no"
                         let s:do_status = "no"
                         let s:save = "no"
@@ -1587,12 +1594,12 @@ fun! s:Space()
                 call setline( s:line_reset, reset_line )
                 let save_line = s:GenerateSaveIndexSizeLine()
                 call setline( s:line_save, save_line )
-                let pull_line = s:GenerateStatusPullLine()
-                call setline( s:line_pull, pull_line )
+                let origin_line = s:GenerateStatusOriginLine()
+                call setline( s:line_origin, origin_line )
             else
                 return 0
             end
-        " Pull line
+        " Origin line
         elseif len( p_result ) > 0
 
             " Get Save line
@@ -1616,17 +1623,25 @@ fun! s:Space()
                         let s:do_status = "no"
                     else
                         let s:commit = "no"
-                        let s:do_pull = "no"
+                        let s:origin = "nop"
                         let s:do_reset = "no"
                         let s:do_status = "yes"
                         let s:save = "no"
                     end
                 elseif col > pos1
-                    if p_result[2] ==? "yes"
-                        let s:do_pull = "no"
-                    else
+                    if p_result[2] ==? "pull"
+                        let s:origin = "nop"
+                    elseif p_result[2] ==? "nop"
+                        let s:origin = "push"
+
                         let s:commit = "no"
-                        let s:do_pull = "yes"
+                        let s:do_reset = "no"
+                        let s:do_status = "no"
+                        let s:save = "no"
+                    elseif p_result[2] ==? "push"
+                        let s:origin = "pull"
+
+                        let s:commit = "no"
                         let s:do_reset = "no"
                         let s:do_status = "no"
                         let s:save = "no"
@@ -1636,8 +1651,8 @@ fun! s:Space()
                 " Get current index size so that it can be preserved
                 let s:index_size_new = s_result[2]
 
-                let pull_line = s:GenerateStatusPullLine()
-                call setline( linenr, pull_line )
+                let origin_line = s:GenerateStatusOriginLine()
+                call setline( linenr, origin_line )
                 let commit_line = s:GenerateCommitLine()
                 call setline( s:line_commit, commit_line )
                 let reset_line = s:GenerateIndexResetLine()
@@ -2027,6 +2042,21 @@ fun! s:DoPull()
     else
         call map( arr, '" " . v:val' )
         call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with pull >", arr )
+    end
+endfun
+" 2}}}
+" FUNCTION: DoPush() {{{2
+fun! s:DoPush()
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " push origin"
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+
+    if v:shell_error == 0
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Push successful >", arr )
+    else
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with push >", arr )
     end
 endfun
 " 2}}}
