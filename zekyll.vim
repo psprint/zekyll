@@ -1853,6 +1853,9 @@ fun! s:DoCheckout(ref)
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     
+    let pattern="Note:\\|HEAD\\ is\\ now\\|Previous\\ HEAD\\|Switched\\ to\\|Already on\\|error:"
+    call filter(arr, 'v:val =~ pattern')
+
     if v:shell_error == 0
         call map( arr, '" " . v:val' )
         call s:AppendMessageT( "|(err:" . v:shell_error . ")| Checkout successful >", arr )
