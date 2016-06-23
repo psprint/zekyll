@@ -94,6 +94,8 @@ let s:ACTIVE_CURRENT_INDEX = 1
 let s:ACTIVE_CODE = 2
 let s:ACTIVE_SAVE_INDEXSIZE = 3
 let s:ACTIVE_RESET = 4
+let s:ACTIVE_COMMIT = 5
+let s:ACTIVE_CHECKOUT = 6
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -278,6 +280,22 @@ fun! s:ProcessBuffer( active )
     call s:SaveView()
     let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
     call s:RestoreView()
+
+    "
+    " Commit ?
+    "
+
+    if a:active == s:ACTIVE_COMMIT
+        call s:DoCommit()
+    end
+
+    "
+    " Checkout ?
+    "
+
+    if a:active == s:ACTIVE_CHECKOUT
+        call s:DoCheckout()
+    end
 
     "
     " Reset ?
@@ -981,18 +999,24 @@ fun! s:Enter()
     let linenr = line( "." )
     let line = getline( linenr )
     if linenr <= s:working_area_beg 
+        " Process the line like if it was one of multiple-button lines
         let line2 = substitute( line, '[^|]', "x", "g" )
+        let pos1 = stridx( line2, "|" ) + 1
+        let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
         let col = col( "." )
-        let pos = stridx( line2, "|" ) + 1
-        if pos == -1
-            return 0
-        end
 
-        if linenr == s:line_index
-            if col < pos
+        if linenr == s:line_commit
+            if col > pos2
+                call s:ProcessBuffer( s:ACTIVE_COMMIT )
+            end
+            return 1
+        elseif linenr == s:line_index
+            if col < pos1
                 call s:ProcessBuffer( s:ACTIVE_CURRENT_INDEX )
-            else
+            elseif col > pos1 && col < pos2
                 call s:ProcessBuffer( s:ACTIVE_RESET )
+            elseif col > pos2
+                call s:ProcessBuffer( s:ACTIVE_CHECKOUT )
             end
             return 1
         elseif linenr == s:line_code
@@ -1801,6 +1825,22 @@ fun! s:ResetRepo()
     call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
 
     return 1
+endfun
+" 2}}}
+" FUNCTION: DoCommit() {{{2
+fun! s:DoCommit()
+    let cmd = ":!git -C " . shellescape( s:cur_repo_path ) . " commit"
+    exec cmd
+
+    if v:shell_error == 0
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Commit ended successfully" )
+    else
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem during commit" )
+    end
+endfun
+" 2}}}
+" FUNCTION: ResetRepo() {{{2
+fun! s:DoCheckout()
 endfun
 " 2}}}
 " 1}}}
