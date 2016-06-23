@@ -937,7 +937,7 @@ fun! s:DoMappings()
 
     setlocal buftype=nofile
     setlocal ft=help
-    setlocal wrap
+    setlocal nowrap
 
     " Latin, todo few special characters
     for i in range( char2nr('0'), char2nr('[') )
