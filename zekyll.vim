@@ -933,6 +933,7 @@ fun! s:DoMappings()
     nmap <buffer> <silent> <C-]> :set lz<CR>:call <SID>GoToFile()<CR>:set nolz<CR>
     nmap <buffer> <silent> <CR> :set lz<CR>:call <SID>Enter()<CR>:set nolz<CR>
     nnoremap <buffer> <space> :call <SID>Space()<CR>
+    nmap <buffer> <silent> <C-G> :set lz<CR>:!read<CR>:set nolz<CR>
 
     nmap <buffer> <silent> o <Nop>
     nmap <buffer> <silent> v <Nop>
@@ -1849,7 +1850,7 @@ fun! s:DoCommit()
     if v:shell_error == 0
         call s:AppendMessageT( "|(err:" . v:shell_error . ")| Commit ended successfully" )
     else
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem during commit" )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem during commit. Press Ctrl-G to view Git's output." )
     end
 endfun
 " 2}}}
