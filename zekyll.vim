@@ -287,6 +287,7 @@ fun! s:ProcessBuffer( active )
 
     if a:active == s:ACTIVE_COMMIT
         call s:DoCommit()
+        return
     end
 
     "
@@ -297,7 +298,10 @@ fun! s:ProcessBuffer( active )
         let result = matchlist( getline( s:line_checkout ), s:pat_Index_Reset_Checkout )
         if len( result ) > 0
             let s:ref = result[3]
-            call s:DoCheckout( s:ref )
+            if s:CheckGitState()
+                call s:DoCheckout( s:ref )
+            end
+            return
         else
             call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (3)" )
             call s:NormalRender()
@@ -1863,6 +1867,27 @@ fun! s:DoCheckout(ref)
         call map( arr, '" " . v:val' )
         call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with checkout >", arr )
     end
+endfun
+" 2}}}
+" FUNCTION: CheckGitState() {{{2
+" Will check if there are any unsaved operations
+fun! s:CheckGitState()
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " status --porcelain"
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+    let pattern = '^[RA]\|\ D'
+    call filter(arr, 'v:val =~ pattern')
+
+    if len( arr ) > 0
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT(" Please commit or reset before checking out other ref. The problematic, uncommited files are: >", arr)
+        return 0
+    else
+        call map( arr, '" " . v:val' )
+        call s:AppendMessageT(" Allowed to perform checkout >", arr)
+        return 1
+    end
+    return 1
 endfun
 " 2}}}
 " 1}}}
