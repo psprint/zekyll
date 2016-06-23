@@ -81,13 +81,13 @@ let s:pat_ZCSD            = '^|\([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\)|' . '[[:spa
                                \ '[[:space:]]\+' . '\*\?\([A-Z]\)\*\?' . '[[:space:]]\+' . '\(.*\)$'
 
 let s:pat_Commit          = 'Consistent:[[:space:]]\+[a-zA-Z]\+[[:space:]]\+|[[:space:]]\+Errors:[[:space:]]\+[a-zA-Z]\+' . '[[:space:]]\+|[[:space:]]\+' .
-                               \ '\[[[:space:]]\+Commit:[[:space:]]*<\?\([a-zA-Z]\+\)>\?[[:space:]]\+\]'
+                               \ '\[[[:space:]]\+Commit:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]'
 
 let s:pat_Index_Reset_Checkout = 'Current index:[[:space:]]*<\?\(\d\+\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
-                                \ '\[[[:space:]]\+Reset:[[:space:]]*<\?\([a-zA-Z]\+\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
-                                \ '\[[[:space:]]\+Checkout:[[:space:]]*<\?\(.\+\)>\?[[:space:]]\+\]'
+                                \ '\[[[:space:]]\+Reset:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
+                                \ '\[[[:space:]]\+Checkout:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]'
 
-let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\+\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
+let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\{-1,}\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
 
 let s:ACTIVE_NONE = 0
 let s:ACTIVE_CURRENT_INDEX = 1
