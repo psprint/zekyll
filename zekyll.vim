@@ -37,7 +37,6 @@ let s:are_errors = "no"
 let s:save = "no"
 let s:do_reset = "no"
 let s:commit = "no"
-let s:ref = "master"
 let s:do_status = "no"
 let s:origin = "nop"
 
@@ -340,9 +339,9 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_CHECKOUT
         let result = matchlist( getline( s:line_checkout ), s:pat_Index_Reset_Checkout )
         if len( result ) > 0
-            let s:ref = result[3]
+            let ref = result[3]
             if s:CheckGitState()
-                call s:DoCheckout( s:ref )
+                call s:DoCheckout( ref )
             end
             call s:NormalRender()
             return
@@ -1542,7 +1541,21 @@ fun! s:Space()
                         let s:save = "no"
                     end
                 elseif col > pos2
-                    let s:ref = s:ref . "_"
+                    " Find to which s:refs[2] entry s:ref points to
+                    let active_ref = -1
+                    for i in range(0, len(s:refs[2]) - 1)
+                        if s:refs[2][i] == s:refs[0]
+                            let active_ref = i
+                            break
+                        end
+                    endfor
+
+                    if active_ref != -1
+                        let active_ref = (active_ref + 1) % len(s:refs[2])
+                        let s:refs[0] = s:refs[2][active_ref]
+                    else
+                        s:refs[0] = s:refs[2][0]
+                    end
                 end
 
                 " Get current index size so that it can be preserved
@@ -2136,6 +2149,11 @@ fun! s:ListAllRefs()
         end
         call add( arr1, ref )
     endfor
+
+    " Remove whitespace from all arr1 and arr2 elements
+    call map( arr1, 'substitute( v:val, "^ \\+", "", "g" )' )
+    call map( arr2, 'substitute( v:val, "^ \\+", "", "g" )' )
+
     return [ active, detached, arr1 + arr2 ]
 endfun
 " 2}}}
