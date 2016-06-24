@@ -1655,21 +1655,8 @@ fun! s:Space()
                         let s:do_reset = "yes"
                     end
                 elseif col > pos2
-                    " Find to which s:refs[2] entry s:ref points to
-                    let active_ref = -1
-                    for i in range(0, len(s:refs[2]) - 1)
-                        if s:refs[2][i] == s:refs[0]
-                            let active_ref = i
-                            break
-                        end
-                    endfor
-
-                    if active_ref != -1
-                        let active_ref = (active_ref + 1) % len(s:refs[2])
-                        let s:refs[0] = s:refs[2][active_ref]
-                    else
-                        s:refs[0] = s:refs[2][0]
-                    end
+                    let choices = s:refs[2]
+                    let s:refs[0] = s:IterateOver( choices, s:refs[0] )
 
                     " Only one button in use
                     call s:TurnOff()
