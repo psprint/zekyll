@@ -1101,7 +1101,7 @@ fun! s:DoMappings()
     setlocal buftype=nofile
     setlocal ft=help
     setlocal nowrap
-    setlocal tw=120
+    setlocal tw=290
 
     " Latin, todo few special characters
     for i in range( char2nr('0'), char2nr('[') )
@@ -1836,8 +1836,6 @@ fun! s:Space()
                     let posa = pos1 + stridx( line2[pos1 :], "<" ) + 1
                     let posb = posa + stridx( line2[posa :], "<" ) + 1
 
-                    echom "Yes at the button, posa " . posa . ", posb " . posb
-
                     if col > posa && col < posb
                         if p_result[2] !=? "nop"
                             let s:push_where = "nop"
@@ -1881,8 +1879,6 @@ fun! s:Space()
                     " At which of the two <...> cursor is?
                     let posa = pos2 + stridx( line2[pos1 :], "<" ) + 1
                     let posb = posa + stridx( line2[posa :], "<" ) + 1
-
-                    echom "Yes at the button2, posa " . posa . ", posb " . posb
 
                     if col > posa && col < posb
                         if p_result[4] !=? "nop"
