@@ -2422,7 +2422,11 @@ fun! s:ListAllRefs()
     call map( arr1, 'substitute( v:val, "^ \\+", "", "g" )' )
     call map( arr2, 'substitute( v:val, "^ \\+", "", "g" )' )
 
-    return [ active, detached, arr1 + arr2, arr1, arr2 ]
+    " Make ref list unique
+    let all = arr1 + arr2
+    let all = filter(copy(all), 'index(all, v:val, v:key+1)==-1')
+
+    return [ active, detached, all, arr1, arr2 ]
 endfun
 " 2}}}
 " FUNCTION: DoNewBranch() {{{2
