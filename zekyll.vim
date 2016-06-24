@@ -2423,7 +2423,7 @@ fun! s:ListAllRefs()
     call map( arr2, 'substitute( v:val, "^ \\+", "", "g" )' )
 
     " Make ref list unique
-    let all = arr1 + arr2
+    let all = sort(arr1 + arr2)
     let all = filter(copy(all), 'index(all, v:val, v:key+1)==-1')
 
     return [ active, detached, all, arr1, arr2 ]
