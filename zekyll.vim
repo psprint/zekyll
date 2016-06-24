@@ -39,6 +39,10 @@ let s:do_reset = "no"
 let s:commit = "no"
 let s:do_status = "no"
 let s:origin = "nop"
+let s:do_branch = "nop"
+let s:do_tag = "nop"
+let s:do_dbranch = "nop"
+let s:do_dtag = "nop"
 
 let s:working_area_beg = 1
 let s:working_area_end = 1
@@ -66,10 +70,11 @@ let s:line_reset        = 5
 let s:line_checkout     = 5
 let s:line_status       = 6
 let s:line_origin       = 6
-let s:line_code         = 7
-let s:line_save         = 8
-let s:line_index_size   = 8
-let s:line_rule         = 9
+let s:line_btops        = 7
+let s:line_code         = 8
+let s:line_save         = 9
+let s:line_index_size   = 9
+let s:line_rule         = 10
 let s:last_line = s:line_rule
 
 let s:messages = [ ]
@@ -92,7 +97,12 @@ let s:pat_Index_Reset_Checkout = 'Current index:[[:space:]]*<\?\(\d\+\)>\?[[:spa
                                 \ '\[[[:space:]]\+Checkout:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]'
 
 let s:pat_Status_Origin     = '\[[[:space:]]\+Status:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
-                               \ '\[[[:space:]]\+Origin:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]'
+                              \ '\[[[:space:]]\+Origin:[[:space:]]*<\?\([a-zA-Z]\{-1,}\)>\?[[:space:]]\+\]'
+
+let s:pat_BTOps             = '\[[[:space:]]\+New Branch:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
+                              \'\[[[:space:]]\+Add Tag:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
+                              \'\[[[:space:]]\+Delete Branch:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
+                              \'\[[[:space:]]\+Delete Tag:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]'
 
 let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\{-1,}\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
 
@@ -105,6 +115,10 @@ let s:ACTIVE_COMMIT = 5
 let s:ACTIVE_CHECKOUT = 6
 let s:ACTIVE_STATUS = 7
 let s:ACTIVE_ORIGIN = 8
+let s:ACTIVE_NEW_BRANCH = 9
+let s:ACTIVE_ADD_TAG = 10
+let s:ACTIVE_DELETE_BRANCH = 11
+let s:ACTIVE_DELETE_TAG = 12
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -164,8 +178,9 @@ fun! s:NormalRender( ... )
         end
         call setline( s:line_consistent, s:GenerateCommitLine() )
         call setline( s:line_index,      s:GenerateIndexResetLine() )
-        call setline( s:line_origin,       s:GenerateStatusOriginLine() )
-        call setline( s:line_code,               "Code: .......  ~" )
+        call setline( s:line_origin,     s:GenerateStatusOriginLine() )
+        call setline( s:line_btops,      s:GenerateBTOpsLine() )
+        call setline( s:line_code,       "Code: .......  ~" )
         call setline( s:line_save,       s:GenerateSaveIndexSizeLine() )
         call setline( s:line_rule,       s:GenerateRule( 1 ) )
         call cursor(s:last_line+1,1)
@@ -915,6 +930,15 @@ fun! s:GenerateStatusOriginLine( )
     return line
 endfun
 " 2}}}
+" FUNCTION: GenerateBTOpsLine() {{{2
+fun! s:GenerateBTOpsLine( )
+    let line =        s:RPad( "[ New Branch: <"    . s:do_branch. ">", 15)  . " ]  | "
+    let line = line . s:RPad( "[ Add Tag: <"       . s:do_tag. ">", 15)     . " ] | "
+    let line = line . s:RPad( "[ Delete Branch: <" . s:do_dbranch. ">", 15) . " ] | "
+    let line = line . s:RPad( "[ Delete Tag: <"    . s:do_dtag. ">", 15)    . " ]"
+    return line
+endfun
+" 2}}}
 " FUNCTION: IsEditAllowed() {{{2
 fun! s:IsEditAllowed()
     let line = line( "." )
@@ -1467,7 +1491,8 @@ fun! s:Space()
         let s_result = matchlist( line, s:pat_Save_IndexSize )          " Save line
         let r_result = matchlist( line, s:pat_Index_Reset_Checkout )    " Reset line
         let c_result = matchlist( line, s:pat_Commit )                  " Commit line
-        let p_result = matchlist( line, s:pat_Status_Origin )             " Origin line
+        let p_result = matchlist( line, s:pat_Status_Origin )           " Origin line
+        let bt_result = matchlist( line, s:pat_BTOps )                  " BTOps line
 
         " Save line?
         if len( s_result ) > 0
@@ -1484,7 +1509,11 @@ fun! s:Space()
             unlet p_result
             let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Origin ) " Origin line
 
-            if len( r_result ) > 0 && len( c_result ) > 0 && len( p_result ) > 0
+            " Get BTOps line
+            unlet bt_result
+            let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
+
+            if len( r_result ) > 0 && len( c_result ) > 0 && len( p_result ) > 0 && len( bt_result ) > 0
                 if s_result[1] ==? "yes"
                     let s:save = "no"
                 else
@@ -1493,6 +1522,11 @@ fun! s:Space()
                     let s:do_reset = "no"
                     let s:do_status = "no"
                     let s:save = "yes"
+
+                    let s:do_branch = "nop"
+                    let s:do_tag = "nop"
+                    let s:do_dbranch = "nop"
+                    let s:do_dtag = "nop"
                 end
 
                 " Get current index size so that it can be preserved
@@ -1506,6 +1540,8 @@ fun! s:Space()
                 call setline( s:line_reset, reset_line )
                 let origin_line = s:GenerateStatusOriginLine()
                 call setline( s:line_origin, origin_line )
+                let btops_line = s:GenerateBTOpsLine()
+                call setline( s:line_btops, btops_line )
             else
                 return 0
             end
@@ -1525,7 +1561,11 @@ fun! s:Space()
             unlet p_result
             let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Origin ) " Origin line
 
-            if len( s_result ) > 0 && len( c_result ) > 0 && len( p_result ) > 0
+            " Get BTOps line
+            unlet bt_result
+            let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
+
+            if len( s_result ) > 0 && len( c_result ) > 0 && len( p_result ) > 0 && len( bt_result ) > 0
                 let line2 = substitute( line, '[^|]', "x", "g" )
                 let pos1 = stridx( line2, "|" ) + 1
                 let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
@@ -1539,6 +1579,11 @@ fun! s:Space()
                         let s:do_reset = "yes"
                         let s:do_status = "no"
                         let s:save = "no"
+
+                        let s:do_branch = "nop"
+                        let s:do_tag = "nop"
+                        let s:do_dbranch = "nop"
+                        let s:do_dtag = "nop"
                     end
                 elseif col > pos2
                     " Find to which s:refs[2] entry s:ref points to
@@ -1563,6 +1608,11 @@ fun! s:Space()
                     let s:do_reset = "no"
                     let s:do_status = "no"
                     let s:save = "no"
+
+                    let s:do_branch = "nop"
+                    let s:do_tag = "nop"
+                    let s:do_dbranch = "nop"
+                    let s:do_dtag = "nop"
                 end
 
                 " Get current index size so that it can be preserved
@@ -1576,6 +1626,8 @@ fun! s:Space()
                 call setline( s:line_save, save_line )
                 let origin_line = s:GenerateStatusOriginLine()
                 call setline( s:line_origin, origin_line )
+                let btops_line = s:GenerateBTOpsLine()
+                call setline( s:line_btops, btops_line )
             else
                 return 0
             end
@@ -1594,7 +1646,11 @@ fun! s:Space()
             unlet p_result
             let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Origin ) " Origin line
 
-            if len( s_result ) > 0 && len( r_result ) > 0 && len( p_result ) > 0
+            " Get BTOps line
+            unlet bt_result
+            let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
+
+            if len( s_result ) > 0 && len( r_result ) > 0 && len( p_result ) > 0 && len( bt_result ) > 0
                 let line2 = substitute( line, '[^|]', "x", "g" )
                 let pos1 = stridx( line2, "|" ) + 1
                 let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
@@ -1608,6 +1664,11 @@ fun! s:Space()
                         let s:do_reset = "no"
                         let s:do_status = "no"
                         let s:save = "no"
+
+                        let s:do_branch = "nop"
+                        let s:do_tag = "nop"
+                        let s:do_dbranch = "nop"
+                        let s:do_dtag = "nop"
                     end
                 end
 
@@ -1622,6 +1683,8 @@ fun! s:Space()
                 call setline( s:line_save, save_line )
                 let origin_line = s:GenerateStatusOriginLine()
                 call setline( s:line_origin, origin_line )
+                let btops_line = s:GenerateBTOpsLine()
+                call setline( s:line_btops, btops_line )
             else
                 return 0
             end
@@ -1640,7 +1703,11 @@ fun! s:Space()
             unlet c_result
             let c_result = matchlist( getline( s:line_commit ), s:pat_Commit ) " Commit line
 
-            if len( s_result ) > 0 && len( c_result ) > 0 && len( r_result ) > 0
+            " Get BTOps line
+            unlet bt_result
+            let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
+
+            if len( s_result ) > 0 && len( c_result ) > 0 && len( r_result ) > 0 && len( bt_result ) > 0
                 let line2 = substitute( line, '[^|]', "x", "g" )
                 let pos1 = stridx( line2, "|" ) + 1
                 let col = col( "." )
@@ -1653,6 +1720,11 @@ fun! s:Space()
                         let s:do_reset = "no"
                         let s:do_status = "yes"
                         let s:save = "no"
+
+                        let s:do_branch = "nop"
+                        let s:do_tag = "nop"
+                        let s:do_dbranch = "nop"
+                        let s:do_dtag = "nop"
                     end
                 elseif col > pos1
                     if p_result[2] ==? "pull"
@@ -1664,6 +1736,11 @@ fun! s:Space()
                         let s:do_reset = "no"
                         let s:do_status = "no"
                         let s:save = "no"
+
+                        let s:do_branch = "nop"
+                        let s:do_tag = "nop"
+                        let s:do_dbranch = "nop"
+                        let s:do_dtag = "nop"
                     elseif p_result[2] ==? "push"
                         let s:origin = "pull"
 
@@ -1671,6 +1748,11 @@ fun! s:Space()
                         let s:do_reset = "no"
                         let s:do_status = "no"
                         let s:save = "no"
+
+                        let s:do_branch = "nop"
+                        let s:do_tag = "nop"
+                        let s:do_dbranch = "nop"
+                        let s:do_dtag = "nop"
                     end
                 end
 
@@ -1684,9 +1766,111 @@ fun! s:Space()
                 let reset_line = s:GenerateIndexResetLine()
                 call setline( s:line_reset, reset_line )
                 let save_line = s:GenerateSaveIndexSizeLine()
-                call setline( s:line_save, save_line )
+                call setline( s:line_save, save_line ) 
+                let btops_line = s:GenerateBTOpsLine()
+                call setline( s:line_btops, btops_line )
             else
                 return 0
+            end
+        " BTOps line?
+        elseif len( bt_result ) > 0
+            " Get Save line
+            unlet s_result
+            let s_result = matchlist( getline( s:line_save ), s:pat_Save_IndexSize ) " Save line
+
+            " Get Reset line
+            unlet r_result
+            let r_result = matchlist( getline( s:line_reset ), s:pat_Index_Reset_Checkout ) " Reset line
+
+            " Get Commit line
+            unlet c_result
+            let c_result = matchlist( getline( s:line_commit ), s:pat_Commit ) " Commit line
+
+            " Get Origin line
+            unlet p_result
+            let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Origin ) " Origin line
+
+            if len( s_result ) > 0 && len( r_result ) > 0 && len( c_result ) > 0 && len( p_result )
+                let line2 = substitute( line, '[^|]', "x", "g" )
+                let pos1 = stridx( line2, "|" ) + 1
+                let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
+                let pos3 = pos2 + stridx( line2[pos2 :], "|" ) + 1
+                let col = col( "." )
+                if col < pos1
+                    if bt_result[1] !=? "nop"
+                        let s:do_branch = "nop"
+                    else
+                        let s:commit = "no"
+                        let s:do_reset = "no"
+                        let s:do_status = "no"
+                        let s:origin = "nop"
+                        let s:save = "no"
+
+                        let s:do_branch = "..."
+                        let s:do_tag = "nop"
+                        let s:do_dbranch = "nop"
+                        let s:do_dtag = "nop"
+                    end
+                elseif col > pos1 && col < pos2
+                    if bt_result[2] !=? "nop"
+                        let s:do_tag = "nop"
+                    else
+                        let s:commit = "no"
+                        let s:do_reset = "no"
+                        let s:do_status = "no"
+                        let s:origin = "nop"
+                        let s:save = "no"
+
+                        let s:do_branch = "nop"
+                        let s:do_tag = "..."
+                        let s:do_dbranch = "nop"
+                        let s:do_dtag = "nop"
+                    end
+                elseif col > pos2 && col < pos3
+                    if bt_result[3] !=? "nop"
+                        let s:do_dbranch = "nop"
+                    else
+                        let s:commit = "no"
+                        let s:do_reset = "no"
+                        let s:do_status = "no"
+                        let s:origin = "nop"
+                        let s:save = "no"
+
+                        let s:do_branch = "nop"
+                        let s:do_tag = "nop"
+                        let s:do_dbranch = "..."
+                        let s:do_dtag = "nop"
+                    end
+                elseif col > pos3
+                    if bt_result[4] !=? "nop"
+                        let s:do_dtag = "nop"
+                    else
+                        let s:commit = "no"
+                        let s:do_reset = "no"
+                        let s:do_status = "no"
+                        let s:origin = "nop"
+                        let s:save = "no"
+
+                        let s:do_branch = "nop"
+                        let s:do_tag = "nop"
+                        let s:do_dbranch = "nop"
+                        let s:do_dtag = "..."
+                    end
+                end
+
+                " Get current index size so that it can be preserved
+                let s:index_size_new = s_result[2]
+
+                let btops_line = s:GenerateBTOpsLine()
+                call setline( linenr, btops_line )
+                let commit_line = s:GenerateCommitLine()
+                call setline( s:line_commit, commit_line )
+                let reset_line = s:GenerateIndexResetLine()
+                call setline( s:line_reset, reset_line )
+                let save_line = s:GenerateSaveIndexSizeLine()
+                call setline( s:line_save, save_line )
+                let origin_line = s:GenerateStatusOriginLine()
+                call setline( s:line_origin, origin_line )
             end
         end
     elseif linenr > s:working_area_beg
