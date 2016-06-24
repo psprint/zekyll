@@ -311,6 +311,62 @@ fun! s:ProcessBuffer( active )
     call s:RestoreView()
 
     "
+    " New Branch?
+    "
+
+    if a:active == s:ACTIVE_NEW_BRANCH
+        " Get BTOps line
+        let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
+        if bt_result[1] != "nop"
+            call s:DoNewBranch( bt_result[1] )
+            call s:NormalRender()
+        end
+        return
+    end
+
+    "
+    " Add Tag?
+    "
+
+    if a:active == s:ACTIVE_ADD_TAG
+        " Get BTOps line
+        let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
+        if bt_result[2] != "nop"
+            call s:DoAddTag( bt_result[2] )
+            call s:NormalRender()
+        end
+        return
+    end
+
+    "
+    " Delete Branch?
+    "
+
+    if a:active == s:ACTIVE_DELETE_BRANCH
+        " Get BTOps line
+        let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
+        if bt_result[3] != "nop"
+            call s:DoDeleteBranch( bt_result[3] )
+            call s:NormalRender()
+        end
+        return
+    end
+
+    "
+    " Delete Tag?
+    "
+
+    if a:active == s:ACTIVE_DELETE_TAG
+        " Get BTOps line
+        let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
+        if bt_result[4] != "nop"
+            call s:DoDeleteTag( bt_result[4] )
+            call s:NormalRender()
+        end
+        return
+    end
+
+    "
     " Status ?
     "
 
@@ -1095,6 +1151,7 @@ fun! s:Enter()
         let line2 = substitute( line, '[^|]', "x", "g" )
         let pos1 = stridx( line2, "|" ) + 1
         let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
+        let pos3 = pos2 + stridx( line2[pos1 :], "|" ) + 1
         let col = col( "." )
 
         if linenr == s:line_commit
@@ -1118,6 +1175,16 @@ fun! s:Enter()
                 call s:ProcessBuffer( s:ACTIVE_ORIGIN )
             end
             return 1
+        elseif linenr == s:line_btops
+            if col < pos1
+                call s:ProcessBuffer( s:ACTIVE_NEW_BRANCH )
+            elseif col > pos1 && col < pos2
+                call s:ProcessBuffer( s:ACTIVE_ADD_TAG )
+            elseif col > pos2 && col < pos3
+                call s:ProcessBuffer( s:ACTIVE_DELETE_BRANCH )
+            elseif col > pos3
+                call s:ProcessBuffer( s:ACTIVE_DELETE_TAG )
+            end
         elseif linenr == s:line_code
             " TODO
         elseif linenr == s:line_save
@@ -2346,6 +2413,34 @@ fun! s:ListAllRefs()
     call map( arr2, 'substitute( v:val, "^ \\+", "", "g" )' )
 
     return [ active, detached, arr1 + arr2 ]
+endfun
+" 2}}}
+" FUNCTION: DoNewBranch() {{{2
+fun! s:DoNewBranch(ref)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " checkout -b " . shellescape(a:ref)
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+    call map( arr, '" " . v:val' )
+
+    if v:shell_error == 0
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Checkout -b successful >", arr )
+    else
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with checkout -b >", arr )
+    end
+endfun
+" 2}}}
+" FUNCTION: DoAddTag() {{{2
+fun! s:DoAddTag(ref)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " tag " . shellescape(a:ref)
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+    call map( arr, '" " . v:val' )
+
+    if v:shell_error == 0
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Tag successful", arr )
+    else
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with tag >", arr )
+    end
 endfun
 " 2}}}
 " 1}}}
