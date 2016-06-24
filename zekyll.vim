@@ -1005,7 +1005,7 @@ endfun
 " FUNCTION: GenerateBTOpsLine() {{{2
 fun! s:GenerateBTOpsLine( )
     let line =        s:RPad( "[ New Branch: <"    . s:do_branch. ">", 15)  . " ]  | "
-    let line = line . s:RPad( "[ Add Tag: <"       . s:do_tag. ">", 15)     . " ] | "
+    let line = line . s:RPad( "[ Add Tag: <"       . s:do_tag. ">", 15)     . " ]    | "
     let line = line . s:RPad( "[ Delete Branch: <" . s:do_dbranch. ">", 15) . " ] | "
     let line = line . s:RPad( "[ Delete Tag: <"    . s:do_dtag. ">", 15)    . " ]"
     return line
