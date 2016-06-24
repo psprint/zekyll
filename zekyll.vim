@@ -1909,11 +1909,25 @@ fun! s:Space()
                     let posb = posa + stridx( line2[posa :], "<" ) + 1
 
                     if col > posa && col < posb
-                        if p_result[4] !=? "nop"
-                            let s:pull_where = "nop"
-                        elseif p_result[4] ==? "nop"
-                            let s:pull_where = "..."
+                        let choices = [ "nop" ] + s:srcdst + [ "..." ]
 
+                        " Find where currently s:push_where points to
+                        let found = -1
+                        for i in range(0, len(choices)-1)
+                            if choices[i] == p_result[4] 
+                                let found = i
+                            end
+                        endfor
+
+                        " Iterate one or set to first, i.e. to nop
+                        if found == -1
+                            let s:pull_where = "nop"
+                        else
+                            let found = (found + 1) % len(choices)
+                            let s:pull_where = choices[found]
+                        end
+
+                        if s:pull_where !=? "nop"
                             let s:commit = "no"
                             let s:do_reset = "no"
                             let s:do_status = "no"
@@ -1928,11 +1942,25 @@ fun! s:Space()
                             let s:do_dtag = "nop"
                         end
                     elseif col > posb
-                        if p_result[5] !=? "nop"
-                            let s:pull_what = "nop"
-                        elseif p_result[5] ==? "nop"
-                            let s:pull_what = "..."
+                        let choices = [ "nop" ] + s:refs[3] + [ "..." ]
 
+                        " Find where currently s:push_where points to
+                        let found = -1
+                        for i in range(0, len(choices)-1)
+                            if choices[i] == p_result[5] 
+                                let found = i
+                            end
+                        endfor
+
+                        " Iterate one or set to first, i.e. to nop
+                        if found == -1
+                            let s:pull_what = "nop"
+                        else
+                            let found = (found + 1) % len(choices)
+                            let s:pull_what = choices[found]
+                        end
+
+                        if s:pull_what !=? "nop"
                             let s:commit = "no"
                             let s:do_reset = "no"
                             let s:do_status = "no"
