@@ -2054,6 +2054,7 @@ fun! s:IterateOver( choices, current )
     for i in range(0, len(a:choices)-1)
         if a:choices[i] == a:current
             let found = i
+            break
         end
     endfor
 
