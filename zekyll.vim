@@ -25,7 +25,9 @@ let s:repos_paths = [ fnameescape( $HOME )."/.zekyll/repos" ]
 let s:lzsd = []
 let s:listing = []
 let s:inconsistent_listing = []
-let s:refs = [ "master", 0, [] ]
+" Current ref, is detached, all refs, branches, tags
+let s:refs = [ "master", 0, [], [], [] ]
+let s:srcdst = [ "origin" ]
 
 let s:cur_index = 1
 let s:prev_index = -1
@@ -2546,7 +2548,7 @@ fun! s:ListAllRefs()
     call map( arr1, 'substitute( v:val, "^ \\+", "", "g" )' )
     call map( arr2, 'substitute( v:val, "^ \\+", "", "g" )' )
 
-    return [ active, detached, arr1 + arr2 ]
+    return [ active, detached, arr1 + arr2, arr1, arr2 ]
 endfun
 " 2}}}
 " FUNCTION: DoNewBranch() {{{2
