@@ -1777,44 +1777,14 @@ fun! s:Space()
 
                     if col > posa && col < posb
                         let choices = [ "nop" ] + s:srcdst + [ "..." ]
-
-                        " Find where currently s:push_where points to
-                        let found = -1
-                        for i in range(0, len(choices)-1)
-                            if choices[i] == p_result[2] 
-                                let found = i
-                            end
-                        endfor
-
-                        " Iterate one or set to first, i.e. to nop
-                        if found == -1
-                            let s:push_where = "nop"
-                        else
-                            let found = (found + 1) % len(choices)
-                            let s:push_where = choices[found]
-                        end
+                        let s:push_where = s:IterateOver( choices, p_result[2] )
 
                         if s:push_where !=? "nop"
                             call s:TurnOff("NoPush")
                         end
                     elseif col > posb
                         let choices = [ "nop" ] + s:refs[3] + [ "..." ]
-
-                        " Find where currently s:push_where points to
-                        let found = -1
-                        for i in range(0, len(choices)-1)
-                            if choices[i] == p_result[3] 
-                                let found = i
-                            end
-                        endfor
-
-                        " Iterate one or set to first, i.e. to nop
-                        if found == -1
-                            let s:push_what = "nop"
-                        else
-                            let found = (found + 1) % len(choices)
-                            let s:push_what = choices[found]
-                        end
+                        let s:push_what = s:IterateOver( choices, p_result[3] )
 
                         if s:push_what !=? "nop"
                             call s:TurnOff("NoPush")
@@ -1827,44 +1797,14 @@ fun! s:Space()
 
                     if col > posa && col < posb
                         let choices = [ "nop" ] + s:srcdst + [ "..." ]
-
-                        " Find where currently s:push_where points to
-                        let found = -1
-                        for i in range(0, len(choices)-1)
-                            if choices[i] == p_result[4] 
-                                let found = i
-                            end
-                        endfor
-
-                        " Iterate one or set to first, i.e. to nop
-                        if found == -1
-                            let s:pull_where = "nop"
-                        else
-                            let found = (found + 1) % len(choices)
-                            let s:pull_where = choices[found]
-                        end
+                        let s:pull_where = s:IterateOver( choices, p_result[4] )
 
                         if s:pull_where !=? "nop"
                             call s:TurnOff("NoPull")
                         end
                     elseif col > posb
                         let choices = [ "nop" ] + s:refs[3] + [ "..." ]
-
-                        " Find where currently s:push_where points to
-                        let found = -1
-                        for i in range(0, len(choices)-1)
-                            if choices[i] == p_result[5] 
-                                let found = i
-                            end
-                        endfor
-
-                        " Iterate one or set to first, i.e. to nop
-                        if found == -1
-                            let s:pull_what = "nop"
-                        else
-                            let found = (found + 1) % len(choices)
-                            let s:pull_what = choices[found]
-                        end
+                        let s:pull_what = s:IterateOver( choices, p_result[5] )
 
                         if s:pull_what !=? "nop"
                             call s:TurnOff("NoPull")
@@ -2118,6 +2058,25 @@ fun! s:TurnOff(...)
     let s:do_tag = "nop"
     let s:do_dbranch = "nop"
     let s:do_dtag = "nop"
+endfun
+" 2}}}
+" FUNCTION: IterateOver() {{{2
+fun! s:IterateOver( choices, current )
+    " Find where current points to
+    let found = -1
+    for i in range(0, len(a:choices)-1)
+        if a:choices[i] == a:current
+            let found = i
+        end
+    endfor
+
+    " Iterate one or set to first
+    if found == -1
+        return a:choices[0]
+    else
+        let found = (found + 1) % len( a:choices )
+        return a:choices[ found ]
+    end
 endfun
 " 2}}}
 " 1}}}
