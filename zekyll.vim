@@ -119,11 +119,12 @@ let s:ACTIVE_RESET = 4
 let s:ACTIVE_COMMIT = 5
 let s:ACTIVE_CHECKOUT = 6
 let s:ACTIVE_STATUS = 7
-let s:ACTIVE_ORIGIN = 8
-let s:ACTIVE_NEW_BRANCH = 9
-let s:ACTIVE_ADD_TAG = 10
-let s:ACTIVE_DELETE_BRANCH = 11
-let s:ACTIVE_DELETE_TAG = 12
+let s:ACTIVE_PUSH = 8
+let s:ACTIVE_PULL = 9
+let s:ACTIVE_NEW_BRANCH = 10
+let s:ACTIVE_ADD_TAG = 11
+let s:ACTIVE_DELETE_BRANCH = 12
+let s:ACTIVE_DELETE_TAG = 13
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -385,15 +386,18 @@ fun! s:ProcessBuffer( active )
     " Pull / Push ?
     "
 
-    if a:active == s:ACTIVE_ORIGIN
+    if a:active == s:ACTIVE_PUSH
         " Get Push Pull line
         let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Push_Pull ) " Push Pull line
-        if p_result[2] ==? "pull"
-            call s:DoPull()
-        elseif p_result[2] ==? "push"
-            call s:DoPush()
-        end
+        call s:DoPush( p_result[2], p_result[3] )
+        call s:NormalRender()
+        return
+    end
 
+    if a:active == s:ACTIVE_PULL
+        " Get Push Pull line
+        let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Push_Pull ) " Push Pull line
+        call s:DoPull( p_result[4], p_result[5] )
         call s:NormalRender()
         return
     end
@@ -1173,8 +1177,10 @@ fun! s:Enter()
         elseif linenr == s:line_origin
             if col < pos1
                 call s:ProcessBuffer( s:ACTIVE_STATUS )
-            elseif col > pos1
-                call s:ProcessBuffer( s:ACTIVE_ORIGIN )
+            elseif col > pos1 && col < pos2
+                call s:ProcessBuffer( s:ACTIVE_PUSH )
+            elseif col > pos2
+                call s:ProcessBuffer( s:ACTIVE_PULL )
             end
             return 1
         elseif linenr == s:line_btops
@@ -2410,32 +2416,50 @@ fun! s:DoStatus()
 endfun
 " 2}}}
 " FUNCTION: DoPull() {{{2
-fun! s:DoPull()
-    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " pull origin"
+fun! s:DoPull(source, branch)
+    let source = a:source
+    let branch = a:branch
+    if source ==? "nop"
+        let source = "origin"
+    end 
+    if branch ==? "nop"
+        let branch = "master"
+    end
+
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " pull " . shellescape( source ) . " " . shellescape( branch )
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     
     if v:shell_error == 0
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Pull successful >", arr )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Pull " . source . " " . branch . " successful >", arr )
     else
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with pull >", arr )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with pull " . source . " " . branch . " >", arr )
     end
 endfun
 " 2}}}
 " FUNCTION: DoPush() {{{2
-fun! s:DoPush()
-    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " push origin"
+fun! s:DoPush(destination, branch)
+    let destination = a:destination
+    let branch = a:branch
+    if destination ==? "nop"
+        let destination = "origin"
+    end 
+    if branch ==? "nop"
+        let branch = "master"
+    end
+
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " push " . shellescape( destination ) . " " . shellescape( branch )
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
 
     if v:shell_error == 0
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Push successful >", arr )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Push " . destination . " " . branch . " successful >", arr )
     else
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with push >", arr )
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with push " . destination . " " . branch . " >", arr )
     end
 endfun
 " 2}}}
