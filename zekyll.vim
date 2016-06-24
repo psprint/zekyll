@@ -1602,20 +1602,8 @@ fun! s:Space()
                 if s_result[1] ==? "yes"
                     let s:save = "no"
                 else
-                    let s:commit = "no"
-                    let s:do_reset = "no"
-                    let s:do_status = "no"
+                    call s:turnoff()
                     let s:save = "yes"
-
-                    let s:push_where = "nop"
-                    let s:push_what = "nop"
-                    let s:pull_where = "nop"
-                    let s:pull_what = "nop"
-
-                    let s:do_branch = "nop"
-                    let s:do_tag = "nop"
-                    let s:do_dbranch = "nop"
-                    let s:do_dtag = "nop"
                 end
 
                 " Get current index size so that it can be preserved
@@ -1663,20 +1651,8 @@ fun! s:Space()
                     if r_result[2] ==? "yes"
                         let s:do_reset = "no"
                     else
-                        let s:commit = "no"
+                        call s:TurnOff()
                         let s:do_reset = "yes"
-                        let s:do_status = "no"
-                        let s:save = "no"
-
-                        let s:push_where = "nop"
-                        let s:push_what = "nop"
-                        let s:pull_where = "nop"
-                        let s:pull_what = "nop"
-
-                        let s:do_branch = "nop"
-                        let s:do_tag = "nop"
-                        let s:do_dbranch = "nop"
-                        let s:do_dtag = "nop"
                     end
                 elseif col > pos2
                     " Find to which s:refs[2] entry s:ref points to
@@ -1696,20 +1672,7 @@ fun! s:Space()
                     end
 
                     " Only one button in use
-                    let s:commit = "no"
-                    let s:do_reset = "no"
-                    let s:do_status = "no"
-                    let s:save = "no"
-
-                    let s:push_where = "nop"
-                    let s:push_what = "nop"
-                    let s:pull_where = "nop"
-                    let s:pull_what = "nop"
-
-                    let s:do_branch = "nop"
-                    let s:do_tag = "nop"
-                    let s:do_dbranch = "nop"
-                    let s:do_dtag = "nop"
+                    call s:TurnOff()
                 end
 
                 " Get current index size so that it can be preserved
@@ -1756,20 +1719,8 @@ fun! s:Space()
                     if c_result[1] ==? "yes"
                         let s:commit = "no"
                     else
+                        call s:TurnOff()
                         let s:commit = "yes"
-                        let s:do_reset = "no"
-                        let s:do_status = "no"
-                        let s:save = "no"
-
-                        let s:push_where = "nop"
-                        let s:push_what = "nop"
-                        let s:pull_where = "nop"
-                        let s:pull_what = "nop"
-
-                        let s:do_branch = "nop"
-                        let s:do_tag = "nop"
-                        let s:do_dbranch = "nop"
-                        let s:do_dtag = "nop"
                     end
                 end
 
@@ -1816,20 +1767,8 @@ fun! s:Space()
                     if p_result[1] ==? "yes"
                         let s:do_status = "no"
                     else
-                        let s:commit = "no"
-                        let s:do_reset = "no"
+                        call s:TurnOff()
                         let s:do_status = "yes"
-                        let s:save = "no"
-
-                        let s:push_where = "nop"
-                        let s:push_what = "nop"
-                        let s:pull_where = "nop"
-                        let s:pull_what = "nop"
-
-                        let s:do_branch = "nop"
-                        let s:do_tag = "nop"
-                        let s:do_dbranch = "nop"
-                        let s:do_dtag = "nop"
                     end
                 elseif col > pos1 && col < pos2
                     " At which of the two <...> cursor is?
@@ -1856,18 +1795,7 @@ fun! s:Space()
                         end
 
                         if s:push_where !=? "nop"
-                            let s:commit = "no"
-                            let s:do_reset = "no"
-                            let s:do_status = "no"
-                            let s:save = "no"
-
-                            let s:pull_where = "nop"
-                            let s:pull_what = "nop"
-
-                            let s:do_branch = "nop"
-                            let s:do_tag = "nop"
-                            let s:do_dbranch = "nop"
-                            let s:do_dtag = "nop"
+                            call s:TurnOff("NoPush")
                         end
                     elseif col > posb
                         let choices = [ "nop" ] + s:refs[3] + [ "..." ]
@@ -1889,18 +1817,7 @@ fun! s:Space()
                         end
 
                         if s:push_what !=? "nop"
-                            let s:commit = "no"
-                            let s:do_reset = "no"
-                            let s:do_status = "no"
-                            let s:save = "no"
-
-                            let s:pull_where = "nop"
-                            let s:pull_what = "nop"
-
-                            let s:do_branch = "nop"
-                            let s:do_tag = "nop"
-                            let s:do_dbranch = "nop"
-                            let s:do_dtag = "nop"
+                            call s:TurnOff("NoPush")
                         end
                     end
                 elseif col > pos2
@@ -1928,18 +1845,7 @@ fun! s:Space()
                         end
 
                         if s:pull_where !=? "nop"
-                            let s:commit = "no"
-                            let s:do_reset = "no"
-                            let s:do_status = "no"
-                            let s:save = "no"
-
-                            let s:push_where = "nop"
-                            let s:push_what = "nop"
-
-                            let s:do_branch = "nop"
-                            let s:do_tag = "nop"
-                            let s:do_dbranch = "nop"
-                            let s:do_dtag = "nop"
+                            call s:TurnOff("NoPull")
                         end
                     elseif col > posb
                         let choices = [ "nop" ] + s:refs[3] + [ "..." ]
@@ -1961,18 +1867,7 @@ fun! s:Space()
                         end
 
                         if s:pull_what !=? "nop"
-                            let s:commit = "no"
-                            let s:do_reset = "no"
-                            let s:do_status = "no"
-                            let s:save = "no"
-
-                            let s:push_where = "nop"
-                            let s:push_what = "nop"
-
-                            let s:do_branch = "nop"
-                            let s:do_tag = "nop"
-                            let s:do_dbranch = "nop"
-                            let s:do_dtag = "nop"
+                            call s:TurnOff("NoPull")
                         end
                     end
                 end
@@ -2021,76 +1916,28 @@ fun! s:Space()
                     if bt_result[1] !=? "nop"
                         let s:do_branch = "nop"
                     else
-                        let s:commit = "no"
-                        let s:do_reset = "no"
-                        let s:do_status = "no"
-                        let s:save = "no"
-
-                        let s:push_where = "nop"
-                        let s:push_what = "nop"
-                        let s:pull_where = "nop"
-                        let s:pull_what = "nop"
-
+                        call s:TurnOff()
                         let s:do_branch = "..."
-                        let s:do_tag = "nop"
-                        let s:do_dbranch = "nop"
-                        let s:do_dtag = "nop"
                     end
                 elseif col > pos1 && col < pos2
                     if bt_result[2] !=? "nop"
                         let s:do_tag = "nop"
                     else
-                        let s:commit = "no"
-                        let s:do_reset = "no"
-                        let s:do_status = "no"
-                        let s:save = "no"
-
-                        let s:push_where = "nop"
-                        let s:push_what = "nop"
-                        let s:pull_where = "nop"
-                        let s:pull_what = "nop"
-
-                        let s:do_branch = "nop"
+                        call s:TurnOff()
                         let s:do_tag = "..."
-                        let s:do_dbranch = "nop"
-                        let s:do_dtag = "nop"
                     end
                 elseif col > pos2 && col < pos3
                     if bt_result[3] !=? "nop"
                         let s:do_dbranch = "nop"
                     else
-                        let s:commit = "no"
-                        let s:do_reset = "no"
-                        let s:do_status = "no"
-                        let s:save = "no"
-
-                        let s:push_where = "nop"
-                        let s:push_what = "nop"
-                        let s:pull_where = "nop"
-                        let s:pull_what = "nop"
-
-                        let s:do_branch = "nop"
-                        let s:do_tag = "nop"
+                        call s:TurnOff()
                         let s:do_dbranch = "..."
-                        let s:do_dtag = "nop"
                     end
                 elseif col > pos3
                     if bt_result[4] !=? "nop"
                         let s:do_dtag = "nop"
                     else
-                        let s:commit = "no"
-                        let s:do_reset = "no"
-                        let s:do_status = "no"
-                        let s:save = "no"
-
-                        let s:push_where = "nop"
-                        let s:push_what = "nop"
-                        let s:pull_where = "nop"
-                        let s:pull_what = "nop"
-
-                        let s:do_branch = "nop"
-                        let s:do_tag = "nop"
-                        let s:do_dbranch = "nop"
+                        call s:TurnOff()
                         let s:do_dtag = "..."
                     end
                 end
@@ -2243,6 +2090,34 @@ fun! s:FindOurTab( bufnr )
         endwhile
     endfor
     return found
+endfun
+" 2}}}
+" FUNCTION: TurnOffExcept() {{{2
+fun! s:TurnOff(...)
+    let except = ""
+    if a:0 > 0
+        let except = a:1
+    end
+
+    let s:commit = "no"
+    let s:do_reset = "no"
+    let s:do_status = "no"
+    let s:save = "no"
+
+    if except != "NoPush"
+        let s:push_where = "nop"
+        let s:push_what = "nop"
+    end
+
+    if except != "NoPull"
+        let s:pull_where = "nop"
+        let s:pull_what = "nop"
+    end
+
+    let s:do_branch = "nop"
+    let s:do_tag = "nop"
+    let s:do_dbranch = "nop"
+    let s:do_dtag = "nop"
 endfun
 " 2}}}
 " 1}}}
