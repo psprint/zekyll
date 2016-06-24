@@ -2443,6 +2443,34 @@ fun! s:DoAddTag(ref)
     end
 endfun
 " 2}}}
+" FUNCTION: DoDeleteBranch() {{{2
+fun! s:DoDeleteBranch(ref)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " branch -d " . shellescape(a:ref)
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+    call map( arr, '" " . v:val' )
+
+    if v:shell_error == 0
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Branch -d successful >", arr )
+    else
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with branch -d >", arr )
+    end
+endfun
+" 2}}}
+" FUNCTION: DoDeleteTag() {{{2
+fun! s:DoDeleteTag(ref)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " tag -d " . shellescape(a:ref)
+    let cmd_output = system( cmd )
+    let arr = split( cmd_output, '\n\+' )
+    call map( arr, '" " . v:val' )
+
+    if v:shell_error == 0
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Tag -d successful >", arr )
+    else
+        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with tag -d >", arr )
+    end
+endfun
+" 2}}}
 " 1}}}
 " ------------------------------------------------------------------------------
 let &cpo=s:keepcpo
