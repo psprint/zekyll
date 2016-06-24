@@ -389,7 +389,11 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_PUSH
         " Get Push Pull line
         let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Push_Pull ) " Push Pull line
-        call s:DoPush( p_result[2], p_result[3] )
+        if p_result[2] ==? "nop" || p_result[2] ==? "..." || p_result[3] ==? "nop" || p_result[3] ==? "..."
+            call s:AppendMessageT("Please set destination (e.g. origin) and branch (e.g. master)")
+        else
+            call s:DoPush( p_result[2], p_result[3] )
+        end
         call s:NormalRender()
         return
     end
@@ -397,7 +401,11 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_PULL
         " Get Push Pull line
         let p_result = matchlist( getline( s:line_origin ), s:pat_Status_Push_Pull ) " Push Pull line
-        call s:DoPull( p_result[4], p_result[5] )
+        if p_result[4] ==? "nop" || p_result[4] ==? "..." || p_result[5] ==? "nop" || p_result[5] ==? "..."
+            call s:AppendMessageT("Please set source (e.g. origin) and branch (e.g. master)")
+        else
+            call s:DoPull( p_result[4], p_result[5] )
+        end
         call s:NormalRender()
         return
     end
