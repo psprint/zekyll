@@ -111,9 +111,11 @@ if [ -n "$ZKL_CODE" ]; then
         ZKL_ZEKYLLS="$REPLY"
 
         if [ "$ZKL_METADATA" = "1" ]; then
-            [ -n "${reply[1]}" ] && print "Meta-data/ref: ${reply[1]}"
-            [ -n "${reply[2]}" ] && print "Meta-data/file: ${reply[2]}"
-            [ -n "${reply[3]}" ] && print "Meta-data/repo: ${reply[3]}"
+            local -A mdata
+            mdata=( "${reply[@]}" )
+            [ -n "${mdata[ref]}" ] && print "Meta-data/ref: ${mdata[ref]}"
+            [ -n "${mdata[file]}" ] && print "Meta-data/file: ${mdata[file]}"
+            [ -n "${mdata[repo]}" ] && print "Meta-data/repo: ${mdata[repo]}"
         fi
     fi
 fi

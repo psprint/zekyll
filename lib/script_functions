@@ -410,7 +410,7 @@ compute_index_size_check_consistency() {
 
 # $1 - bits decoded from zcode
 # $REPLY = bits to skip
-# $reply = ( ref, file, repo, wordref, unused, error )
+# $reply = ( file "" ref "" repo "" wordref "" chksum "" site "" unused1 "" unused2 "" unused3 "" error "" )
 process_meta_data() {
     local -a bits
     bits=( "$@" )
@@ -422,11 +422,15 @@ process_meta_data() {
 
     local -A decoded
     decoded=(
-        ref ""
         file ""
+        ref ""
         repo ""
         wordref ""
-        unused ""
+        chksum ""
+        site ""
+        unused1 ""
+        unused2 ""
+        unused3 ""
         error ""
     )
 
@@ -437,7 +441,8 @@ process_meta_data() {
         if [ "${strbits[1,${#codes[ss]}]}" = "${codes[ss]}" ]; then
             # We should skip one SS and there is nothing to decode
             REPLY="${#codes[ss]}"
-            reply=( "" "" "" "" "" "" )
+            reply=( file "" ref "" repo "" wordref "" chksum ""
+                    site "" unused1 "" unused2 "" unused3 "" error "" )
             return 0
         fi
 
@@ -462,7 +467,8 @@ process_meta_data() {
             # General failure in decoding the string
             if [ -z "$mat" ]; then
                 REPLY="-1"
-                reply=( "" "" "" "" "" "" )
+                reply=( file "" ref "" repo "" wordref "" chksum ""
+                        site "" unused1 "" unused2 "" unused3 "" error "" )
                 return 1
             fi
 
@@ -474,20 +480,11 @@ process_meta_data() {
                 (ss)
                     break
                     ;;
-                (ref)
-                    current_selector="ref"
+                (file|ref|repo|wordref|chksum|site)
+                    current_selector="$mat"
                     ;;
-                (file)
-                    current_selector="file"
-                    ;;
-                (repo)
-                    current_selector="repo"
-                    ;;
-                (wordref)
-                    current_selector="wordref"
-                    ;;
-                (unused)
-                    current_selector="unused"
+                (unused1|unused2|unused3)
+                    current_selector="$mat"
                     ;;
                 (*)
                     # File names use "/" to encode "." character. "/" itself is unavailable
@@ -498,11 +495,12 @@ process_meta_data() {
         done
 
         REPLY="$(( init_len - ${#strbits} ))"
-        reply=( "${decoded[ref]}" "${decoded[file]}" "${decoded[repo]}" "${decoded[wordref]}" "${decoded[unused]}" "${decoded[error]}" )
+        reply=( "${(kv)decoded[@]}" )
     else
         # No meta data and no special ending of zekyll bits
         REPLY="0"
-        reply=( "" "" "" "" "" "" )
+        reply=( file "" ref "" repo "" wordref "" chksum ""
+                site "" unused1 "" unused2 "" unused3 "" error "" )
     fi
 
     return 0
