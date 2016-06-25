@@ -52,7 +52,7 @@ let s:do_dtag = "nop"
 " Used by zcode buttons
 let s:c_code = ""
 let s:c_ref = ""
-let s:c_fname = ""
+let s:c_file = ""
 let s:c_repo = ""
 
 let s:working_area_beg = 1
@@ -199,7 +199,7 @@ fun! s:NormalRender( ... )
         call setline( s:line_index,      s:GenerateIndexResetLine() )
         call setline( s:line_origin,     s:GenerateStatusPushPullLine() )
         call setline( s:line_btops,      s:GenerateBTOpsLine() )
-        call setline( s:line_code,       "Code: .......  ~" )
+        call setline( s:line_code,       s:GenerateCodeLine( "", s:c_ref, s:c_file, s:c_repo ) )
         call setline( s:line_save,       s:GenerateSaveIndexSizeLine() )
         call setline( s:line_rule,       s:GenerateRule( 1 ) )
         call cursor(s:last_line+1,1)
@@ -218,9 +218,7 @@ fun! s:NormalRender( ... )
     end
 
     if depth >= 0
-        " Code line
-        let resu = s:encode_zcode_arr01( reverse( copy(s:code_selectors) ) )
-        call setline( s:line_code, s:GenerateCodeLine( resu[1], s:c_ref, s:c_fname, s:c_repo ) )
+        call s:ResetCodeLine()
 
         let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
         call cursor(s:working_area_end+1,1)
@@ -1228,6 +1226,45 @@ fun! s:Enter()
         return 0
     elseif linenr < s:working_area_end
        return s:GoToFile()
+    end
+endfun
+" 2}}}
+" FUNCTION: ResetCodeLine() {{{2
+fun! s:ResetCodeLine()
+    " First parse screen for ref, file name, repo
+    let result = matchlist( getline( s:line_code ), s:pat_Code )
+    if len( result ) > 0
+        let s:c_ref = result[2]
+        let s:c_file = result[3]
+        let s:c_repo = result[4]
+
+        let appendix = []
+        call extend( appendix, s:BitsStart() )
+        call extend( appendix, s:BitsRef(s:c_ref) )
+        call extend( appendix, s:BitsFile(s:c_file) )
+        call extend( appendix, s:BitsRepo(s:c_repo) )
+        call extend( appendix, s:BitsStop() )
+        let appendix = s:BitsRemoveIfStartStop( appendix )
+
+        let code_bits = reverse( copy( s:code_selectors ) )
+
+        if len( appendix ) == 0
+            " There is no appendix, we should check if data is
+            " properly ended with two reversed SS or without SS
+            let rev_bits = reverse( copy( s:bits['ss'] ) )
+            if s:BitsCompareSuffix( code_bits, rev_bits )
+                call extend( code_bits, rev_bits )
+            end
+        else
+            " Append the appendix, reversed
+            call extend( code_bits, reverse( copy( appendix ) ) )
+        end
+
+        " echom "Code bits: " . join( code_bits, "," ) . " reversed SS: " . join( reverse( copy( s:bits['ss'] ) ), "," )
+        " echom "Appendix: " . join( appendix, "," )
+
+        let resu = s:encode_zcode_arr01( code_bits )
+        call setline( s:line_code, s:GenerateCodeLine( resu[1], s:c_ref, s:c_file, s:c_repo ) )
     end
 endfun
 " 2}}}
@@ -2501,7 +2538,210 @@ fun! s:DoDeleteTag(ref)
 endfun
 " 2}}}
 " 1}}}
+" Bits functions {{{1
+" FUNCTION: BitsStart() {{{2
+fun! s:BitsStart()
+    return s:bits['ss']
+endfun
+" 2}}}
+" FUNCTION: BitsStop() {{{2
+fun! s:BitsStop()
+    return s:bits['ss']
+endfun
+" 2}}}
+" FUNCTION: BitsRef() {{{2
+fun! s:BitsRef( ref )
+    let bits = []
+
+    let ref = deepcopy( a:ref )
+    if ref == " "
+        let ref = ""
+    end
+
+    for lt in split( ref, '\zs' )
+        if has_key( s:bits, lt )
+            call extend( bits, s:bits[lt] )
+        else
+            call s:AppendMessageT(" Incorrect character in ref name: `" . lt . "'")
+        end
+    endfor
+
+    " Ref preamble
+    if len( bits ) > 0
+        let bits = s:bits['ref'] + bits
+    end
+
+    return bits
+endfun
+" 2}}}
+" FUNCTION: BitsFile() {{{2
+fun! s:BitsFile( file )
+    let bits = []
+
+    let file = deepcopy( a:file )
+    if file == " "
+        let file = ""
+    end
+
+    for lt in split( file, '\zs' )
+        if lt == "."
+            call extend( bits, s:bits["/"] )
+        elseif lt == "/"
+            call s:AppendMessageT(" Incorrect character in file name: `" . lt . "'")
+        else
+            if has_key( s:bits, lt )
+                call extend( bits, s:bits[lt] )
+            else
+                call s:AppendMessageT(" Incorrect character in file name: `" . lt . "'")
+            end
+        end
+    endfor
+
+    " File preamble
+    if len( bits ) > 0
+        let bits = s:bits['file'] + bits
+    end
+
+    return bits
+endfun
+" 2}}}
+" FUNCTION: BitsRepo() {{{2
+fun! s:BitsRepo( repo )
+    let bits = []
+
+    let repo = deepcopy( a:repo )
+    if repo == " "
+        let repo = ""
+    end
+
+    for lt in split( repo, '\zs' )
+        if has_key( s:bits, lt )
+            call extend( bits, s:bits[lt] )
+        else
+            call s:AppendMessageT(" Incorrect character in file name: `" . lt . "'")
+        end
+    endfor
+
+    " Repo preamble
+    if len( bits ) > 0
+        let bits = s:bits['repo'] + bits
+    end
+
+    return bits
+endfun
+" 2}}}
+" FUNCTION: BitsRemoveIfStartStop() {{{2
+" This function also ensures that the code ends
+" at double SS bits if data ends at SS bits
+fun! s:BitsRemoveIfStartStop( appendix )
+    let appendix = deepcopy( a:appendix )
+
+    if s:BitsCompareSuffix( appendix, s:bits['ss'] )
+        call remove( appendix, len(appendix) - len(s:bits['ss']), -1 )
+
+        if s:BitsCompareSuffix( appendix, s:bits['ss'] )
+            call remove( appendix, len(appendix) - len(s:bits['ss']), -1 )
+
+            " Two consecutive SS bits occured, correct removal
+        else
+            " We couldn't remove second SS bits, so it means
+            " that there is some meta data, and we should
+            " restore already removed last SS bits
+            call extend( appendix, s:bits['ss'] )
+        end
+    else
+        " This shouldn't happen, this function must be
+        " called after adding SS bits
+        return []
+    end
+
+    return appendix
+endfun
+" 2}}}
+" FUNCTION: BitsCompareSuffix() {{{2
+fun! s:BitsCompareSuffix( long_bits, short_bits )
+    " Check if short_bits occur at the end of long_bits
+    let range = range( len( a:long_bits ) - len( a:short_bits ) + 1, len( a:long_bits ) )
+    let equal = 1
+    let s = 0
+    for l in map(range, "v:val - 1")
+        if a:long_bits[l] != a:short_bits[s]
+            let equal = 0
+            break
+        end
+        let s = s + 1
+    endfor
+
+    return equal
+endfun
+" 2}}}
+" 1}}}
 " ------------------------------------------------------------------------------
+
+let s:bits = {
+\ 'a'         : [ 0,0,0,1,0 ],
+\ 'e'         : [ 0,0,0,0,0 ],
+\ 'ss'        : [ 0,0,0,0,1 ],
+\ 'file'      : [ 1,1,1,1,1,0 ],
+\ 'ref'       : [ 1,1,1,1,1,1 ],
+\ 'repo'      : [ 1,1,1,1,0,1 ],
+\ 'wordref'   : [ 1,0,0,0,1,1 ],
+\ 'unused'    : [ 1,1,1,1,0,0 ],
+\ 'x' :    [ 1,1,1,0,1,1 ],
+\ 'w' :    [ 1,1,1,0,1,0 ],
+\ 'z' :    [ 1,1,1,0,0,1 ],
+\ 'y' :    [ 1,1,1,0,0,0 ],
+\ 'l' :    [ 1,1,0,1,1,1 ],
+\ 'k' :    [ 1,1,0,1,1,0 ],
+\ 'n' :    [ 1,1,0,1,0,1 ],
+\ 'm' :    [ 1,1,0,1,0,0 ],
+\ 'h' :    [ 1,1,0,0,1,1 ],
+\ 'g' :    [ 1,1,0,0,1,0 ],
+\ 'j' :    [ 1,1,0,0,0,1 ],
+\ 'i' :    [ 1,1,0,0,0,0 ],
+\ 't' :    [ 1,0,1,1,1,1 ],
+\ 's' :    [ 1,0,1,1,1,0 ],
+\ 'v' :    [ 1,0,1,1,0,1 ],
+\ 'u' :    [ 1,0,1,1,0,0 ],
+\ 'p' :    [ 1,0,1,0,1,1 ],
+\ 'o' :    [ 1,0,1,0,1,0 ],
+\ 'r' :    [ 1,0,1,0,0,1 ],
+\ 'q' :    [ 1,0,1,0,0,0 ],
+\ 'c' :    [ 1,0,0,1,1,1 ],
+\ 'b' :    [ 1,0,0,1,1,0 ],
+\ 'f' :    [ 1,0,0,1,0,1 ],
+\ 'd' :    [ 1,0,0,1,0,0 ],
+\ 'A' :    [ 1,0,0,0,1,0 ],
+\ 'C' :    [ 1,0,0,0,0,1 ],
+\ 'B' :    [ 1,0,0,0,0,0 ],
+\ 'I' :    [ 0,1,1,1,1,1 ],
+\ 'H' :    [ 0,1,1,1,1,0 ],
+\ 'K' :    [ 0,1,1,1,0,1 ],
+\ 'J' :    [ 0,1,1,1,0,0 ],
+\ 'E' :    [ 0,1,1,0,1,1 ],
+\ 'D' :    [ 0,1,1,0,1,0 ],
+\ 'G' :    [ 0,1,1,0,0,1 ],
+\ 'F' :    [ 0,1,1,0,0,0 ],
+\ 'Q' :    [ 0,1,0,1,1,1 ],
+\ 'P' :    [ 0,1,0,1,1,0 ],
+\ 'S' :    [ 0,1,0,1,0,1 ],
+\ 'R' :    [ 0,1,0,1,0,0 ],
+\ 'M' :    [ 0,1,0,0,1,1 ],
+\ 'L' :    [ 0,1,0,0,1,0 ],
+\ 'O' :    [ 0,1,0,0,0,1 ],
+\ 'N' :    [ 0,1,0,0,0,0 ],
+\ 'Y' :    [ 0,0,1,1,1,1 ],
+\ 'X' :    [ 0,0,1,1,1,0 ],
+\ '/' :    [ 0,0,1,1,0,1 ],
+\ 'Z' :    [ 0,0,1,1,0,0 ],
+\ 'U' :    [ 0,0,1,0,1,1 ],
+\ 'T' :    [ 0,0,1,0,1,0 ],
+\ 'W' :    [ 0,0,1,0,0,1 ],
+\ 'V' :    [ 0,0,1,0,0,0 ],
+\ '_' :    [ 0,0,0,1,1,1 ],
+\ '-' :    [ 0,0,0,1,1,0 ]
+\ }
+
 let &cpo=s:keepcpo
 unlet s:keepcpo
 
