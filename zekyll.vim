@@ -49,6 +49,12 @@ let s:do_tag = "nop"
 let s:do_dbranch = "nop"
 let s:do_dtag = "nop"
 
+" Used by zcode buttons
+let s:c_code = ""
+let s:c_ref = ""
+let s:c_fname = ""
+let s:c_repo = ""
+
 let s:working_area_beg = 1
 let s:working_area_end = 1
 
@@ -112,6 +118,11 @@ let s:pat_BTOps             = '\[[[:space:]]\+New Branch:[[:space:]]*<\?\(.\{-1,
                               \'\[[[:space:]]\+Delete Tag:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]'
 
 let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\{-1,}\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
+
+let s:pat_Code            = '\[[[:space:]]\+Code:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
+                          \ '\[[[:space:]]\+Ref:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
+                          \ '\[[[:space:]]\+File Name:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
+                          \ '\[[[:space:]]\+Repo:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*'
 
 let s:ACTIVE_NONE = 0
 let s:ACTIVE_CURRENT_INDEX = 1
@@ -209,7 +220,7 @@ fun! s:NormalRender( ... )
     if depth >= 0
         " Code line
         let resu = s:encode_zcode_arr01( reverse( copy(s:code_selectors) ) )
-        call setline( s:line_code, s:GenerateCodeLine( resu[1] ) )
+        call setline( s:line_code, s:GenerateCodeLine( resu[1], s:c_ref, s:c_fname, s:c_repo ) )
 
         let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
         call cursor(s:working_area_end+1,1)
@@ -990,8 +1001,12 @@ fun! s:GenerateCommitLine()
 endfun
 " 2}}}
 " FUNCTION: GenerateCodeLine() {{{2
-fun! s:GenerateCodeLine( code )
-    return "[ Code:." . s:cur_index . "/" . s:RPad( a:code, 29, "." ) . " ] ~"
+fun! s:GenerateCodeLine( code, ref, file_name, repo )
+    let line = "[ Code: " . s:cur_index . "/" . s:RPad( a:code, 15, " " ) . " ] "
+    let line = line . "[ Ref: " . s:RPad( a:ref, 15, " " ) . " ] "
+    let line = line . "[ File Name: " . s:RPad( a:file_name, 15, " " ) . " ] "
+    let line = line . "[ Repo: " . s:RPad( a:repo, 15, " " ) . " ] ~"
+    return line
 endfun
 " 2}}}
 " FUNCTION: GenerateStatusPushPullLine() {{{2
@@ -1090,7 +1105,7 @@ fun! s:DoMappings()
     nmap <buffer> <silent> Y <Nop>
     noremap <buffer> <silent> <expr> p @" != "" ? 'p:let @"=""<cr>' : ""
     noremap <buffer> <silent> <expr> P @" != "" ? 'P:let @"=""<cr>' : ""
-    map <expr> i <SID>IsCodeLine() ? 'R' : 'i'
+    "map <expr> i <SID>IsCodeLine() ? 'R' : 'i'
 
     vmap <buffer> <silent> D <Nop>
     vmap <buffer> <silent> p <Nop>
