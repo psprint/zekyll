@@ -7,6 +7,8 @@ REPO_DIR="${ZERO%/*}"
 source "$REPO_DIR/lib/script_preamble"
 source "$REPO_DIR/lib/script_vars"
 source "$REPO_DIR/lib/script_functions"
+source "$REPO_DIR/lib/math_functions"
+source "$REPO_DIR/lib/codes_huffman"
 
 #
 # Zparseopts
@@ -20,8 +22,10 @@ ZKL_VERBOSE="-s"
 ZKL_NOANSI="0"
 ZKL_QUIET="0"
 ZKL_REPO=""
+ZKL_CODE=""
+ZKL_METADATA="0"
 zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default v -verbose \
-            n -noansi q -quiet r: -repo: || exit 1
+            n -noansi q -quiet r: -repo: m -meta || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
@@ -34,6 +38,7 @@ zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default v -verbose \
 (( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
 (( ${+opthash[-r]} )) && ZKL_REPO="${opthash[-r]}"
 (( ${+opthash[--repo]} )) && ZKL_REPO="${opthash[--repo]}"
+(( ${+opthash[-m]} + ${+opthash[--meta]} )) && ZKL_METADATA="1"
 
 noansi
 
@@ -47,6 +52,18 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-dft
 
     exit 0
+fi
+
+#
+# Code given?
+#
+
+if [ -n "$1" ]; then
+    ZKL_CODE="$1"
+    if [[ "$ZKL_CODE" != [0-9]##/[a-z0-9]## ]]; then
+        qerror "Improper zcode, exiting"
+        exit 1
+    fi
 fi
 
 #
@@ -77,6 +94,29 @@ REPLY="$ZKL_PATH"
 [ "$REPLY" = "" ] && resolve_path
 ZKL_PATH="$REPLY"
 cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 1
+
+#
+# If code was given, establish ZKL_ZEKYLLS basing
+# on it, overwriting any user given -z/--zkl string
+#
+
+if [ -n "$ZKL_CODE" ]; then
+    if [[ "$ZKL_CODE" = (#b)([0-9]##)/([a-z0-9]##) ]]; then
+        integer index="${match[1]}"
+        local code="${match[2]}"
+        ZKL_INDEX="$index"
+
+        set_index "$ZKL_INDEX"
+        get_zekylls_for_code "$ZKL_CODE"
+        ZKL_ZEKYLLS="$REPLY"
+
+        if [ "$ZKL_METADATA" = "1" ]; then
+            [ -n "${reply[1]}" ] && print "Meta-data/ref: ${reply[1]}"
+            [ -n "${reply[2]}" ] && print "Meta-data/file: ${reply[2]}"
+            [ -n "${reply[3]}" ] && print "Meta-data/repo: ${reply[3]}"
+        fi
+    fi
+fi
 
 #
 # Read and examine new zekylls string
