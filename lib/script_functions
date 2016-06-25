@@ -408,6 +408,104 @@ compute_index_size_check_consistency() {
     return $(( 1-consistent ))
 }
 
+# $1 - bits decoded from zcode
+# $REPLY = bits to skip
+# $reply = ( ref, file, repo, wordref, unused, error )
+process_meta_data() {
+    local -a bits
+    bits=( "$@" )
+    integer size="$#"
+
+    bits=( "${(Oa)bits[@]}" )
+    local strbits="${(j::)bits}"
+    integer init_len="${#strbits}"
+
+    local -A decoded
+    decoded=(
+        ref ""
+        file ""
+        repo ""
+        wordref ""
+        unused ""
+        error ""
+    )
+
+    # Is there SS?
+    if [ "${strbits[1,${#codes[ss]}]}" = "${codes[ss]}" ]; then
+        strbits="${strbits[${#codes[ss]}+1,-1]}"
+        # Is there immediate following SS?
+        if [ "${strbits[1,${#codes[ss]}]}" = "${codes[ss]}" ]; then
+            # We should skip one SS and there is nothing to decode
+            REPLY="${#codes[ss]}"
+            reply=( "" "" "" "" "" "" )
+            return 0
+        fi
+
+        #
+        # Follows meta data, decode it
+        #
+
+        # ref, file, repo, wordref, unused or error
+        local current_selector="error"
+        integer trylen
+        local mat trystr
+        while (( 1 )); do
+            mat=""
+            for (( trylen=1; trylen <= 6; trylen ++ )); do
+                # Take substring of len $trylen and check if
+                # it mates any Huffman code
+                trystr="${strbits[1,trylen]}"
+                mat="${rcodes[$trystr]}"
+                [ -n "$mat" ] && break
+            done
+
+            # General failure in decoding the string
+            if [ -z "$mat" ]; then
+                REPLY="-1"
+                reply=( "" "" "" "" "" "" )
+                return 1
+            fi
+
+            # Skip decoded bits
+            strbits="${strbits[trylen+1,-1]}"
+
+            # Handle what has been matched, either selector or data
+            case "$mat" in
+                (ss)
+                    break
+                    ;;
+                (ref)
+                    current_selector="ref"
+                    ;;
+                (file)
+                    current_selector="file"
+                    ;;
+                (repo)
+                    current_selector="repo"
+                    ;;
+                (wordref)
+                    current_selector="wordref"
+                    ;;
+                (unused)
+                    current_selector="unused"
+                    ;;
+                (*)
+                    decoded[$current_selector]+="$mat"
+                    ;;
+            esac
+        done
+
+        REPLY="$(( init_len - ${#strbits} ))"
+        reply=( "${decoded[ref]}" "${decoded[file]}" "${decoded[repo]}" "${decoded[wordref]}" "${decoded[unused]}" "${decoded[error]}" )
+    else
+        # No meta data and no special ending of zekyll bits
+        REPLY="0"
+        reply=( "" "" "" "" "" "" )
+    fi
+
+    return 0
+}
+
 #
 # Gets zekylls for given code ($1)
 # Also gets meta data: ref, file, repo
@@ -419,12 +517,22 @@ get_zekylls_for_code() {
 
     local -a bits
     bits=( "${reply[@]}" )
-    integer size="${#reply}" i
-    local zekylls
+
+    process_meta_data "${bits[@]}"
+    # $reply contains: ref, file, repo, wordref, unused, error
+    # $REPLY contains: number of final bits that contained the meta data
+    local -a meta_reply
+    meta_reply=( "${reply[@]}" )
+
+    # Skip bits that were processed as meta data
+    bits=( "${(@)bits[1,-1*REPLY-1]}" )
+    integer size="${#bits}"
 
     # Last zekyll from $reply is first zekyll
     # in ZKL_INDEX_ZEKYLLS, thus the size-i+1
     # Less significant bit is first zekyll
+    integer i
+    local zekylls
     for (( i=size; i>=1; i-- )); do
         if [ "${bits[i]}" = "1" ]; then
             zekylls+="${ZKL_INDEX_ZEKYLLS[size-i+1]}"
@@ -432,6 +540,7 @@ get_zekylls_for_code() {
     done
 
     REPLY="$zekylls"
+    reply=( "${meta_reply[@]}" )
 }
 
 # vim:ft=zsh
