@@ -23,8 +23,9 @@ ZKL_NOANSI="0"
 ZKL_CODE=""
 ZKL_REPO=""
 ZKL_QUIET="0"
+ZKL_METADATA="0"
 zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default \
-            v -verbose n -noansi r: -repo: q -quiet || exit 1
+            v -verbose n -noansi r: -repo: q -quiet m -meta || exit 1
 
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
@@ -37,6 +38,7 @@ zparseopts -E -D -A opthash h -help p: -path: z: -zkl: d -default \
 (( ${+opthash[-r]} )) && ZKL_REPO="${opthash[-r]}"
 (( ${+opthash[--repo]} )) && ZKL_REPO="${opthash[--repo]}"
 (( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
+(( ${+opthash[-m]} + ${+opthash[--meta]} )) && ZKL_METADATA="1"
 
 noansi
 
@@ -107,9 +109,11 @@ if [ -n "$ZKL_CODE" ]; then
         get_zekylls_for_code "$ZKL_CODE"
         ZKL_ZEKYLLS="$REPLY"
 
-        [ -n "${reply[1]}" ] && print "Meta-data/ref: ${reply[1]}"
-        [ -n "${reply[2]}" ] && print "Meta-data/file: ${reply[2]}"
-        [ -n "${reply[3]}" ] && print "Meta-data/repo: ${reply[3]}"
+        if [ "$ZKL_METADATA" = "1" ]; then
+            [ -n "${reply[1]}" ] && print "Meta-data/ref: ${reply[1]}"
+            [ -n "${reply[2]}" ] && print "Meta-data/file: ${reply[2]}"
+            [ -n "${reply[3]}" ] && print "Meta-data/repo: ${reply[3]}"
+        fi
     fi
 fi
 
