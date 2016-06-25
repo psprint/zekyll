@@ -120,20 +120,20 @@ else
     zekylls_string_vis="$ZKL_ZEKYLLS"
 fi
 
-print
+qprint
 zekylls_string="${zekylls_string_vis//_/}"
-pinfo2 "Read: $zekylls_string"
-print
+qinfo2 "Read: $zekylls_string"
+qprint
 
 local -a zekylls1
 zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
 
-pinfo "Checking current zekyll for duplicates..."
+qinfo "Checking current zekyll for duplicates..."
 if ! detect_duplicates "${zekylls1[@]}"; then
     perror "Duplicates found. Continuing to listing the zekylls"
 fi
 
-print
+qprint
 
 #
 # Skip incomplete zekyll
@@ -157,12 +157,12 @@ for file in "${reply2[@]}"; do
     pinfo2 "-> $file"
 done
 
-print
+qprint
 
 # Handle vim specifically, adding its -p option
 if [ "${EDITOR:-vim}" = "vim" ]; then
     local vimopt=" -p"
 fi
 
-echo "Your EDITOR string would be: ${EDITOR:-vim}$vimopt" $^existing"*"
-echo "Other possibility is: zkl-view-zekylls -p \"$ZKL_PATH\" --zkl $zekylls_string"
+qprint "Your EDITOR string would be: ${EDITOR:-vim}$vimopt" $^existing"*"
+qprint "Other possibility is: zkl-view-zekylls -p \"$ZKL_PATH\" --zkl $zekylls_string"
