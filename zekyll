@@ -143,7 +143,7 @@ ZKLCOL=(
                 -zkl-error "Error: improper input (2)"
             fi
         # user?
-        elif [[ "$1" = [a-zA-Z0-9]## ]]; then
+        elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
             # Should be zekyll
             if [[ "$2" = [a-zA-Z0-9_]## ]]; then
                 user="$1"
@@ -195,10 +195,10 @@ ZKLCOL=(
 #
 -zkl-any2-to-user-repo-zekyll-desc() {
     local user repo zekyll desc
-    if [[ "$1" = [a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
+    if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#:[a-zA-Z0-9]* ]]; then
         user="${1%:*}"
         1="${1#*:}"
-    elif [[ "$1" = [a-zA-Z0-9]##/[a-zA-Z0-9]##:[a-zA-Z0-9]* ]]; then
+    elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#/[a-zA-Z0-9_-]##:[a-zA-Z0-9]* ]]; then
         user="${1%/*}"
         repo="${${1#*/}%:*}"
         1="${1#*:}"
@@ -226,10 +226,10 @@ ZKLCOL=(
 
 -zkl-any3-to-user-repo-zekyllfile() {
     local user repo zekyllfile="$1"
-    if [[ "$1" = [a-zA-Z0-9]##:[\.a-zA-Z0-9]## ]]; then
+    if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#:[\.a-zA-Z0-9_-]## ]]; then
         user="${1%:*}"
         zekyllfile="${1#*:}"
-    elif [[ "$1" = [a-zA-Z0-9]##/[a-zA-Z0-9]##:[\.a-zA-Z0-9]## ]]; then
+    elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#/[a-zA-Z0-9_-]##:[\.a-zA-Z0-9_-]## ]]; then
         user="${1%/*}"
         repo="${${1#*/}%:*}"
         zekyllfile="${1#*:}"
