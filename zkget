@@ -6,9 +6,10 @@ REPO_DIR="${ZERO%/*}"
 [ "$ZERO" = "$REPO_DIR" ] && REPO_DIR="$HOME/.zekyll/zekyll"
 source "$REPO_DIR/lib/script_preamble"
 source "$REPO_DIR/lib/script_vars"
-source "$REPO_DIR/lib/math_functions"
 source "$REPO_DIR/lib/script_functions"
+source "$REPO_DIR/lib/math_functions"
 source "$REPO_DIR/lib/codes_huffman"
+source "$REPO_DIR/lib/coding_functions"
 
 #
 # Zparseopts

@@ -9,6 +9,7 @@ source "$REPO_DIR/lib/script_vars"
 source "$REPO_DIR/lib/script_functions"
 source "$REPO_DIR/lib/math_functions"
 source "$REPO_DIR/lib/codes_huffman"
+source "$REPO_DIR/lib/coding_functions"
 
 #
 # Zparseopts
