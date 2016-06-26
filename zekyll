@@ -689,6 +689,11 @@ zkllong() {
         return
     fi
 
+    if [ "${#zekyll}" -eq 2 ]; then
+        echo "Skipping two letter zekyll $zekyll"
+        return
+    fi
+
     zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${repo}/${zekyll}.[A-Z]--*(N.) )
     if [[ "${#zekyll_file}" -eq 0 ]]; then
         echo "Zekyll $zekyll ($desc) doesn't exist, skipping"
