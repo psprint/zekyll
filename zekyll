@@ -596,6 +596,7 @@ Options are:
         output_path="${output_path}/out"
     elif [[ ( ! -d "$input_path" && ! -f "$input_path" ) && "${input_path%/}" = "${input_path}" ]]; then
         # Obtained not-existing file name, provide that its directory exists
+        # If there is no parent directory, :h will return "."
         command mkdir -p "${input_path:h}"
     elif [ -d "$input_path" ]; then
         # Obtained directory, provide file name: "out"
@@ -605,6 +606,20 @@ Options are:
     fi
 
     REPLY="$output_path"
+}
+
+# $1 - full path
+# $2 - file name
+#
+# Result is $1:h/$2 or $1/$2
+# The second case when $1 already points to directory
+-merge-paths() {
+    if [ -d "$1" ]; then
+        REPLY="$1/$2"
+    else
+        REPLY="${1:h}/$2"
+    fi
+    return 0
 }
 
 #
@@ -664,7 +679,10 @@ Options are:
             # Establish output path
             #
 
+            # out_path is established to contain file name, currently it cannot contain any path
+            # general_path is already prepared, i.e. its directory exists
             local specific_path="$out_path"
+            [ -n "$specific_path" ] && { -merge-paths "$general_path" "${specific_path:t}"; specific_path="$REPLY"; }
             [ -z "$specific_path" ] && specific_path="$general_path"
             [ -n "$ZKL_FIXED_PATH" ] && specific_path="$general_path"
             -prepare-output-path "$specific_path"
