@@ -19,7 +19,7 @@ typeset -gH ZKL_UPDATE_ONLY="0"
 typeset -gAH ZKL_UPDATED_REPOS
 typeset -gH ZKL_CSTR_A="#"
 typeset -gH ZKL_CSTR_B=""
-typeset -ghi ZKL_COUNTER=0
+typeset -ghi ZKL_COLLISION_COUNTER=0
 
 #
 # Data aggregation arrays
@@ -31,6 +31,8 @@ typeset -gaH ZKL_EMIT_FILE_NAMES
 typeset -gaH ZKL_EMIT_SECTIONS
 typeset -gaH ZKL_EMIT_DESCRIPTIONS
 typeset -gaH ZKL_EMIT_OUT_PATHS
+
+typeset -gaHU ZKL_EMITTED_PATHS
 
 typeset -gH ZKL_LAST_PROCESSING_USER
 typeset -gH ZKL_LAST_PROCESSING_REPO
@@ -612,6 +614,17 @@ Options are:
 -zkl-emit() {
     local -a output
 
+    # Maps demanded file paths to actually written to.
+    #
+    # The point is that every path may be used for each whole emit once.
+    # Paths used for the first time are stored in ZKL_EMITTED_PATHS and not
+    # used for the second time for another emit. The hash here holds substitute
+    # file paths for cases where a collision occurs. Every collision bumps up
+    # ZKL_COLLISION_COUNTER and path formed this way is stored in the hash in
+    # question, to be valid across one emit. This means that collisions in
+    # general are counted, not collisions of single path.
+    local -A paths_map
+
     #
     # Establish and prepare general_path
     #
@@ -656,6 +669,23 @@ Options are:
             [ -n "$ZKL_FIXED_PATH" ] && specific_path="$general_path"
             -prepare-output-path "$specific_path"
             specific_path="$REPLY"
+
+            if [ -z "${paths_map[$specific_path]}" ]; then
+                # No assigned path yet, can we use current path unmodified?
+                if [ "${ZKL_EMITTED_PATHS[(r)$specific_path]}" != "$specific_path" ]; then
+                    # Can use current path unmodified
+                    paths_map[$specific_path]="$specific_path"
+                    ZKL_EMITTED_PATHS+=( "$specific_path" )
+                else
+                    # Have to generate new path and store it for current "emit session"
+                    ZKL_COLLISION_COUNTER+=1
+                    local specific_path_bkp="$specific_path"
+                    specific_path="${specific_path}---${ZKL_COLLISION_COUNTER}"
+                    paths_map[$specific_path_bkp]="$specific_path"
+                fi
+            else
+                specific_path="${paths_map[$specific_path]}"
+            fi
 
             #
             # Write to file
