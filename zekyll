@@ -2,6 +2,8 @@
 
 zmodload zsh/zutil
 
+setopt extendedglob typesetsilent
+
 typeset -gH ZKL_YES="NO"
 typeset -gH ZKL_LOCAL_USER="_local"
 typeset -gH ZKL_DEFAULT_PLUGIN="zkl"
@@ -102,8 +104,6 @@ ZKLCOL=(
 # $3 -                                     zekyll(s)
 #
 -zkl-any-to-user-repo-zekyll() {
-    setopt localoptions extendedglob
-
     local user="_unknown"
     local repo="_unknown"
     local zekyll="_unknown"
@@ -620,8 +620,6 @@ help() {
 # This function takes parametes as -zkl-any-to-user-repo-zekyll
 #
 zkl() {
-    setopt localoptions extendedglob typesetsilent
-
     [ "$ZKL_YES" = "NO" ] && return
 
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
@@ -673,8 +671,6 @@ zkl() {
 # zkllong {user}/repo:[:alnum:][:alnum:] Some text here (a description, comment)
 #
 zkllong() {
-    setopt localoptions extendedglob typesetsilent
-
     [ "$ZKL_YES" = "NO" ] && return
 
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
