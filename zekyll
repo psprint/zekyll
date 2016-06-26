@@ -4,6 +4,11 @@ zmodload zsh/zutil
 
 setopt extendedglob typesetsilent
 
+REPO_DIR="$HOME/.zekyll/zekyll"
+source "$REPO_DIR/lib/math_functions"
+source "$REPO_DIR/lib/codes_huffman"
+source "$REPO_DIR/lib/coding_functions"
+
 typeset -gH ZKL_YES="NO"
 typeset -gH ZKL_LOCAL_USER="_local"
 typeset -gH ZKL_DEFAULT_PLUGIN="zkl"
@@ -250,6 +255,34 @@ ZKLCOL=(
     return 0
 }
 
+#
+# Used by "zcode" template function
+#
+# Will use $ZKL_CUR_PLUGIN and $ZKL_CUR_USER if the values aren't
+# provided. That's the main sense of this function
+#
+-zkl-uspl2-to-user-repo() {
+    local user repo
+    if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
+        user="$1"
+    elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#/[a-zA-Z0-9_-]## ]]; then
+        user="${1%/*}"
+        repo="${1#*/}"
+    elif [[ "$1" != [[:blank:]]# ]]; then
+        -zkl-error "Error: improper user/repo given: $1"
+        return 1
+    fi
+
+    [ -z "$user" ] && user="$ZKL_CUR_USER"
+    [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user (2), no default user set" && return 1
+
+    [ -z "$repo" ] && repo="$ZKL_CUR_PLUGIN"
+    [[ "$repo" = "_unknown" || -z "$repo" ]] && -zkl-error "Error: unknown repo (2), no default repository set" && return 1
+
+    reply=( "$user" "$repo" )
+    return 0
+}
+
 # This function is used for repository paths manipulations
 # Basically, every repository path consists of user name and repo name
 # There are 3 formats:
@@ -383,6 +416,8 @@ ZKLCOL=(
         -zkl-any2-to-user-repo-zekyll-desc "$@" || return 2
     elif [ "$optype" = "file" ]; then
         -zkl-any3-to-user-repo-zekyllfile "$1" || return 2
+    elif [ "$optype" = "zcode" ]; then
+        -zkl-uspl2-to-user-repo "$1" || return 2
     else
         return 1
     fi
@@ -709,6 +744,81 @@ zkllong() {
     ZKL_EMIT_REPOS+=( "${user}---${repo}" )
     ZKL_EMIT_FILE_NAMES+=( "$file_name" )
     ZKL_EMIT_DESCRIPTIONS+=( "$desc" )
+}
+
+zcode() {
+    local zcode
+    [ -n "$1" ] && zcode="$1" || return 0
+
+    if [[ "$zcode" != (#b)([0-9]##)/([a-z0-9]##) ]]; then
+        echo "Improper zcode: $1"
+        return 1
+    fi
+
+    integer index="${match[1]}"
+    local code="${match[2]}" zekylls
+
+    set_index "$index"
+    get_zekylls_for_code "$zcode"
+    zekylls_str="$REPLY"
+
+    local -A mdata
+    mdata=( "${reply[@]}" )
+
+    if [ -n "${mdata[ref]}" ]; then
+        print "Zcode meta-data/ref: ${mdata[ref]}"
+    fi
+
+    if [ -n "${mdata[file]}" ]; then
+        print "Zcode meta-data/file: ${mdata[file]}"
+        ZKL_OUTPUT_PATH="${mdata[file]}"
+    fi
+
+    if [ -n "${mdata[repo]}" ]; then
+        print "Zcode meta-data/repo: ${mdata[repo]}"
+    fi
+
+    # Strictly, this will propagate error code from -zkl-start-zekyll-input
+    -zkl-start-zekyll-input "zcode" "${mdata[repo]}" || return
+    local user="${reply[1]}" repo="${reply[2]}"
+
+    if [[ "$ZKL_LAST_PROCESSING_USER" != "$user" || "$ZKL_LAST_PROCESSING_REPO" != "$repo" ]]; then
+        -zkl-pinfo2 "\nProcessing (zcode) for user $user, repo $repo\n"
+    fi
+
+    ZKL_LAST_PROCESSING_USER="$user"
+    ZKL_LAST_PROCESSING_REPO="$repo"
+
+    # Allow underscores - remove them now
+    zekylls_str="${zekylls_str//_/}"
+
+    local -a zekylls zekyll_file
+    local zzz line
+
+    # Generate three-character bits
+    zekylls=( ${(@s:_:)${zekylls_str//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
+
+    # Iterate over the bits
+    for zzz in "${zekylls[@]}"; do
+        # Skip one or two letter zekylls - they are allowed though not processed
+        [[ "${#zzz}" -eq 1 || "${#zzz}" -eq 2 ]] && continue
+
+        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${repo}/${zzz}.[A-Z]--*(N.) )
+        if [[ "${#zekyll_file}" -eq 0 ]]; then
+            echo "Zekyll $zzz doesn't exist, skipping"
+            continue
+        fi
+
+        local file_name="${zekyll_file[1]##*/}"
+        local section="${${file_name/#???.}%%--*}"
+
+        # Store gathered data
+        ZKL_EMIT_ZEKYLLS+=( "$zekylls_str" )
+        ZKL_EMIT_SECTIONS+=( "$section" )
+        ZKL_EMIT_REPOS+=( "${user}---${repo}" )
+        ZKL_EMIT_FILE_NAMES+=( "$file_name" )
+        ZKL_EMIT_DESCRIPTIONS+=( "" )
+    done
 }
 
 #
