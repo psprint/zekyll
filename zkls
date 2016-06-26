@@ -177,4 +177,4 @@ if [ "${EDITOR:-vim}" = "vim" ]; then
 fi
 
 qprint "Your EDITOR string would be: ${EDITOR:-vim}$vimopt" $^existing"*"
-qprint "Other possibility is: zkl-view-zekylls -p \"$ZKL_PATH\" --zkl $zekylls_string"
+qprint "Other possibility is: zkview -p \"$ZKL_PATH\" --zkl $zekylls_string"
