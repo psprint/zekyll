@@ -109,6 +109,9 @@ read_destination_path() {
             zekylls_path="."
         fi
 
+        # Expand ~
+        zekylls_path="${zekylls_path/(#s)~/$HOME}"
+
         if ! test -d "$zekylls_path"; then
             perror "Path doesn't exist, try again"
             continue
