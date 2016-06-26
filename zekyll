@@ -627,6 +627,12 @@ zkl() {
     -zkl-start-zekyll-input "zkl" "$1" "$2" "$3" || return
     local user="${reply[-3]}" repo="${reply[-2]}" zekyll="${reply[-1]}"
 
+    if [[ "$ZKL_LAST_PROCESSING_USER" != "$user" || "$ZKL_LAST_PROCESSING_REPO" != "$repo" ]]; then
+        -zkl-pinfo2 "\nProcessing for user $user, repo $repo\n"
+    fi
+    ZKL_LAST_PROCESSING_USER="$user"
+    ZKL_LAST_PROCESSING_REPO="$repo"
+
     # Allow underscores - remove them now
     zekyll="${zekyll//_/}"
 
@@ -635,12 +641,6 @@ zkl() {
 
     # Generate three-character bits
     zekylls=( ${(@s:_:)${zekyll//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$match[1]_}} )
-
-    if [[ "$ZKL_LAST_PROCESSING_USER" != "$user" || "$ZKL_LAST_PROCESSING_REPO" != "$repo" ]]; then
-        -zkl-pinfo2 "\nProcessing for user $user, repo $repo\n"
-    fi
-    ZKL_LAST_PROCESSING_USER="$user"
-    ZKL_LAST_PROCESSING_REPO="$repo"
 
     # Iterate over the bits
     for zzz in "${zekylls[@]}"; do
