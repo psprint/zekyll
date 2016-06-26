@@ -1,4 +1,4 @@
-# Helper functions
+# Helper functions {{{
 pinfo()   { print -- "${fg_bold[green]}$*$reset_color"; }
 pinfon()  { print -n -- "${fg_bold[green]}$*$reset_color"; }
 pinfo2()  { print -- "${fg_bold[yellow]}$*$reset_color"; }
@@ -16,11 +16,8 @@ qerror()  { quiet || print -- "${fg_bold[red]}$*$reset_color" >&2; }
 qerrorn() { quiet || print -n -- "${fg_bold[red]}$*$reset_color" >&2; }
 
 clearinput() { repeat 10; do read -rs -k 1 -t; done; }
-
-#
-# Standard outputs
-#
-
+# }}}
+# Standard outputs {{{
 dry-mode-msg() { [ "$ZKL_PERFORM_WRITE" = "0" ] && pinfo2 "= Dry mode =" || perror "= Actual mode (not-dry) ="; }
 help-opts()  { pinfo "Options are:"; }
 help-cd()    { print -- "-c/--cd             -- ask for working directory, otherwise it's current directory"; }
@@ -41,33 +38,27 @@ help-sect()  { print -- "--section           -- use given section name when e.g.
 help-desc()  { print -- "--desc              -- use given description when e.g. creating zekylls"; }
 help-cons()  { print -- "--consistent        -- check if index is consistent, output inconsistent files/zekylls"; }
 help-list()  { print -- "--list              -- list files belonging to index, even inconsistent ones"; }
-
-#
+# }}}
+# FUNCTION: quiet {{{
 # Returns if quiet mode
-#
-
 quiet() {
     [ "$ZKL_QUIET" = "0" ] && return 1 || return 0
 }
-
-#
+# }}}
+# FUNCTION: src {{{
 # Returns if source zekylls given
-#
-
 src() {
     [ -z "$ZKL_ZEKYLLS" ] && return 1 || return 0
 }
-#
+# 2}}}
+# FUNCTION: tgt {{{
 # Returns if target zekylls given
-#
-
 tgt() {
     [ -z "$ZKL_TARGET_ZEKYLLS" ] && return 1 || return 0
 }
-
-#
+# }}}
+# FUNCTION: noansi {{{
 # Turns colors on and off
-#
 noansi() {
     if [ "$ZKL_NOANSI" = "1" ]; then
         local k
@@ -83,11 +74,9 @@ noansi() {
         done
     fi
 }
-
-#
+# }}}
+# FUNCTION: detect_duplicates {{{
 # Detects duplicates in given array
-#
-
 detect_duplicates() {
     local -a sorted
     sorted=( "${(on)@}" )
@@ -105,11 +94,9 @@ detect_duplicates() {
 
     return $dups
 }
-
-#
+# }}}
+# FUNCTION: read_destination_path {{{
 # Read destination path
-#
-
 read_destination_path() {
     local zekylls_path="$1"
 
@@ -133,11 +120,9 @@ read_destination_path() {
     REPLY="$zekylls_path"
     return 0
 }
-
-#
+# }}}
+# FUNCTION: read_repo {{{
 # Read repository spec
-#
-
 read_repo() {
     local repo_spec="$1"
 
@@ -162,10 +147,9 @@ read_repo() {
 
     return 0
 }
-
-#
+# }}}
+# FUNCTION: resolve_path {{{
 # Resolves path according to various rules and sources
-#
 resolve_path() {
     # If -d/--default is given, then this means: do exactly the
     # same but without prompting for path, but fallback to this
@@ -185,12 +169,11 @@ resolve_path() {
 
     return 0
 }
-
-#
+# }}}
+# FUNCTION: resolve_repo {{{
 # This function translates repo to path, but
 # also asks for the repo if conditions are
 # meet
-#
 resolve_repo() {
     integer ask=1
     [[ "$ZKL_DEFAULT" = 1 && -n "$ZEKYLL_DEFAULT_REPO" ]] && ask=0
@@ -209,10 +192,9 @@ resolve_repo() {
     get_path_from_repo "$repo"
     [ -d "$REPLY" ] && return 0 || return 1
 }
-
-#
+# }}}
+# FUNCTION: cd_will_work_on {{{
 # CD to path and show files there
-#
 cd_will_work_on() {
     [ -d "$1" ] || { perror "Error: path '$1' doesn't exist"; return 1 }
 
@@ -234,10 +216,9 @@ cd_will_work_on() {
 
     return 0
 }
-
-#
+# }}}
+# FUNCTION: get_path_from_repo {{{
 # Returns physicall path for given repo string
-#
 get_path_from_repo() {
     local user="${1%/*}"
     local repo="${1#*/}"
@@ -249,19 +230,17 @@ get_path_from_repo() {
 
     REPLY="$ZKL_REPOS_DIR/${user}---${repo}"
 }
-
-#
+# }}}
+# FUNCTION: get_path_from_repo {{{
 # Returns physicall path for given user and repo
-#
 get_path_from_user_repo() {
     [ "$2" = "" ] && 2="zkl"
     REPLY="$ZKL_REPOS_DIR/${1}---${2}"
 }
-
-#
+# }}}
+# FUNCTION: filter_for_existing_zekylls {{{
 # Iterates over given zekylls, rejects non-existing ones,
 # saves file names (returned in reply2) and sections (reply3)
-#
 filter_for_existing_zekylls() {
     local -a existing sections files
     local zekyll
@@ -287,11 +266,10 @@ filter_for_existing_zekylls() {
     reply2=( "${files[@]}" )
     reply3=( "${sections[@]}" )
 }
-
-#
+# }}}
+# FUNCTION: three_to_section_order {{{
 # Converts lists of zekylls, files and sections into
 # section order
-#
 three_to_section_order() {
     local -a zekylls files sections out_zekylls out_files out_sections
     integer size="$1"
@@ -314,5 +292,6 @@ three_to_section_order() {
     typeset -ga reply2 reply3
     reply=( "${out_zekylls[@]}" ) ; reply2=( "${out_files[@]}" ) ; reply3=( "${out_sections[@]}" )
 }
+# }}}
 
 # vim:ft=zsh
