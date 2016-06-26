@@ -99,10 +99,6 @@ ZKLCOL=(
 # - user:zekyll             / sensitive to "zekyll repo"
 # - zekyll                  / sensitive to "zekyll repo" and "zekyll user"
 #
-# $1 - user/repo:zekyll(s), user/repo, user,               user:zekyll(s), zekyll(s)
-# $2 -                        zekyll(s)    repo or zekyll(s)
-# $3 -                                     zekyll(s)
-#
 -zkl-any-to-user-repo-zekyll() {
     local user="_unknown"
     local repo="_unknown"
@@ -521,7 +517,7 @@ Options are:
     if [ -n "$ZKL_CSTR_B" ]; then
         reply=( "$ZKL_CSTR_A $REPLY $ZKL_CSTR_B" "${reply[@]}" )
     else
-        reply=( "$ZKL_CSTR_A $REPLY " "${reply[@]}" )
+        reply=( "$ZKL_CSTR_A $REPLY" "${reply[@]}" )
     fi
 
     # Add separating new line if it's not there
