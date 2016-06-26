@@ -203,6 +203,7 @@ ZKLCOL=(
         repo="${${1#*/}%:*}"
         1="${1#*:}"
     fi
+    # TODO: discover improper input
 
     [ -z "$user" ] && user="$ZKL_CUR_USER"
     [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user" && return 1
@@ -224,6 +225,9 @@ ZKLCOL=(
     return 0
 }
 
+#
+# Used by "file" template command
+#
 -zkl-any3-to-user-repo-zekyllfile() {
     local user repo zekyllfile="$1"
     if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#:[\.a-zA-Z0-9_-]## ]]; then
@@ -234,6 +238,7 @@ ZKLCOL=(
         repo="${${1#*/}%:*}"
         zekyllfile="${1#*:}"
     fi
+    # TODO: discover improper input
 
     [ -z "$user" ] && user="$ZKL_CUR_USER"
     [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user" && return 1
@@ -362,9 +367,9 @@ ZKLCOL=(
 # - signaling inproper input and update mode
 #
 # Has three modes, zkl, zkllong, file. Input differs for all of
-# them. For the first input, reffer to -zkl-any-to-user-repo and
-# for the second one to -zkl-any2-to-user-repo-zekyll-desc. Third
-# one extends the one from -zkl-any3-to-user-repo-zekyllfile.
+# them. For the first input, reffer to -zkl-any-to-user-repo-zekyll
+# and for the second one to -zkl-any2-to-user-repo-zekyll-desc.
+# Third one extends the one from -zkl-any3-to-user-repo-zekyllfile.
 #
 -zkl-start-zekyll-input() {
     -zkl-prepare-home
