@@ -671,19 +671,32 @@ Options are:
             specific_path="$REPLY"
 
             if [ -z "${paths_map[$specific_path]}" ]; then
-                # No assigned path yet, can we use current path unmodified?
+                # No assigned path yet, can use original path unmodified?
                 if [ "${ZKL_EMITTED_PATHS[(r)$specific_path]}" != "$specific_path" ]; then
-                    # Can use current path unmodified
+                    # Can use original path unmodified
                     paths_map[$specific_path]="$specific_path"
                     ZKL_EMITTED_PATHS+=( "$specific_path" )
                 else
-                    # Have to generate new path and store it for current "emit session"
+                    # Emitting to the same file more than one time
+                    # Have to generate custom path and store it for current "emit session"
                     ZKL_COLLISION_COUNTER+=1
-                    local specific_path_bkp="$specific_path"
-                    specific_path="${specific_path}---${ZKL_COLLISION_COUNTER}"
-                    paths_map[$specific_path_bkp]="$specific_path"
+                    local specific_path_orig="$specific_path"
+                    integer counter=1
+                    while (( 1 )); do
+                        specific_path="${specific_path_orig}---${counter}"
+                        if [ "${ZKL_EMITTED_PATHS[(r)$specific_path]}" != "$specific_path" ]; then
+                            # Found first free custom path
+                            break
+                        fi
+                        counter+=1
+                    done
+
+                    # Can use newly created path
+                    paths_map[$specific_path_orig]="$specific_path"
+                    ZKL_EMITTED_PATHS+=( "$specific_path" )
                 fi
             else
+                # Reuse path assigned to this emit session
                 specific_path="${paths_map[$specific_path]}"
             fi
 
