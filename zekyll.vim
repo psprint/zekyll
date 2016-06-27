@@ -2516,6 +2516,15 @@ fun! s:BitsCompareSuffix( long_bits, short_bits )
 endfun
 " 2}}}
 " Coding functions {{{1
+" FUNCTION: LettersToNumbers() {{{2
+fun! s:LettersToNumbers( letters )
+    let reply=[]
+    for l in split( a:letters, '\zs' )
+        let number = index( s:characters, l )
+        call add( reply, number )
+    endfor
+    return reply
+endfun
 " FUNCTION: NumbersToLetters() {{{2
 fun! s:NumbersToLetters(numbers)
     let result=""
