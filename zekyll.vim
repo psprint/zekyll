@@ -2685,6 +2685,58 @@ fun! s:encode_zcode_8_bit_pack_numbers(nums)
     return [ nums_base36, str ]
 endfun
 " 2}}}
+" FUNCTION: div2() {{{2
+" input - zcode's letters
+" return - [ zcode's letters after division, remainder 0 or 1 ]
+fun! s:div2( letters )
+    "
+    " First translate the letters to numbers and put them into array
+    "
+
+    let numbers = []
+    let numbers = s:LettersToNumbers( a:letters )
+
+    "
+    " Now operate on the array performing long-division
+    "
+
+    let cur = 0
+    let last = len( numbers ) - 1
+
+    let result = []
+
+    let prepared_for_division = numbers[ cur ]
+    while 1
+        let quotient = prepared_for_division / 2
+
+        call add( result, quotient )
+
+        let recovered = quotient * 2
+        let subtracted = prepared_for_division - recovered
+
+        let cur = cur + 1
+        if cur > last
+            break
+        end
+
+        let prepared_for_division = 36 * subtracted + numbers[ cur ]
+    endwhile
+
+    "
+    " Now convert the result to letters
+    "
+
+    let REPLY = s:NumbersToLetters( result )
+
+    "
+    " Return
+    "
+
+    let reply=[ REPLY, subtracted ]
+
+    return reply
+endfun
+" 2}}}
 " 1}}}
 " ------------------------------------------------------------------------------
 
