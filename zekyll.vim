@@ -1311,51 +1311,6 @@ fun! s:BufferLineToZCSD(line)
     end
     return []
 endfun
-" FUNCTION: NumbersToLetters() {{{2
-fun! s:NumbersToLetters(numbers)
-    let result=""
-    for i in a:numbers
-        let result = result . s:characters[i]
-    endfor
-    return result
-endfun
-" FUNCTION: ConvertIntegerToBase36() {{{2
-"
-" Takes number in $1, returns string [a-z0-9]+
-" that is representation of the number in base 36
-"
-fun! s:ConvertIntegerToBase36(number)
-    let digits = []
-
-    let new_number=a:number
-    while new_number != 0
-        let remainder=new_number%36
-        let new_number=new_number/36
-
-        call add( digits, remainder )
-    endwhile
-
-    if len( digits ) == 0
-        call add( digits, 0 )
-    end
-    if len( digits ) == 1
-        call add( digits, 0 )
-    end
-    if len( digits ) == 2
-        call add( digits, 0 )
-    end
-
-    let digits_reversed=[]
-    let size = len( digits )
-    let i = size-1
-    while i >= 0
-        call add( digits_reversed, digits[i] )
-        let i = i - 1
-    endwhile
-
-    return s:NumbersToLetters( digits_reversed )
-endfun
-" 2}}}
 " FUNCTION: RPad() {{{2
 function! s:RPad(str, number, ...)
     if len(a:000) > 0 && type( a:000[0] ) == type( ' ' )
@@ -1483,121 +1438,6 @@ fun! s:ReadCodes()
     endwhile
 
     return sel_count
-endfun
-" 2}}}
-" FUNCTION: div_8_bit_pack_numbers_36() {{{2
-fun! s:div_8_bit_pack_numbers_36(nums)
-    let numbers = []
-    let numbers = a:nums
-
-    "
-    " Now operate on the array performing long-division
-    "
-
-    let cur = 0
-    let last = len( numbers ) - 1
-    let result=[]
-
-    let prepared_for_division = numbers[cur]
-    while 1 == 1
-        let quotient = prepared_for_division/36
-
-        call add( result, quotient )
-
-        let recovered = quotient * 36
-        let subtracted = prepared_for_division-recovered
-
-        let cur = cur + 1
-        if cur > last
-            break
-        end
-
-        let prepared_for_division = 256 * subtracted + numbers[cur]
-    endwhile
-
-    " echom "Result of division: " . join( result, "," )
-    " echom "Remainder: " . subtracted
-
-    return [ result, subtracted ]
-}
-endfun
-" 2}}}
-" FUNCTION: arr_01_to_8_bit_pack_numbers() {{{2
-fun! s:arr_01_to_8_bit_pack_numbers(arr)
-    let bits = []
-    let pack = []
-    let numbers = []
-
-    let bits = a:arr
-    let bcount = 0
-    let size = len( bits )
-    let i = size - 1
-
-    " Take packs of 8 bits, convert each to number and store in array
-    while i >= 0
-        " Insert bits[i] at start of the list pack
-        call insert( pack, bits[ i ] )
-        let bcount = bcount + 1
-        if bcount < 8 && i != 0
-            let i = i - 1
-            continue
-        else
-            let i = i - 1
-        end
-        let bcount = 0
-
-        " Convert the max. 8 bit pack to number
-        let result = 0
-        for p in pack
-            let result = result * 2 + p
-        endfor
-
-        " Insert result at start of the list numbers
-        call insert( numbers, result )
-
-        let pack=[]
-    endwhile
-
-    return numbers
-endfun
-" 2}}}
-" FUNCTION: encode_zcode_arr01() {{{2
-fun! s:encode_zcode_arr01(arr01)
-    let numbers = s:arr_01_to_8_bit_pack_numbers(a:arr01)
-    return s:encode_zcode_8_bit_pack_numbers(numbers)
-endfun
-" 2}}}
-" FUNCTION: encode_zcode_8_bit_pack_numbers() {{{2
-"
-" Takes 8-bit pack numbers whose bits mark which zekylls are active
-" and encodes them to base 36 number expressed via a-z0-9
-"
-fun! s:encode_zcode_8_bit_pack_numbers(nums)
-    let numbers = a:nums
-    let nums_base36 = []
-    let workingvar = []
-
-    let workingvar = numbers
-
-    let sum=0
-    for i in workingvar
-        let sum = sum + i
-    endfor
-
-    while sum != 0
-        let res = s:div_8_bit_pack_numbers_36( workingvar )
-        let workingvar = res[0]
-        call insert( nums_base36, res[1] )
-
-        " Check if workingvar is all zero
-        let sum=0
-        for i in workingvar
-            let sum = sum + i
-        endfor
-    endwhile
-
-    let str = s:NumbersToLetters( nums_base36 )
-    return [ nums_base36, str ]
 endfun
 " 2}}}
 " FUNCTION: Space() {{{2
@@ -2673,6 +2513,167 @@ fun! s:BitsCompareSuffix( long_bits, short_bits )
     endfor
 
     return equal
+endfun
+" 2}}}
+" Coding functions {{{1
+" FUNCTION: NumbersToLetters() {{{2
+fun! s:NumbersToLetters(numbers)
+    let result=""
+    for i in a:numbers
+        let result = result . s:characters[i]
+    endfor
+    return result
+endfun
+" FUNCTION: ConvertIntegerToBase36() {{{2
+"
+" Takes number in $1, returns string [a-z0-9]+
+" that is representation of the number in base 36
+"
+fun! s:ConvertIntegerToBase36(number)
+    let digits = []
+
+    let new_number=a:number
+    while new_number != 0
+        let remainder=new_number%36
+        let new_number=new_number/36
+
+        call add( digits, remainder )
+    endwhile
+
+    if len( digits ) == 0
+        call add( digits, 0 )
+    end
+    if len( digits ) == 1
+        call add( digits, 0 )
+    end
+    if len( digits ) == 2
+        call add( digits, 0 )
+    end
+
+    let digits_reversed=[]
+    let size = len( digits )
+    let i = size-1
+    while i >= 0
+        call add( digits_reversed, digits[i] )
+        let i = i - 1
+    endwhile
+
+    return s:NumbersToLetters( digits_reversed )
+endfun
+" 2}}}
+" FUNCTION: div_8_bit_pack_numbers_36() {{{2
+fun! s:div_8_bit_pack_numbers_36(nums)
+    let numbers = []
+    let numbers = a:nums
+
+    "
+    " Now operate on the array performing long-division
+    "
+
+    let cur = 0
+    let last = len( numbers ) - 1
+    let result=[]
+
+    let prepared_for_division = numbers[cur]
+    while 1 == 1
+        let quotient = prepared_for_division/36
+
+        call add( result, quotient )
+
+        let recovered = quotient * 36
+        let subtracted = prepared_for_division-recovered
+
+        let cur = cur + 1
+        if cur > last
+            break
+        end
+
+        let prepared_for_division = 256 * subtracted + numbers[cur]
+    endwhile
+
+    " echom "Result of division: " . join( result, "," )
+    " echom "Remainder: " . subtracted
+
+    return [ result, subtracted ]
+}
+endfun
+" 2}}}
+" FUNCTION: arr_01_to_8_bit_pack_numbers() {{{2
+fun! s:arr_01_to_8_bit_pack_numbers(arr)
+    let bits = []
+    let pack = []
+    let numbers = []
+
+    let bits = a:arr
+    let bcount = 0
+    let size = len( bits )
+    let i = size - 1
+
+    " Take packs of 8 bits, convert each to number and store in array
+    while i >= 0
+        " Insert bits[i] at start of the list pack
+        call insert( pack, bits[ i ] )
+        let bcount = bcount + 1
+        if bcount < 8 && i != 0
+            let i = i - 1
+            continue
+        else
+            let i = i - 1
+        end
+        let bcount = 0
+
+        " Convert the max. 8 bit pack to number
+        let result = 0
+        for p in pack
+            let result = result * 2 + p
+        endfor
+
+        " Insert result at start of the list numbers
+        call insert( numbers, result )
+
+        let pack=[]
+    endwhile
+
+    return numbers
+endfun
+" 2}}}
+" FUNCTION: encode_zcode_arr01() {{{2
+fun! s:encode_zcode_arr01(arr01)
+    let numbers = s:arr_01_to_8_bit_pack_numbers(a:arr01)
+    return s:encode_zcode_8_bit_pack_numbers(numbers)
+endfun
+" 2}}}
+" FUNCTION: encode_zcode_8_bit_pack_numbers() {{{2
+"
+" Takes 8-bit pack numbers whose bits mark which zekylls are active
+" and encodes them to base 36 number expressed via a-z0-9
+"
+fun! s:encode_zcode_8_bit_pack_numbers(nums)
+    let numbers = a:nums
+    let nums_base36 = []
+    let workingvar = []
+
+    let workingvar = numbers
+
+    let sum=0
+    for i in workingvar
+        let sum = sum + i
+    endfor
+
+    while sum != 0
+        let res = s:div_8_bit_pack_numbers_36( workingvar )
+        let workingvar = res[0]
+        call insert( nums_base36, res[1] )
+
+        " Check if workingvar is all zero
+        let sum=0
+        for i in workingvar
+            let sum = sum + i
+        endfor
+    endwhile
+
+    let str = s:NumbersToLetters( nums_base36 )
+    return [ nums_base36, str ]
 endfun
 " 2}}}
 " 1}}}
