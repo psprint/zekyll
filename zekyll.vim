@@ -2737,6 +2737,41 @@ fun! s:div2( letters )
     return reply
 endfun
 " 2}}}
+" FUNCTION: decode_zcode() {{{2
+"
+" Takes zekyl code, i.e. 1/someletters
+" and decodes it to series of zekylls
+"
+fun! s:decode_zcode( zcode )
+    let splitted = split( a:zcode, "/" )
+
+    if len( splitted ) != 2
+        " Improper zcode
+        return []
+    end
+
+    let number = splitted[0]
+    let letters = splitted[1]
+
+    " The zcode can have at most 30 digits
+    " This is the 150 bits (150 zekylls)
+    " written in base 36. We have to obtain
+    " the 150 bits. We will implement division
+    " in base 36 and gradually obtain the 150 bits.
+
+    let bits = []
+    let workingvar = letters
+    while workingvar !~ "^a*$"
+        let reply = s:div2( workingvar )
+        let workingvar = reply[0]
+        call insert( bits, reply[1] )
+        " echom "After div " . workingvar . "/" . reply[1]
+    endwhile
+    " echom "Bits of the letters " . letters . " are: " . join( bits, "" )
+    return bits
+}
+endfun
+" 2}}}
 " 1}}}
 " ------------------------------------------------------------------------------
 
