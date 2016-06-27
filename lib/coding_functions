@@ -202,7 +202,7 @@ get_zekylls_for_code() {
     bits=( "${reply[@]}" )
 
     process_meta_data "${bits[@]}"
-    # $reply contains: ref, file, repo, wordref, unused, error
+    # $reply contains: ( file "" ref "" repo "" wordref "" chksum "" site "" unused1 "" unused2 "" unused3 "" error "" )
     # $REPLY contains: number of final bits that contained the meta data
     local -a meta_reply
     meta_reply=( "${reply[@]}" )
