@@ -2772,6 +2772,118 @@ fun! s:decode_zcode( zcode )
 }
 endfun
 " 2}}}
+" FUNCTION: process_meta_data() {{{2
+" Arg 1 - bits decoded from zcode
+" reply - [ bits to skip, { file : "", ref : "", repo : "", wordref : "", chksum : "", site : "",
+"                           unused1 : "", unused2 : "", unused3 : "", error : "" } ]
+fun! s:process_meta_data( bits )
+    let bits = reverse( deepcopy( a:bits ) )
+    let strbits = join( bits, "" )
+    let init_len = len( strbits )
+    let to_skip = 0
+
+    let decoded = {
+      \  "file"     : "",
+      \  "ref"      : "",
+      \  "repo"     : "",
+      \  "wordref"  : "",
+      \  "chksum"   : "",
+      \  "site"     : "",
+      \  "unused1"  : "",
+      \  "unused2"  : "",
+      \  "unused3"  : "",
+      \  "error"    : "",
+      \ }
+
+    " Is there SS?
+    let ss_len = len( s:codes['ss'] )
+    if strbits[ 0 : ss_len-1 ] == s:codes['ss']
+        let strbits = strbits[ ss_len : -1 ]
+        " Is there immediate following SS?
+        if strbits[ 0 : ss_len-1 ] == s:codes['ss']
+            " We should skip one SS and there is nothing to decode
+            let to_skip = ss_len
+            return [ to_skip, decoded ]
+        end
+
+        "
+        " Follows meta data, decode it
+        "
+
+        " keys of the decoded dictionary
+        let current_selector = "error"
+        let trylen = 0
+        let mat = ""
+        let trystr = ""
+        while 1
+            let mat=""
+            for trylen in range(1,7)
+                " Take substring of len $trylen and check if
+                " it matches any Huffman code
+                let trystr = strbits[ 0 : trylen-1 ]
+                if has_key( s:rcodes, trystr )
+                    let mat = s:rcodes[ trystr ]
+                    break
+                end
+            endfor
+
+            " General failure in decoding the string
+            if mat == ""
+                let to_skip = -1
+                return [ to_skip, decoded ]
+            end
+
+            " Skip decoded bits
+            let strbits = strbits[ trylen : -1 ]
+
+            " Handle what has been matched, either selector or data
+            if mat == "ss"
+                break
+            elseif mat == "file" || mat == "ref" || mat == "repo" || mat == "wordref" || mat == "chksum" || mat == "site"
+                let current_selector = mat
+            elseif mat == "unused1" || mat == "unused2" || mat == "unused3"
+                let current_selector = mat
+            else
+                " File names use "/" to encode "." character. "/" itself is unavailable
+                if mat == "/" && current_selector == "file"
+                    mat = "."
+                end
+
+                let decoded[ current_selector ] = decoded[ current_selector ] . mat
+            end
+        endwhile
+
+        let to_skip = init_len - len( strbits )
+    else
+        let to_skip = 0
+    end
+
+    return [ to_skip, decoded ]
+endfun
+" 2}}}
+" FUNCTION: get_zekyll_bits_for_code() {{{2
+"
+" Gets zekyll bits for given code ($1)
+" Also gets meta data: ref, file, repo
+" and puts it into return array [ bits,
+" meta_data ]
+"
+fun! s:get_zekyll_bits_for_code( zcode )
+    let bits = s:decode_zcode ( a:zcode )
+
+    let [ to_skip, meta_reply ] = s:process_meta_data( bits )
+    " meta_reply contains: { file : "", ref : "", repo : "", wordref : "", chksum : "", site : "",
+    "                        unused1 : "", unused2 : "", unused3 : "", error : "" }
+    " to_skip contains: number of final bits that contained the meta data
+
+    " Skip bits that were processed as meta data
+
+    let before = len (bits)
+    let bits = bits[ 0 : -1*to_skip-1 ]
+
+    return [ bits, meta_reply ]
+endfun
+" 2}}
 " 1}}}
 " ------------------------------------------------------------------------------
 
@@ -2851,6 +2963,163 @@ let s:bits = {
 \ 'x'        :  [ 0,1,1,1,0,0 ],
 \ 'y'        :  [ 0,1,1,1,0,1 ],
 \ 'z'        :  [ 1,0,1,0,1,0 ]
+\ }
+
+let s:codes={
+\ 'ss'          : "110011",
+\ 'file'        : "110000",
+\ 'ref'         : "110001",
+\ 'repo'        : "110100",
+\ 'wordref'     : "101000",
+\ 'chksum'      : "101001",
+\ 'site'        : "000010",
+\ 'unused1'     : "010010",
+\ 'unused2'     : "010011",
+\ 'unused3'     : "101110",
+\ '-'           : "001100",
+\ '_'           : "001101",
+\ '/'           : "001111",
+\ '0'           : "010000",
+\ '1'           : "000011",
+\ '2'           : "000000",
+\ '3'           : "000001",
+\ '4'           : "000110",
+\ '5'           : "000111",
+\ '6'           : "000100",
+\ '7'           : "000101",
+\ '8'           : "001010",
+\ '9'           : "001011",
+\ 'A'           : "101011",
+\ 'B'           : "1101110",
+\ 'C'           : "1101111",
+\ 'D'           : "1101100",
+\ 'E'           : "1101101",
+\ 'F'           : "1111010",
+\ 'G'           : "1111011",
+\ 'H'           : "1111000",
+\ 'I'           : "1111001",
+\ 'J'           : "1111110",
+\ 'K'           : "1111111",
+\ 'L'           : "1111100",
+\ 'M'           : "1111101",
+\ 'N'           : "1110010",
+\ 'O'           : "1110011",
+\ 'P'           : "1110000",
+\ 'Q'           : "1110001",
+\ 'R'           : "1110110",
+\ 'S'           : "1110111",
+\ 'T'           : "1110100",
+\ 'U'           : "1110101",
+\ 'V'           : "1101010",
+\ 'W'           : "1101011",
+\ 'X'           : "001000",
+\ 'Y'           : "001001",
+\ 'Z'           : "001110",
+\ 'a'           : "101111",
+\ 'b'           : "010001",
+\ 'c'           : "101100",
+\ 'd'           : "101101",
+\ 'e'           : "110010",
+\ 'f'           : "010110",
+\ 'g'           : "010111",
+\ 'h'           : "010100",
+\ 'i'           : "010101",
+\ 'j'           : "100010",
+\ 'k'           : "100011",
+\ 'l'           : "100000",
+\ 'm'           : "100001",
+\ 'n'           : "100110",
+\ 'o'           : "100111",
+\ 'p'           : "100100",
+\ 'q'           : "100101",
+\ 'r'           : "011010",
+\ 's'           : "011011",
+\ 't'           : "011000",
+\ 'u'           : "011001",
+\ 'v'           : "011110",
+\ 'w'           : "011111",
+\ 'x'           : "011100",
+\ 'y'           : "011101",
+\ 'z'           : "101010",
+\ }
+
+" Reverse map of Huffman codes
+let s:rcodes = {
+\ "110011"         : 'ss',
+\ "110000"         : 'file',
+\ "110001"         : 'ref',
+\ "110100"         : 'repo',
+\ "101000"         : 'wordref',
+\ "101001"         : 'chksum',
+\ "000010"         : 'site',
+\ "010010"         : 'unused1',
+\ "010011"         : 'unused2',
+\ "101110"         : 'unused3',
+\ "001100"         : '-',
+\ "001101"         : '_',
+\ "001111"         : '/',
+\ "010000"         : '0',
+\ "000011"         : '1',
+\ "000000"         : '2',
+\ "000001"         : '3',
+\ "000110"         : '4',
+\ "000111"         : '5',
+\ "000100"         : '6',
+\ "000101"         : '7',
+\ "001010"         : '8',
+\ "001011"         : '9',
+\ "101011"         : 'A',
+\ "1101110"        : 'B',
+\ "1101111"        : 'C',
+\ "1101100"        : 'D',
+\ "1101101"        : 'E',
+\ "1111010"        : 'F',
+\ "1111011"        : 'G',
+\ "1111000"        : 'H',
+\ "1111001"        : 'I',
+\ "1111110"        : 'J',
+\ "1111111"        : 'K',
+\ "1111100"        : 'L',
+\ "1111101"        : 'M',
+\ "1110010"        : 'N',
+\ "1110011"        : 'O',
+\ "1110000"        : 'P',
+\ "1110001"        : 'Q',
+\ "1110110"        : 'R',
+\ "1110111"        : 'S',
+\ "1110100"        : 'T',
+\ "1110101"        : 'U',
+\ "1101010"        : 'V',
+\ "1101011"        : 'W',
+\ "001000"         : 'X',
+\ "001001"         : 'Y',
+\ "001110"         : 'Z',
+\ "101111"         : 'a',
+\ "010001"         : 'b',
+\ "101100"         : 'c',
+\ "101101"         : 'd',
+\ "110010"         : 'e',
+\ "010110"         : 'f',
+\ "010111"         : 'g',
+\ "010100"         : 'h',
+\ "010101"         : 'i',
+\ "100010"         : 'j',
+\ "100011"         : 'k',
+\ "100000"         : 'l',
+\ "100001"         : 'm',
+\ "100110"         : 'n',
+\ "100111"         : 'o',
+\ "100100"         : 'p',
+\ "100101"         : 'q',
+\ "011010"         : 'r',
+\ "011011"         : 's',
+\ "011000"         : 't',
+\ "011001"         : 'u',
+\ "011110"         : 'v',
+\ "011111"         : 'w',
+\ "011100"         : 'x',
+\ "011101"         : 'y',
+\ "101010"         : 'z',
 \ }
 
 let &cpo=s:keepcpo
