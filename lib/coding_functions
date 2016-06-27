@@ -133,7 +133,7 @@ process_meta_data() {
         # Follows meta data, decode it
         #
 
-        # ref, file, repo, wordref, unused or error
+        # keys of the 'decoded' hash
         local current_selector="error"
         integer trylen
         local mat trystr
@@ -141,7 +141,7 @@ process_meta_data() {
             mat=""
             for (( trylen=1; trylen <= 6; trylen ++ )); do
                 # Take substring of len $trylen and check if
-                # it mates any Huffman code
+                # it matches any Huffman code
                 trystr="${strbits[1,trylen]}"
                 mat="${rcodes[$trystr]}"
                 [ -n "$mat" ] && break
