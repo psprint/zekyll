@@ -1654,7 +1654,7 @@ fun! s:Space()
                 if s_result[1] ==? "yes"
                     let s:save = "no"
                 else
-                    call s:turnoff()
+                    call s:TurnOff()
                     let s:save = "yes"
                 end
 
