@@ -365,7 +365,7 @@ fun! s:ProcessBuffer( active )
                 call s:NormalRender()
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (7)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (1)" )
             call s:NormalRender()
         end
         return
@@ -384,7 +384,7 @@ fun! s:ProcessBuffer( active )
                 call s:NormalRender()
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (8)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (2)" )
             call s:NormalRender()
         end
         return
@@ -403,7 +403,7 @@ fun! s:ProcessBuffer( active )
                 call s:NormalRender()
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (9)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (3)" )
             call s:NormalRender()
         end
         return
@@ -422,7 +422,7 @@ fun! s:ProcessBuffer( active )
                 call s:NormalRender()
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (10)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (4)" )
             call s:NormalRender()
         end
         return
@@ -440,7 +440,7 @@ fun! s:ProcessBuffer( active )
                 call s:NormalRender()
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (14)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (5)" )
             call s:NormalRender()
         end
         return
@@ -460,7 +460,7 @@ fun! s:ProcessBuffer( active )
                 call s:DoPush( p_result[2], p_result[3] )
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (11)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (6)" )
         end
         call s:NormalRender()
         return
@@ -476,7 +476,7 @@ fun! s:ProcessBuffer( active )
                 call s:DoPull( p_result[4], p_result[5] )
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (6)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (7)" )
         end
         call s:NormalRender()
         return
@@ -494,7 +494,7 @@ fun! s:ProcessBuffer( active )
                 call s:NormalRender()
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (15)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (8)" )
             call s:NormalRender()
         end
         return
@@ -513,7 +513,7 @@ fun! s:ProcessBuffer( active )
                 call s:NormalRender()
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (3)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (9)" )
             call s:NormalRender()
         end
         return
@@ -532,7 +532,7 @@ fun! s:ProcessBuffer( active )
                 call s:DeepRender()
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (1)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (10)" )
             call s:NormalRender()
         end
         return
@@ -551,7 +551,7 @@ fun! s:ProcessBuffer( active )
                 call s:DeepRender()
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (12)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (11)" )
             call s:NormalRender()
         end
         return
@@ -572,7 +572,7 @@ fun! s:ProcessBuffer( active )
                 return
             end
         else
-            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (2)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (12)" )
             call s:NormalRender()
             return
         end
@@ -1386,9 +1386,9 @@ fun! s:ComputeCodingState( op )
 
     if !correct_buffer
         if a:op == "decode"
-            call s:AppendMessageT( "*Error:* control lines modified, cannot use document and decode Zcode - will regenerate the document (4)" )
+            call s:AppendMessageT( "*Error:* control lines modified, cannot use document and decode Zcode - will regenerate the document (13)" )
         elseif a:op == "regenerate"
-            call s:AppendMessageT( "*Error:* control lines modified, cannot use document and create Zcode - will regenerate the document (5)" )
+            call s:AppendMessageT( "*Error:* control lines modified, cannot use document and create Zcode - will regenerate the document (14)" )
         end
         call s:NormalRender()
     end
