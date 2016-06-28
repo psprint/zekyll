@@ -215,12 +215,12 @@ fun! s:NormalRender( ... )
         call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
         if s:consistent ==? "no" || s:are_errors ==? "yes"
             call setline( s:line_welcome+1, ">" )
-            let s:prefix = " "
+            let prefix = " "
         else
             call setline( s:line_welcome+1, "" )
-            let s:prefix = ""
+            let prefix = ""
         end
-        call setline( s:line_consistent, s:GenerateIndexLine() )
+        call setline( s:line_consistent, prefix . s:GenerateIndexLine() )
         call setline( s:line_commit,     s:GenerateCommitResetLine() )
         call setline( s:line_gitops2,    s:GenerateStatusPushPullLine() )
         call setline( s:line_btops,      s:GenerateBTOpsLine() )
