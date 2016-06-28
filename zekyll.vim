@@ -487,8 +487,16 @@ fun! s:ProcessBuffer( active )
     "
 
     if a:active == s:ACTIVE_COMMIT
-        call s:DoCommit()
-        call s:NormalRender()
+        let r_result = matchlist( getline( s:line_gitops1 ), s:pat_Commit_Reset_Checkout ) " Commit line
+        if len( r_result ) > 0
+            if r_result[1] ==? "yes"
+                call s:DoCommit()
+                call s:NormalRender()
+            end
+        else
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (15)" )
+            call s:NormalRender()
+        end
         return
     end
 
