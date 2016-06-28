@@ -351,8 +351,13 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_NEW_BRANCH
         " Get BTOps line
         let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
-        if bt_result[1] != "nop"
-            call s:DoNewBranch( bt_result[1] )
+        if len( bt_result ) > 0
+            if bt_result[1] != "nop"
+                call s:DoNewBranch( bt_result[1] )
+                call s:NormalRender()
+            end
+        else
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (7)" )
             call s:NormalRender()
         end
         return
@@ -365,8 +370,13 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_ADD_TAG
         " Get BTOps line
         let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
-        if bt_result[2] != "nop"
-            call s:DoAddTag( bt_result[2] )
+        if len( bt_result ) > 0
+            if bt_result[2] != "nop"
+                call s:DoAddTag( bt_result[2] )
+                call s:NormalRender()
+            end
+        else
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (8)" )
             call s:NormalRender()
         end
         return
@@ -379,8 +389,13 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_DELETE_BRANCH
         " Get BTOps line
         let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
-        if bt_result[3] != "nop"
-            call s:DoDeleteBranch( bt_result[3] )
+        if len( bt_result ) > 0
+            if bt_result[3] != "nop"
+                call s:DoDeleteBranch( bt_result[3] )
+                call s:NormalRender()
+            end
+        else
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (9)" )
             call s:NormalRender()
         end
         return
@@ -393,8 +408,13 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_DELETE_TAG
         " Get BTOps line
         let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
-        if bt_result[4] != "nop"
-            call s:DoDeleteTag( bt_result[4] )
+        if len( bt_result ) > 0
+            if bt_result[4] != "nop"
+                call s:DoDeleteTag( bt_result[4] )
+                call s:NormalRender()
+            end
+        else
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (10)" )
             call s:NormalRender()
         end
         return
@@ -417,10 +437,14 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_PUSH
         " Get Status line
         let p_result = matchlist( getline( s:line_gitops2 ), s:pat_Status_Push_Pull ) " Status line
-        if p_result[2] ==? "nop" || p_result[2] ==? "..." || p_result[3] ==? "nop" || p_result[3] ==? "..."
-            call s:AppendMessageT("Please set destination (e.g. origin) and branch (e.g. master)")
+        if len( p_result ) > 0
+            if p_result[2] ==? "nop" || p_result[2] ==? "..." || p_result[3] ==? "nop" || p_result[3] ==? "..."
+                call s:AppendMessageT("Please set destination (e.g. origin) and branch (e.g. master)")
+            else
+                call s:DoPush( p_result[2], p_result[3] )
+            end
         else
-            call s:DoPush( p_result[2], p_result[3] )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (11)" )
         end
         call s:NormalRender()
         return
@@ -429,10 +453,14 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_PULL
         " Get Status line
         let p_result = matchlist( getline( s:line_gitops2 ), s:pat_Status_Push_Pull ) " Status line
-        if p_result[4] ==? "nop" || p_result[4] ==? "..." || p_result[5] ==? "nop" || p_result[5] ==? "..."
-            call s:AppendMessageT("Please set source (e.g. origin) and branch (e.g. master)")
+        if len( p_result ) > 0
+            if p_result[4] ==? "nop" || p_result[4] ==? "..." || p_result[5] ==? "nop" || p_result[5] ==? "..."
+                call s:AppendMessageT("Please set source (e.g. origin) and branch (e.g. master)")
+            else
+                call s:DoPull( p_result[4], p_result[5] )
+            end
         else
-            call s:DoPull( p_result[4], p_result[5] )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (6)" )
         end
         call s:NormalRender()
         return
@@ -458,14 +486,13 @@ fun! s:ProcessBuffer( active )
             let ref = result[3]
             if s:CheckGitState()
                 call s:DoCheckout( ref )
+                call s:NormalRender()
             end
-            call s:NormalRender()
-            return
         else
-            call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (3)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (3)" )
             call s:NormalRender()
-            return
         end
+        return
     end
 
     "
@@ -479,13 +506,12 @@ fun! s:ProcessBuffer( active )
                 let s:do_reset = "no"
                 call s:ResetRepo()
                 call s:DeepRender()
-                return
             end
         else
-            call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (1)" )
             call s:NormalRender()
-            return
         end
+        return
     end
 
     "
@@ -499,13 +525,12 @@ fun! s:ProcessBuffer( active )
                 let s:cur_index = result[1]
                 call s:ResetCodeSelectors()
                 call s:DeepRender()
-                return
             end
         else
-            call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (1)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (12)" )
             call s:NormalRender()
-            return
         end
+        return
     end
 
     "
@@ -520,13 +545,12 @@ fun! s:ProcessBuffer( active )
             else
                 call s:AppendMessageT(" Set \"Save:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
                 call s:ShallowRender()
-                return
             end
         else
-            call s:AppendMessageT( "*Error:* control lines modified, cannot use document - will regenerate (2)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (2)" )
             call s:NormalRender()
-            return
         end
+        return
     end
 
     " Compute reference to all operations - current buffer's LZSD
@@ -555,7 +579,7 @@ fun! s:ProcessBuffer( active )
         " Perform index size change
         call s:IndexChangeSize()
     else
-        call s:AppendMessageT("*Errors* during data processing, rereading state from disk")
+        call s:AppendMessageT("Error: problem during processing of Zekyll list, rereading state from disk")
     end
 
     " Refresh buffer (e.g. set Save back to "no")
