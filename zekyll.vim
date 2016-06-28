@@ -1386,9 +1386,9 @@ fun! s:ComputeCodingState( op )
 
     if !correct_buffer
         if a:op == "decode"
-            call s:AppendMessageT( "*Error:* control lines modified, cannot use document and decode Zcode - will regenerate the document (13)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document and decode Zcode - will regenerate the document (13)" )
         elseif a:op == "regenerate"
-            call s:AppendMessageT( "*Error:* control lines modified, cannot use document and create Zcode - will regenerate the document (14)" )
+            call s:AppendMessageT( "Error: control lines modified, cannot use document and create Zcode - will regenerate the document (14)" )
         end
         call s:NormalRender()
     end
@@ -1585,7 +1585,7 @@ fun! s:ZcsdToZsd( zcsd )
     if len( a:zcsd ) == 4
         return [ a:zcsd[0], a:zcsd[2], a:zcsd[3] ]
     else
-        call s:DebugMsgT( 1, "*Error:* ZcsdToZsd given list of size: " . len( a:zcsd ) )
+        call s:DebugMsgT( 1, "Error: ZcsdToZsd given list of size: " . len( a:zcsd ) )
         return []
     end
 endfun
@@ -2116,6 +2116,7 @@ fun! s:SetupSyntaxHighlighting()
     syn match helpType            "(err:0)"
     syn match helpHyperTextJump   "(err:[1-9]\d*)"
     syn match helpHyperTextJump   "Error:"
+    syn match helpUnderlined      "\d\+/[a-z0-9]\+"
 endfun
 " 2}}}
 " 1}}}
