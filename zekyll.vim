@@ -1331,8 +1331,8 @@ fun! s:ComputeCodingState( op )
     let correct_buffer = 1
 
     if a:op == "regenerate"
-        let [ correct_buffer, s:c_code ] = s:GenerateCodeFromBuffer()
-        if correct_buffer
+        let [ correct_generation, s:c_code ] = s:GenerateCodeFromBuffer()
+        if correct_generation
             let msg = "Succesfully created code"
 
             " Enumerate used fields
@@ -1363,6 +1363,9 @@ fun! s:ComputeCodingState( op )
             " Finally append the Zcode
             let msg = msg . ": " . s:cur_index . "/" . s:c_code
             call s:AppendMessageT( msg )
+        else
+            " TODO: this may not always mean incorrect buffer
+            correct_buffer = 0
         end
     elseif a:op == "decode"
         let result = matchlist( getline( s:line_code ), s:pat_Code )
@@ -1480,7 +1483,17 @@ fun! s:UpdateStateForZcode( zcode )
         " Truncate
         let s:code_selectors = s:code_selectors[0:cur_len-1]
 
-        call s:AppendMessageT("Error: the Zcode " . a:zcode . " is for index of size |" . new_len . "|, current index is of size |" . cur_len . "|. Truncated the Zcode.")
+        " Regenerate
+        let [ correct_generation, s:c_code ] = s:GenerateCodeFromState()
+
+        if correct_generation
+            call s:AppendMessageT("Error: the Zcode " . a:zcode . " is for index of size |" . new_len . "|, current index is of size |" . cur_len .
+                        \ "|. The Zcode truncated: " . s:cur_index . "/" . s:c_code )
+        else
+            let s:c_code = ""
+            call s:AppendMessageT("Error: the Zcode " . a:zcode . " is for index of size |" . new_len . "|, current index is of size |" . cur_len .
+                        \ "|. Error: couldn't truncate the Zcode" )
+        end
     elseif new_len < cur_len
         " Extend with 0s, i.e. values stating unselection
         call extend( s:code_selectors, repeat( [ 0 ], cur_len - new_len ) )
