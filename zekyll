@@ -670,11 +670,14 @@ Options are:
     # Add description line
     #
 
-    -zkl-file-name-to-hreadable-desc "$1"
+    if [ -z "$desc" ]; then
+        -zkl-file-name-to-hreadable-desc "$1"
+        desc="$REPLY"
+    fi
     if [ -n "$ZKL_CSTR_B" ]; then
-        reply=( "$ZKL_CSTR_A $REPLY $ZKL_CSTR_B" "${reply[@]}" )
+        reply=( "$ZKL_CSTR_A $desc $ZKL_CSTR_B" "${reply[@]}" )
     else
-        reply=( "$ZKL_CSTR_A $REPLY" "${reply[@]}" )
+        reply=( "$ZKL_CSTR_A $desc" "${reply[@]}" )
     fi
 
     # Add separating new line if it's not there
