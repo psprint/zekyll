@@ -2457,7 +2457,7 @@ fun! s:BitsRepo( repo )
         if has_key( s:bits, lt )
             call extend( bits, s:bits[lt] )
         else
-            call s:AppendMessageT(" Incorrect character in file name: `" . lt . "'")
+            call s:AppendMessageT(" Incorrect character in repo name: `" . lt . "'")
         end
     endfor
 
