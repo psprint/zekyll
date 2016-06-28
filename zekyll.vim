@@ -1271,6 +1271,8 @@ fun! s:ResetCodeLine()
         let s:c_file = result[3]
         let s:c_repo = result[4]
 
+        let [ s:c_ref, s:c_file, s:c_repo ] = s:TrimBlanks( s:c_ref, s:c_file, s:c_repo )
+
         let appendix = []
         call extend( appendix, s:BitsStart() )
         call extend( appendix, s:BitsRef(s:c_ref) )
@@ -1953,6 +1955,18 @@ fun! s:IterateOver( choices, current )
     end
 endfun
 " 2}}}
+" FUNCTION: TrimBlanks() {{{2
+fun! s:TrimBlanks( ... )
+    let result = []
+    for entry in a:000
+        let new_entry = substitute( entry, "^[[:blank:]]*", "", "" )
+        let new_entry = substitute( new_entry, "[[:blank:]]*$", "", "" )
+        call add( result, new_entry )
+    endfor
+
+    return result
+endfun
+" 2}}}
 " 1}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
@@ -2388,9 +2402,6 @@ fun! s:BitsRef( ref )
     let bits = []
 
     let ref = deepcopy( a:ref )
-    if ref == " "
-        let ref = ""
-    end
 
     for lt in split( ref, '\zs' )
         if has_key( s:bits, lt )
@@ -2413,9 +2424,6 @@ fun! s:BitsFile( file )
     let bits = []
 
     let file = deepcopy( a:file )
-    if file == " "
-        let file = ""
-    end
 
     for lt in split( file, '\zs' )
         if lt == "."
@@ -2444,9 +2452,6 @@ fun! s:BitsRepo( repo )
     let bits = []
 
     let repo = deepcopy( a:repo )
-    if repo == " "
-        let repo = ""
-    end
 
     for lt in split( repo, '\zs' )
         if has_key( s:bits, lt )
