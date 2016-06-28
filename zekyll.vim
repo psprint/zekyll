@@ -433,8 +433,16 @@ fun! s:ProcessBuffer( active )
     "
 
     if a:active == s:ACTIVE_STATUS
-        call s:DoStatus()
-        call s:NormalRender()
+        let p_result = matchlist( getline( s:line_gitops2 ), s:pat_Status_Push_Pull ) " Status line
+        if len( p_result ) > 0
+            if p_result[1] ==? "yes"
+                call s:DoStatus()
+                call s:NormalRender()
+            end
+        else
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (14)" )
+            call s:NormalRender()
+        end
         return
     end
 
