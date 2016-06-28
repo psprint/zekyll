@@ -1146,6 +1146,8 @@ fun! s:DoMappings()
     setlocal ft=help
     setlocal nowrap
     setlocal tw=290
+    setlocal magic
+    setlocal matchpairs=
 
     " Latin, todo few special characters
     for i in range( char2nr('0'), char2nr('[') )
