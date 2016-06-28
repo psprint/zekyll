@@ -2338,7 +2338,7 @@ endfun
 " 2}}}
 " FUNCTION: DoStatus() {{{2
 fun! s:DoStatus()
-    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " status -u no"
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " status -b --porcelain"
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     
