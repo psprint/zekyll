@@ -1623,11 +1623,7 @@ fun! s:SetupSelectionCodes( text )
         let s:code_selectors = s:code_selectors[0:len(s:lzsd)-1]
     elseif len( s:code_selectors ) < len( s:lzsd )
         let diff = len( s:lzsd ) - len( s:code_selectors )
-        let i = 0
-        while i < diff
-            call add( s:code_selectors, 1 )
-            let i = i + 1
-        endwhile
+        call extend( s:code_selectors, repeat( [ 1 ], diff ) )
     end
 
     let s:prev_index = s:cur_index
