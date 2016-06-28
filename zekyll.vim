@@ -1488,16 +1488,16 @@ fun! s:Space()
         let p_result = matchlist( line, s:pat_Status_Push_Pull )        " Status line
         let bt_result = matchlist( line, s:pat_BTOps )                  " BTOps line
 
-        " Save line? (1)
-        if len( s_result ) > 0
+        " Index line (1)
+        if len( i_result ) > 0
 
+            " Get Save line
+            unlet s_result
+            let s_result = matchlist( getline( s:line_save ), s:pat_Save_IndexSize ) " Save line
+            
             " Get Commit line
             unlet r_result
             let r_result = matchlist( getline( s:line_reset ), s:pat_Commit_Reset_Checkout ) " Commit line
-
-            " Get Index line
-            unlet i_result
-            let i_result = matchlist( getline( s:line_index ), s:pat_Index ) " Index line
 
             " Get Status line
             unlet p_result
@@ -1507,23 +1507,24 @@ fun! s:Space()
             unlet bt_result
             let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
 
-            if len( r_result ) > 0 && len( i_result ) > 0 && len( p_result ) > 0 && len( bt_result ) > 0
-                if s_result[1] ==? "yes"
-                    let s:save = "no"
-                else
+            if len( s_result ) > 0 && len( r_result ) > 0 && len( p_result ) > 0 && len( bt_result ) > 0
+                let line2 = substitute( line, '[^|]', "x", "g" )
+                let pos1 = stridx( line2, "|" ) + 1
+                let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
+                let col = col( "." )
+                if col > pos2
                     call s:TurnOff()
-                    let s:save = "yes"
                 end
 
                 " Get current index size so that it can be preserved
                 let s:index_size_new = s_result[2]
 
-                let save_line = s:GenerateSaveIndexSizeLine()
-                call setline( linenr, save_line )
                 let index_line = s:GenerateIndexLine()
-                call setline( s:line_index, index_line )
+                call setline( linenr, index_line )
                 let reset_line = s:GenerateCommitResetLine()
                 call setline( s:line_reset, reset_line )
+                let save_line = s:GenerateSaveIndexSizeLine()
+                call setline( s:line_save, save_line )
                 let origin_line = s:GenerateStatusPushPullLine()
                 call setline( s:line_gitops2, origin_line )
                 let btops_line = s:GenerateBTOpsLine()
@@ -1531,7 +1532,6 @@ fun! s:Space()
             else
                 return 0
             end
-
         " Commit line (2)
         elseif len( r_result ) > 0
 
@@ -1594,51 +1594,7 @@ fun! s:Space()
             else
                 return 0
             end
-        " Index line (3)
-        elseif len( i_result ) > 0
-
-            " Get Save line
-            unlet s_result
-            let s_result = matchlist( getline( s:line_save ), s:pat_Save_IndexSize ) " Save line
-            
-            " Get Commit line
-            unlet r_result
-            let r_result = matchlist( getline( s:line_reset ), s:pat_Commit_Reset_Checkout ) " Commit line
-
-            " Get Status line
-            unlet p_result
-            let p_result = matchlist( getline( s:line_gitops2 ), s:pat_Status_Push_Pull ) " Status line
-
-            " Get BTOps line
-            unlet bt_result
-            let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
-
-            if len( s_result ) > 0 && len( r_result ) > 0 && len( p_result ) > 0 && len( bt_result ) > 0
-                let line2 = substitute( line, '[^|]', "x", "g" )
-                let pos1 = stridx( line2, "|" ) + 1
-                let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
-                let col = col( "." )
-                if col > pos2
-                    call s:TurnOff()
-                end
-
-                " Get current index size so that it can be preserved
-                let s:index_size_new = s_result[2]
-
-                let index_line = s:GenerateIndexLine()
-                call setline( linenr, index_line )
-                let reset_line = s:GenerateCommitResetLine()
-                call setline( s:line_reset, reset_line )
-                let save_line = s:GenerateSaveIndexSizeLine()
-                call setline( s:line_save, save_line )
-                let origin_line = s:GenerateStatusPushPullLine()
-                call setline( s:line_gitops2, origin_line )
-                let btops_line = s:GenerateBTOpsLine()
-                call setline( s:line_btops, btops_line )
-            else
-                return 0
-            end
-        " Status line (4)
+        " Status line (3)
         elseif len( p_result ) > 0
             " Get Save line
             unlet s_result
@@ -1726,7 +1682,7 @@ fun! s:Space()
             else
                 return 0
             end
-        " BTOps line? (5)
+        " BTOps line? (4)
         elseif len( bt_result ) > 0
             " Get Save line
             unlet s_result
@@ -1793,6 +1749,49 @@ fun! s:Space()
                 call setline( s:line_save, save_line )
                 let origin_line = s:GenerateStatusPushPullLine()
                 call setline( s:line_gitops2, origin_line )
+            end
+        " Save line? (5)
+        elseif len( s_result ) > 0
+
+            " Get Commit line
+            unlet r_result
+            let r_result = matchlist( getline( s:line_reset ), s:pat_Commit_Reset_Checkout ) " Commit line
+
+            " Get Index line
+            unlet i_result
+            let i_result = matchlist( getline( s:line_index ), s:pat_Index ) " Index line
+
+            " Get Status line
+            unlet p_result
+            let p_result = matchlist( getline( s:line_gitops2 ), s:pat_Status_Push_Pull ) " Status line
+
+            " Get BTOps line
+            unlet bt_result
+            let bt_result = matchlist( getline( s:line_btops ), s:pat_BTOps ) " BTOps line
+
+            if len( r_result ) > 0 && len( i_result ) > 0 && len( p_result ) > 0 && len( bt_result ) > 0
+                if s_result[1] ==? "yes"
+                    let s:save = "no"
+                else
+                    call s:TurnOff()
+                    let s:save = "yes"
+                end
+
+                " Get current index size so that it can be preserved
+                let s:index_size_new = s_result[2]
+
+                let save_line = s:GenerateSaveIndexSizeLine()
+                call setline( linenr, save_line )
+                let index_line = s:GenerateIndexLine()
+                call setline( s:line_index, index_line )
+                let reset_line = s:GenerateCommitResetLine()
+                call setline( s:line_reset, reset_line )
+                let origin_line = s:GenerateStatusPushPullLine()
+                call setline( s:line_gitops2, origin_line )
+                let btops_line = s:GenerateBTOpsLine()
+                call setline( s:line_btops, btops_line )
+            else
+                return 0
             end
         end
     elseif linenr > s:working_area_beg
