@@ -247,7 +247,12 @@ fun! s:NormalRender( ... )
     end
 
     if depth >= 0
+        let [ correct_generation, s:c_code ] = s:GenerateCodeFromState()
         call setline( s:line_code, s:GenerateCodeLine( s:cur_index, s:c_code, s:c_ref, s:c_file, s:c_repo ) )
+
+        if !correct_generation
+            call s:AppendMessageT( "Error: couldn't generate code for current index, selections and meta-data" )
+        end
 
         let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
         call cursor(s:working_area_end+1,1)
