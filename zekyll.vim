@@ -1193,8 +1193,7 @@ fun! s:DoMappings()
     vmap <buffer> <silent> p <Nop>
     vmap <buffer> <silent> P <Nop>
 
-    imap <buffer> <silent> <CR> <Nop>
-
+    imap <buffer> <silent> <CR> <ESC><CR>
 
     " Latin, todo few special characters
     for i in range( char2nr('0'), char2nr('[') )
