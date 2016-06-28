@@ -216,7 +216,7 @@ fun! s:NormalRender( ... )
         call setline( s:line_commit,     s:GenerateCommitResetLine() )
         call setline( s:line_gitops2,    s:GenerateStatusPushPullLine() )
         call setline( s:line_btops,      s:GenerateBTOpsLine() )
-        call setline( s:line_code,       s:GenerateCodeLine( "", s:c_ref, s:c_file, s:c_repo ) )
+        call setline( s:line_code,       s:GenerateCodeLine( s:cur_index, s:c_code, s:c_ref, s:c_file, s:c_repo ) )
         call setline( s:line_save,       s:GenerateSaveIndexSizeLine() )
         call setline( s:line_rule,       s:GenerateRule( 1 ) )
         call cursor(s:last_line+1,1)
@@ -235,7 +235,7 @@ fun! s:NormalRender( ... )
     end
 
     if depth >= 0
-        call s:ResetCodeLine()
+        call setline( s:line_code, s:GenerateCodeLine( s:cur_index, s:c_code, s:c_ref, s:c_file, s:c_repo ) )
 
         let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
         call cursor(s:working_area_end+1,1)
@@ -1016,8 +1016,8 @@ fun! s:GenerateIndexLine()
 endfun
 " 2}}}
 " FUNCTION: GenerateCodeLine() {{{2
-fun! s:GenerateCodeLine( code, ref, file_name, repo )
-    let line = "[ Code: " . s:cur_index . "/" . s:RPad( a:code, 15, " " ) . " ] "
+fun! s:GenerateCodeLine( index, code, ref, file_name, repo )
+    let line = "[ Code: " . a:index . "/" . s:RPad( a:code, 15, " " ) . " ] "
     let line = line . "[ Ref: " . s:RPad( a:ref, 15, " " ) . " ] "
     let line = line . "[ File Name: " . s:RPad( a:file_name, 15, " " ) . " ] "
     let line = line . "[ Repo: " . s:RPad( a:repo, 15, " " ) . " ] ~"
@@ -1250,7 +1250,22 @@ fun! s:Enter()
                 call s:ProcessBuffer( s:ACTIVE_DELETE_TAG )
             end
         elseif linenr == s:line_code
-            " TODO
+            let line2 = substitute( line, '[^]]', "x", "g" )
+            let pos1 = stridx( line2, "]" ) + 1
+            let pos2 = pos1 + stridx( line2[pos1 :], "]" ) + 1
+            let pos3 = pos2 + stridx( line2[pos2 :], "]" ) + 1
+            let pos4 = pos3 + stridx( line2[pos3 :], "]" ) + 1
+
+            if col <= pos1
+                if s:ComputeCodingState("decode")
+                    call s:ShallowRender()
+                end
+            else
+                if s:ComputeCodingState("regenerate")
+                    call s:ShallowRender()
+                end
+            end
+
         elseif linenr == s:line_save
             call s:ProcessBuffer( s:ACTIVE_SAVE_INDEXSIZE )
             return 1
@@ -1262,9 +1277,87 @@ fun! s:Enter()
     end
 endfun
 " 2}}}
-" FUNCTION: ResetCodeLine() {{{2
-fun! s:ResetCodeLine()
-    " First parse screen for ref, file name, repo
+" FUNCTION: ComputeCodingState() {{{2
+fun! s:ComputeCodingState( op )
+    let correct_buffer = 1
+
+    if a:op == "regenerate"
+        let [ correct_buffer, s:c_code ] = s:GenerateCodeFromBuffer()
+        if correct_buffer
+            let msg = "Succesfully created code"
+
+            " Enumerate used fields
+            if s:c_ref != "" || s:c_file != "" || s:c_repo != ""
+                let msg = msg . " for"
+            end
+            let was = 0
+            if s:c_ref != ""
+                let [ was, msg ] = [ 1, msg . " ref: '" . s:c_ref . "'" ]
+            end
+            if s:c_file != ""
+                let msg = msg . (was ? "," : "")
+                let [ was, msg ] = [ 1, msg . " file: '" . s:c_file."'" ]
+            end
+            if s:c_repo != ""
+                let msg = msg . (was ? "," : "")
+                let [ was, msg ] = [ 1, msg . " repo: '" . s:c_repo ."'" ]
+            end
+
+            " How many selections message
+            let msg = msg . (was ? " and " : " for ")
+            let cnt = 0
+            for i in range(0, len( s:code_selectors ) - 1)
+                let cnt = s:code_selectors[i] ? cnt + 1 : cnt
+            endfor
+            let msg = msg . "current " . cnt . " selection(s)"
+
+            " Finally append the Zcode
+            let msg = msg . ": " . s:cur_index . "/" . s:c_code
+            call s:AppendMessageT( msg )
+        end
+    elseif a:op == "decode"
+        let result = matchlist( getline( s:line_code ), s:pat_Code )
+        if len( result ) > 0
+            let split_result = split( result[1], "/" )
+            if len( split_result ) == 1
+                " Code, i.e. no index - or index alone
+                if result[1] =~ "/$"
+                    let s:c_code = ""
+                else
+                    let s:c_code = split_result[0]
+                end
+            elseif len( split_result ) == 2
+                " Zcode, i.e. code with index
+                let s:c_code = split_result[1]
+            else
+                let correct_buffer = 0
+            end
+
+            if correct_buffer
+                call s:ImposeCodeOnBuffer( s:c_code )
+            end
+        else
+            let correct_buffer = 0
+        end
+    end
+
+    if !correct_buffer
+        if a:op == "decode"
+            call s:AppendMessageT( "*Error:* control lines modified, cannot use document and decode Zcode - will regenerate the document (4)" )
+        elseif a:op == "regenerate"
+            call s:AppendMessageT( "*Error:* control lines modified, cannot use document and create Zcode - will regenerate the document (5)" )
+        end
+        call s:NormalRender()
+    end
+
+    return correct_buffer
+endfun
+" 2}}}
+" FUNCTION: GenerateCodeFromBuffer() {{{2
+" Returns true/false integer denoting status of the operation,
+" and in second element of the returned list – string with the
+" code generated or kept unchanged
+fun! s:GenerateCodeFromBuffer()
     let result = matchlist( getline( s:line_code ), s:pat_Code )
     if len( result ) > 0
         let s:c_ref = result[2]
@@ -1299,8 +1392,14 @@ fun! s:ResetCodeLine()
         " echom "Appendix: " . join( appendix, "," )
 
         let resu = s:encode_zcode_arr01( code_bits )
-        call setline( s:line_code, s:GenerateCodeLine( resu[1], s:c_ref, s:c_file, s:c_repo ) )
+        return [1, resu[1] ]
+    else
+        return [0, s:c_code ]
     end
+endfun
+" 2}}}
+" FUNCTION: ImposeCodeOnBuffer() {{{2
+fun! s:ImposeCodeOnBuffer( code )
 endfun
 " 2}}}
 "1}}}
