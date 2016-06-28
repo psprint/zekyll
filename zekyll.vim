@@ -161,6 +161,14 @@ let s:ACTIVE_DELETE_TAG = 13
 fun! s:StartZekyll()
     call s:Opener()
 
+    setlocal buftype=nofile
+    setlocal nowrap
+    setlocal tw=1024
+    setlocal magic
+    setlocal matchpairs=
+
+    call s:SetupSyntaxHighlighting()
+
     call s:DoMappings()
 
     call s:DeepRender()
@@ -543,14 +551,15 @@ fun! s:ProcessBuffer( active )
             if result[1] ==? "yes"
                 " Continue below
             else
-                call s:AppendMessageT(" Set \"Save:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository")
+                call s:AppendMessageT( "Set \"Save:\" or \"Reset:\" field to <yes> to write changes to disk or to reset Git repository" )
                 call s:ShallowRender()
+                return
             end
         else
             call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (2)" )
             call s:NormalRender()
+            return
         end
-        return
     end
 
     " Compute reference to all operations - current buffer's LZSD
@@ -1113,7 +1122,7 @@ fun! s:Opener()
         " Try current tab
         let [winnr, all] = s:FindOurWindow( g:_zekyll_bufnr )
         if all > 0
-            call s:AppendMessageT( " Welcome back! Using current tab" )
+            call s:AppendMessageT( "Welcome back! Using current tab" )
             exec winnr . "wincmd w"
             let retval = 1
         else
@@ -1123,17 +1132,17 @@ fun! s:Opener()
                 exec 'normal! ' . tabpagenr . 'gt'
                 let [winnr, all] = s:FindOurWindow( g:_zekyll_bufnr )
                 if all > 0
-                    call s:AppendMessageT( " Welcome back! Switched to already used tab" )
+                    call s:AppendMessageT( "Welcome back! Switched to already used tab" )
                     exec  winnr . "wincmd w"
                     let retval = 1
                 else
-                    call s:AppendMessageT( " Unexpected *error* occured, running second instance of Zekyll" . winnr )
+                    call s:AppendMessageT( "Unexpected *error* occured, running second instance of Zekyll" . winnr )
                     let retval = 0
                 end
             else
                 tabnew
                 exec ":silent! buffer " . g:_zekyll_bufnr
-                call s:AppendMessageT(" Welcome back! Restored our buffer")
+                call s:AppendMessageT( "Welcome back! Restored our buffer" )
                 let retval = 1
             end
         end
@@ -1166,12 +1175,6 @@ fun! s:DoMappings()
 
     imap <buffer> <silent> <CR> <Nop>
 
-    setlocal buftype=nofile
-    setlocal ft=help
-    setlocal nowrap
-    setlocal tw=1024
-    setlocal magic
-    setlocal matchpairs=
 
     " Latin, todo few special characters
     for i in range( char2nr('0'), char2nr('[') )
@@ -2090,6 +2093,15 @@ fun! s:TrimBlanks( ... )
     return result
 endfun
 " 2}}}
+" FUNCTION: SetupSyntaxHighlighting() {{{2
+fun! s:SetupSyntaxHighlighting()
+    setlocal ft=help
+    syn match helpOption          "'.\{1,\}'"
+    syn match helpType            "(err:0)"
+    syn match helpHyperTextJump   "(err:[1-9]\d*)"
+    syn match helpHyperTextJump   "Error:"
+endfun
+" 2}}}
 " 1}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
@@ -2146,7 +2158,7 @@ fun! s:RemoveLZSD(lzsd)
         let result = result + v:shell_error
 
         " Message
-        call add( delarr, "|(err:" . v:shell_error . ")| {" . entry[1] . "." . entry[2] . "} " . entry[3] )
+        call add( delarr, "(err:" . v:shell_error . ") {" . entry[1] . "." . entry[2] . "} " . entry[3] )
     endfor
 
     if result > 0
@@ -2155,10 +2167,10 @@ fun! s:RemoveLZSD(lzsd)
 
     " Message
     if len( delarr ) == 1
-        call s:AppendMessageT( " Deleted: " . delarr[0] )
+        call s:AppendMessageT( "Deleted: " . delarr[0] )
     elseif len( delarr ) >= 2
         call map( delarr, '" *>* " . v:val' )
-        call s:AppendMessageT( " Deleted: ", delarr )
+        call s:AppendMessageT( "Deleted: ", delarr )
     end
 
     return result
@@ -2181,7 +2193,7 @@ fun! s:Rename2LZSD(lzsd_lzsd)
         let result = result + v:shell_error
 
         " Message
-        call add( renarr, "|(err:" . v:shell_error . ")| {" . entry[0][1] . "." . entry[0][2] . "} " . entry[0][3] .
+        call add( renarr, "(err:" . v:shell_error . ") {" . entry[0][1] . "." . entry[0][2] . "} " . entry[0][3] .
                 \ " -> {" . entry[1][1] . "." . entry[1][2] . "} " . entry[1][3] )
     endfor
 
@@ -2191,10 +2203,10 @@ fun! s:Rename2LZSD(lzsd_lzsd)
 
     " Message
     if len( renarr ) == 1
-        call s:AppendMessageT( " Renamed: " . renarr[0] )
+        call s:AppendMessageT( "Renamed: " . renarr[0] )
     elseif len( renarr ) >= 2
         call map( renarr, '" *>* " . v:val' )
-        call s:AppendMessageT( " Renamed: ", renarr )
+        call s:AppendMessageT( "Renamed: ", renarr )
     end
 
     return result
@@ -2246,15 +2258,15 @@ fun! s:IndexChangeSize()
         else
             let msg="shrink"
         end
-        call s:AppendMessageT( "*Error* during index {" . s:cur_index . "} " . msg .  " (from |" . s:index_size .
-                               \ "| to |" . s:index_size_new . "| zekylls):", " *>* |(err:" . v:shell_error . ")|" . error_decode )
+        call s:AppendMessageT( "Error: during index {" . s:cur_index . "} " . msg .  " (from |" . s:index_size .
+                               \ "| to |" . s:index_size_new . "| zekylls):", " *>* (err:" . v:shell_error . ")" . error_decode )
     else
         if s:index_size_new > s:index_size
             let msg="Extended"
         else
             let msg="Shrinked"
         end
-        call s:AppendMessageT( " " . msg . " index {" . s:cur_index . "} from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls" )
+        call s:AppendMessageT( msg . " index {" . s:cur_index . "} from |" . s:index_size . "| to |" . s:index_size_new . "| zekylls" )
     end
 
     call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr, error_decode )
@@ -2267,9 +2279,9 @@ fun! s:ResetRepo()
     let arr = split( cmd_output, '\n\+' )
 
     if v:shell_error == 0
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Repository reset successfully" )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Repository reset successfully" )
     else
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem occured during repository reset" )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem occured during repository reset" )
     end
 
     call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
@@ -2283,9 +2295,9 @@ fun! s:DoCommit()
     exec cmd
 
     if v:shell_error == 0
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Commit ended successfully" )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Commit ended successfully" )
     else
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem during commit. Press Ctrl-G to view Git's output." )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem during commit. Press Ctrl-G to view Git's output." )
     end
 endfun
 " 2}}}
@@ -2300,10 +2312,10 @@ fun! s:DoCheckout(ref)
 
     if v:shell_error == 0
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Checkout successful >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Checkout successful >", arr )
     else
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with checkout >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with checkout >", arr )
     end
 endfun
 " 2}}}
@@ -2315,10 +2327,10 @@ fun! s:DoStatus()
     
     if v:shell_error == 0
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Status successful >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Status successful >", arr )
     else
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with status >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with status >", arr )
     end
 endfun
 " 2}}}
@@ -2339,10 +2351,10 @@ fun! s:DoPull(source, branch)
     
     if v:shell_error == 0
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Pull " . source . " " . branch . " successful >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Pull " . source . " " . branch . " successful >", arr )
     else
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with pull " . source . " " . branch . " >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with pull " . source . " " . branch . " >", arr )
     end
 endfun
 " 2}}}
@@ -2363,10 +2375,10 @@ fun! s:DoPush(destination, branch)
 
     if v:shell_error == 0
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Push " . destination . " " . branch . " successful >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Push " . destination . " " . branch . " successful >", arr )
     else
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with push " . destination . " " . branch . " >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with push " . destination . " " . branch . " >", arr )
     end
 endfun
 " 2}}}
@@ -2381,11 +2393,11 @@ fun! s:CheckGitState()
 
     if len( arr ) > 0
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT(" Please commit or reset before checking out other ref. The problematic, uncommited files are: >", arr)
+        call s:AppendMessageT( "Please commit or reset before checking out other ref. The problematic, uncommited files are: >", arr )
         return 0
     else
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT(" Allowed to perform checkout >", arr)
+        call s:AppendMessageT( "Allowed to perform checkout >", arr )
         return 1
     end
     return 1
@@ -2403,7 +2415,7 @@ fun! s:ListAllRefs()
 
     if v:shell_error != 0
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with branch --list >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with branch --list >", arr )
     end
     call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
 
@@ -2417,7 +2429,7 @@ fun! s:ListAllRefs()
 
     if v:shell_error != 0
         call map( arr2, '" " . v:val' )
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with tag -l >", arr2 )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with tag -l >", arr2 )
     end
     call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr2 )
 
@@ -2460,9 +2472,9 @@ fun! s:DoNewBranch(ref)
     call map( arr, '" " . v:val' )
 
     if v:shell_error == 0
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Checkout -b successful >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Checkout -b successful >", arr )
     else
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with checkout -b >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with checkout -b >", arr )
     end
 endfun
 " 2}}}
@@ -2474,9 +2486,9 @@ fun! s:DoAddTag(ref)
     call map( arr, '" " . v:val' )
 
     if v:shell_error == 0
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Tag successful", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Tag successful", arr )
     else
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with tag >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with tag >", arr )
     end
 endfun
 " 2}}}
@@ -2488,9 +2500,9 @@ fun! s:DoDeleteBranch(ref)
     call map( arr, '" " . v:val' )
 
     if v:shell_error == 0
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Branch -d successful >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Branch -d successful >", arr )
     else
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with branch -d >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with branch -d >", arr )
     end
 endfun
 " 2}}}
@@ -2502,9 +2514,9 @@ fun! s:DoDeleteTag(ref)
     call map( arr, '" " . v:val' )
 
     if v:shell_error == 0
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Tag -d successful >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Tag -d successful >", arr )
     else
-        call s:AppendMessageT( "|(err:" . v:shell_error . ")| Problem with tag -d >", arr )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with tag -d >", arr )
     end
 endfun
 " 2}}}
@@ -2530,7 +2542,7 @@ fun! s:BitsRef( ref )
         if has_key( s:bits, lt )
             call extend( bits, s:bits[lt] )
         else
-            call s:AppendMessageT(" Incorrect character in ref name: `" . lt . "'")
+            call s:AppendMessageT( "Incorrect character in ref name: `" . lt . "'" )
         end
     endfor
 
@@ -2552,12 +2564,12 @@ fun! s:BitsFile( file )
         if lt == "."
             call extend( bits, s:bits["/"] )
         elseif lt == "/"
-            call s:AppendMessageT(" Incorrect character in file name: `" . lt . "'")
+            call s:AppendMessageT( "Incorrect character in file name: `" . lt . "'" )
         else
             if has_key( s:bits, lt )
                 call extend( bits, s:bits[lt] )
             else
-                call s:AppendMessageT(" Incorrect character in file name: `" . lt . "'")
+                call s:AppendMessageT( "Incorrect character in file name: `" . lt . "'" )
             end
         end
     endfor
@@ -2580,7 +2592,7 @@ fun! s:BitsRepo( repo )
         if has_key( s:bits, lt )
             call extend( bits, s:bits[lt] )
         else
-            call s:AppendMessageT(" Incorrect character in repo name: `" . lt . "'")
+            call s:AppendMessageT( "Incorrect character in repo name: `" . lt . "'" )
         end
     endfor
 
