@@ -362,7 +362,7 @@ ZKLCOL=(
 # provided. That's the main sense of this function
 #
 -zkl-user-repo-rev-to-user-repo-rev-defaults() {
-    local user repo
+    local user repo rev
     # User?
     if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
         user="$1"
