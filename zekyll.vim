@@ -1145,7 +1145,7 @@ fun! s:DoMappings()
     setlocal buftype=nofile
     setlocal ft=help
     setlocal nowrap
-    setlocal tw=290
+    setlocal tw=1024
     setlocal magic
     setlocal matchpairs=
 
