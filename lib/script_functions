@@ -132,14 +132,16 @@ read_repo() {
     while (( 1 )); do
         vared -cp "Enter user/name or just user: " repo_spec
 
-        if [[ "$repo_spec" != [a-zA-Z0-9][a-zA-Z0-9-]#[/][a-zA-Z0-9_-]## && "$repo_spec" != [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
-            perror "Incorrect repository spec. It can contain letters, numbers, underscores and hyphens."
+        if [[ "$repo_spec" != [a-zA-Z0-9][a-zA-Z0-9-]#[/][a-zA-Z0-9_-]##/[a-zA-Z0-9_-]## && 
+                "$repo_spec" != [a-zA-Z0-9][a-zA-Z0-9-]#[/][a-zA-Z0-9_-]## &&
+                    "$repo_spec" != [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
+            perror "Incorrect repository spec. It can contain letters, numbers, underscores and hyphens, and is in format: {user}/{repo}/{rev} or {user}/{repo} or {user}"
             continue
         fi
 
         get_path_from_repo "$repo_spec"
         if ! test -d "$REPLY"; then
-            perror "Repository doesn't exist, try again"
+            perror "Repository ${REPLY:t} doesn't exist, try again"
             continue
         fi
 
@@ -223,15 +225,24 @@ cd_will_work_on() {
 # FUNCTION: get_path_from_repo {{{
 # Returns physicall path for given repo string
 get_path_from_repo() {
-    local user="${1%/*}"
-    local repo="${1#*/}"
+    local user repo="zkl" rev="master"
 
-    # No repo given? Use "zkl"
-    if [ "${1//\//}" = "$1" ]; then
-        repo="zkl"
+    if [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##) ]]; then
+        user="${match[1]}"
+        repo="${match[2]}"
+        rev="${match[3]}"
+    elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##) ]]; then
+        user="${match[1]}"
+        repo="${match[2]}"
+    elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#) ]]; then
+        user="${match[1]}"
+    else
+        perror "Incorrect repository spec. It can contain letters, numbers, underscores and hyphens, and is in format: {user}/{repo}/{rev} or {user}/{repo} or {user}"
+        return 1
     fi
 
-    REPLY="$ZKL_REPOS_DIR/${user}---${repo}"
+    REPLY="$ZKL_REPOS_DIR/${user}---${repo}---${rev}"
+    return 0
 }
 # }}}
 # FUNCTION: get_path_from_repo {{{
