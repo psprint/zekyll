@@ -1041,6 +1041,20 @@ fun! s:GenerateBTOpsLine( )
     return line
 endfun
 " 2}}}
+" FUNCTION: ResetControlLines() {{{2
+fun! s:ResetControlLines( )
+    let index_line = s:GenerateIndexLine()
+    call setline( s:line_index, index_line )
+    let commit_line = s:GenerateCommitResetLine()
+    call setline( s:line_reset, commit_line )
+    let status_line = s:GenerateStatusPushPullLine()
+    call setline( s:line_gitops2, status_line )
+    let btops_line = s:GenerateBTOpsLine()
+    call setline( s:line_btops, btops_line )
+    let save_line = s:GenerateSaveIndexSizeLine()
+    call setline( s:line_save, save_line )
+endfun
+" 2}}}
 " FUNCTION: IsEditAllowed() {{{2
 fun! s:IsEditAllowed()
     let line = line( "." )
@@ -1519,16 +1533,8 @@ fun! s:Space()
                 " Get current index size so that it can be preserved
                 let s:index_size_new = s_result[2]
 
-                let index_line = s:GenerateIndexLine()
-                call setline( linenr, index_line )
-                let reset_line = s:GenerateCommitResetLine()
-                call setline( s:line_reset, reset_line )
-                let save_line = s:GenerateSaveIndexSizeLine()
-                call setline( s:line_save, save_line )
-                let origin_line = s:GenerateStatusPushPullLine()
-                call setline( s:line_gitops2, origin_line )
-                let btops_line = s:GenerateBTOpsLine()
-                call setline( s:line_btops, btops_line )
+                " Redraw Control Lines
+                call s:ResetControlLines()
             else
                 return 0
             end
@@ -1581,16 +1587,8 @@ fun! s:Space()
                 " Get current index size so that it can be preserved
                 let s:index_size_new = s_result[2]
 
-                let reset_line = s:GenerateCommitResetLine()
-                call setline( linenr, reset_line )
-                let index_line = s:GenerateIndexLine()
-                call setline( s:line_index, index_line )
-                let save_line = s:GenerateSaveIndexSizeLine()
-                call setline( s:line_save, save_line )
-                let origin_line = s:GenerateStatusPushPullLine()
-                call setline( s:line_gitops2, origin_line )
-                let btops_line = s:GenerateBTOpsLine()
-                call setline( s:line_btops, btops_line )
+                " Redraw Control Lines
+                call s:ResetControlLines()
             else
                 return 0
             end
@@ -1669,16 +1667,8 @@ fun! s:Space()
                 " Get current index size so that it can be preserved
                 let s:index_size_new = s_result[2]
 
-                let origin_line = s:GenerateStatusPushPullLine()
-                call setline( linenr, origin_line )
-                let index_line = s:GenerateIndexLine()
-                call setline( s:line_index, index_line )
-                let reset_line = s:GenerateCommitResetLine()
-                call setline( s:line_reset, reset_line )
-                let save_line = s:GenerateSaveIndexSizeLine()
-                call setline( s:line_save, save_line ) 
-                let btops_line = s:GenerateBTOpsLine()
-                call setline( s:line_btops, btops_line )
+                " Redraw Control Lines
+                call s:ResetControlLines()
             else
                 return 0
             end
@@ -1739,16 +1729,8 @@ fun! s:Space()
                 " Get current index size so that it can be preserved
                 let s:index_size_new = s_result[2]
 
-                let btops_line = s:GenerateBTOpsLine()
-                call setline( linenr, btops_line )
-                let index_line = s:GenerateIndexLine()
-                call setline( s:line_index, index_line )
-                let reset_line = s:GenerateCommitResetLine()
-                call setline( s:line_reset, reset_line )
-                let save_line = s:GenerateSaveIndexSizeLine()
-                call setline( s:line_save, save_line )
-                let origin_line = s:GenerateStatusPushPullLine()
-                call setline( s:line_gitops2, origin_line )
+                " Redraw Control Lines
+                call s:ResetControlLines()
             end
         " Save line? (5)
         elseif len( s_result ) > 0
@@ -1780,16 +1762,8 @@ fun! s:Space()
                 " Get current index size so that it can be preserved
                 let s:index_size_new = s_result[2]
 
-                let save_line = s:GenerateSaveIndexSizeLine()
-                call setline( linenr, save_line )
-                let index_line = s:GenerateIndexLine()
-                call setline( s:line_index, index_line )
-                let reset_line = s:GenerateCommitResetLine()
-                call setline( s:line_reset, reset_line )
-                let origin_line = s:GenerateStatusPushPullLine()
-                call setline( s:line_gitops2, origin_line )
-                let btops_line = s:GenerateBTOpsLine()
-                call setline( s:line_btops, btops_line )
+                " Redraw Control Lines
+                call s:ResetControlLines()
             else
                 return 0
             end
