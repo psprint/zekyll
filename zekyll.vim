@@ -1039,11 +1039,6 @@ fun! s:ResetCodeSelectors()
     endwhile
 endfun
 "2}}}
-" FUNCTION: GatherCodeSelectors() {{{2
-" Sets s:code_selectors from the buffer
-fun! s:GatherCodeSelectors()
-endfun
-" 2}}}
 " FUNCTION: GenerateSaveIndexSizeLine() {{{2
 fun! s:GenerateSaveIndexSizeLine()
     return "[ Save (<" . s:save . ">) with index size <" . s:index_size_new . "> ]"
