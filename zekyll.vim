@@ -2198,7 +2198,7 @@ endfun
 " FUNCTION: SetupSyntaxHighlighting() {{{2
 fun! s:SetupSyntaxHighlighting()
     setlocal ft=help
-    syn match helpOption          "'.\{1,\}'"
+    syn match helpOption          "'.\{-1,\}'"
     syn match helpType            "(err:0)"
     syn match helpHyperTextJump   "(err:[1-9]\d*)"
     syn match helpHyperTextJump   "Error:"
