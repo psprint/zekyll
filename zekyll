@@ -1204,7 +1204,16 @@ file() {
 
     cd "$ZKL_REPOS_DIR/${user}---${repo}---${rev}"
 
+    local bkp_user="$ZKL_CUR_USER" bkp_repo="$ZKL_CUR_PLUGIN" bkp_rev="$ZKL_CUR_REV"
+    ZKL_CUR_USER="$user"
+    ZKL_CUR_PLUGIN="$repo"
+    ZKL_CUR_REV="$rev"
+
     source "$zekyllfile"
+
+    ZKL_CUR_USER="$bkp_user"
+    ZKL_CUR_PLUGIN="$bkp_repo"
+    ZKL_CUR_REV="$bkp_rev"
 }
 
 #
