@@ -744,6 +744,10 @@ Options are:
 -zkl-emit() {
     local -a output
 
+    ZKL_LAST_PROCESSING_USER=""
+    ZKL_LAST_PROCESSING_REPO=""
+    ZKL_LAST_PROCESSING_REV=""
+
     # Maps demanded file paths to actually written to.
     #
     # The point is that every path may be used for each whole emit once.
@@ -786,6 +790,17 @@ Options are:
             local out_path="${ZKL_EMIT_OUT_PATHS[i]}"
 
             [ "$selected_section" != "$section" ] && continue
+
+            if [[ "$repo" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)---([a-zA-Z0-9_-]##)---([a-zA-Z0-9_-]##) ]]; then
+                local tmp_user="${match[1]}" tmp_repo="${match[2]}" tmp_rev="${match[3]}"
+                if [[ "$ZKL_LAST_PROCESSING_USER" != "$tmp_user" || "$ZKL_LAST_PROCESSING_REPO" != "$tmp_repo" || "$ZKL_LAST_PROCESSING_REV" != "$tmp_rev" ]]; then
+                    local c1="${ZKLCOL[error]}" c2="${ZKLCOL[info2]}"
+                    -zkl-pinfo2 "\nProcessing for user ${c1}$tmp_user${c2}, repo ${c1}$tmp_repo${c2}, rev ${c1}$tmp_rev${c2}\n"
+                fi
+                ZKL_LAST_PROCESSING_USER="$tmp_user"
+                ZKL_LAST_PROCESSING_REPO="$tmp_repo"
+                ZKL_LAST_PROCESSING_REV="$tmp_rev"
+            fi
 
             -process-zekyll-file "${ZKL_REPOS_DIR}/${repo}/${file_name}" "$desc"
             output=( "${reply[@]}" )
@@ -905,13 +920,6 @@ zkl() {
     -zkl-start-zekyll-input "zkl" "$1" "$2" "$3" "$4" || return
     local user="${reply[1]}" repo="${reply[2]}" rev="${reply[3]}" zekyll="${reply[4]}"
 
-    if [[ "$ZKL_LAST_PROCESSING_USER" != "$user" || "$ZKL_LAST_PROCESSING_REPO" != "$repo" || "$ZKL_LAST_PROCESSING_REV" != "$rev" ]]; then
-        -zkl-pinfo2 "\nProcessing for user $user, repo $repo, rev $rev\n"
-    fi
-    ZKL_LAST_PROCESSING_USER="$user"
-    ZKL_LAST_PROCESSING_REPO="$repo"
-    ZKL_LAST_PROCESSING_REV="$rev"
-
     # Allow underscores - remove them now
     zekyll="${zekyll//_/}"
 
@@ -957,13 +965,6 @@ zkllong() {
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
     -zkl-start-zekyll-input "zkllong" "$@" || return
     local user="${reply[1]}" repo="${reply[2]}" rev="${reply[3]}" zekyll="${reply[4]}" desc="${reply[5]}"
-
-    if [[ "$ZKL_LAST_PROCESSING_USER" != "$user" || "$ZKL_LAST_PROCESSING_REPO" != "$repo" || "$ZKL_LAST_PROCESSING_REV" != "$rev" ]]; then
-        -zkl-pinfo2 "\nProcessing (long) for user $user, repo $repo, rev $rev\n"
-    fi
-    ZKL_LAST_PROCESSING_USER="$user"
-    ZKL_LAST_PROCESSING_REPO="$repo"
-    ZKL_LAST_PROCESSING_REV="$rev"
 
     if [ "${#zekyll}" -eq 1 ]; then
         echo "Skipping single letter zekyll $zekyll"
@@ -1029,14 +1030,6 @@ zcode() {
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
     -zkl-start-zekyll-input "zcode" "${mdata[repo]}" "${mdata[ref]}" || return
     local user="${reply[1]}" repo="${reply[2]}" rev="${reply[3]}"
-
-    if [[ "$ZKL_LAST_PROCESSING_USER" != "$user" || "$ZKL_LAST_PROCESSING_REPO" != "$repo" || "$ZKL_LAST_PROCESSING_REV" != "$rev" ]]; then
-        -zkl-pinfo2 "\nProcessing (zcode) for user $user, repo $repo, rev $rev\n"
-    fi
-
-    ZKL_LAST_PROCESSING_USER="$user"
-    ZKL_LAST_PROCESSING_REPO="$repo"
-    ZKL_LAST_PROCESSING_REV="$rev"
 
     # Allow underscores - remove them now
     zekylls_str="${zekylls_str//_/}"
