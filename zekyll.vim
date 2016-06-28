@@ -155,6 +155,10 @@ let s:ACTIVE_NEW_BRANCH = 10
 let s:ACTIVE_ADD_TAG = 11
 let s:ACTIVE_DELETE_BRANCH = 12
 let s:ACTIVE_DELETE_TAG = 13
+let s:ACTIVE_CODE = 14
+let s:ACTIVE_REF = 15
+let s:ACTIVE_FILE = 16
+let s:ACTIVE_REPO = 17
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -1059,7 +1063,7 @@ endfun
 " 2}}}
 " FUNCTION: GenerateIndexLine() {{{2
 fun! s:GenerateIndexLine()
-    return s:RPad( s:prefix . "Consistent: " . s:consistent, 21 ) . " | " .
+    return s:RPad( "Consistent: " . s:consistent, 21 ) . " | " .
          \ s:RPad( "Errors: " . s:are_errors, 21 ) . " | " .
          \ s:RPad( "[ Current index: <" . s:cur_index. "> ]", 16 )
 endfun
@@ -1301,7 +1305,9 @@ fun! s:Enter()
 
             if col <= pos1
                 if s:ComputeCodingState("decode")
-                    call s:ShallowRender()
+                    " Need normal render to regenerate entries,
+                    " not only messages, as ShallowRender does
+                    call s:NormalRender()
                 end
             else
                 if s:ComputeCodingState("regenerate")
@@ -1377,7 +1383,7 @@ fun! s:ComputeCodingState( op )
             end
 
             if correct_buffer
-                call s:ImposeCodeOnBuffer( s:c_code )
+                call s:UpdateStateForZcode( s:cur_index . "/" . s:c_code )
             end
         else
             let correct_buffer = 0
@@ -1409,40 +1415,111 @@ fun! s:GenerateCodeFromBuffer()
 
         let [ s:c_ref, s:c_file, s:c_repo ] = s:TrimBlanks( s:c_ref, s:c_file, s:c_repo )
 
-        let appendix = []
-        call extend( appendix, s:BitsStart() )
-        call extend( appendix, s:BitsRef(s:c_ref) )
-        call extend( appendix, s:BitsFile(s:c_file) )
-        call extend( appendix, s:BitsRepo(s:c_repo) )
-        call extend( appendix, s:BitsStop() )
-        let appendix = s:BitsRemoveIfStartStop( appendix )
-
-        let code_bits = reverse( copy( s:code_selectors ) )
-
-        if len( appendix ) == 0
-            " There is no appendix, we should check if data is
-            " properly ended with two reversed SS or without SS
-            let rev_bits = reverse( copy( s:bits['ss'] ) )
-            if s:BitsCompareSuffix( code_bits, rev_bits )
-                call extend( code_bits, rev_bits )
-            end
-        else
-            " Append the appendix, reversed
-            call extend( code_bits, reverse( copy( appendix ) ) )
-        end
-
-        " echom "Code bits: " . join( code_bits, "," ) . " reversed SS: " . join( reverse( copy( s:bits['ss'] ) ), "," )
-        " echom "Appendix: " . join( appendix, "," )
-
-        let resu = s:encode_zcode_arr01( code_bits )
-        return [1, resu[1] ]
+        return s:GenerateCodeFromState()
     else
         return [0, s:c_code ]
     end
+
 endfun
 " 2}}}
-" FUNCTION: ImposeCodeOnBuffer() {{{2
-fun! s:ImposeCodeOnBuffer( code )
+" FUNCTION: GenerateCodeFromState() {{{2
+" Generates code from current values of s:c_* variables
+" TODO: error handling
+fun! s:GenerateCodeFromState()
+    let appendix = []
+    call extend( appendix, s:BitsStart() )
+    call extend( appendix, s:BitsRef(s:c_ref) )
+    call extend( appendix, s:BitsFile(s:c_file) )
+    call extend( appendix, s:BitsRepo(s:c_repo) )
+    call extend( appendix, s:BitsStop() )
+    let appendix = s:BitsRemoveIfStartStop( appendix )
+
+    let code_bits = reverse( copy( s:code_selectors ) )
+
+    if len( appendix ) == 0
+        " There is no appendix, we should check if data is
+        " properly ended with two reversed SS or without SS
+        let rev_bits = reverse( copy( s:bits['ss'] ) )
+        if s:BitsCompareSuffix( code_bits, rev_bits )
+            call extend( code_bits, rev_bits )
+        end
+    else
+        " Append the appendix, reversed
+        call extend( code_bits, reverse( copy( appendix ) ) )
+    end
+
+    " echom "Code bits: " . join( code_bits, "," ) . " reversed SS: " . join( reverse( copy( s:bits['ss'] ) ), "," )
+    " echom "Appendix: " . join( appendix, "," )
+
+    let resu = s:encode_zcode_arr01( code_bits )
+
+    return [1, resu[1] ]
+endfun
+" 2}}}
+" FUNCTION: UpdateStateForZcode() {{{2
+fun! s:UpdateStateForZcode( zcode )
+    let [ error, bits, meta_data ] = s:get_zekyll_bits_for_code( a:zcode )
+    if error
+        call s:AppendMessageT( "Error when decoding Zcode '" . a:zcode . "', it is probably mistyped and thus inconsistent" )
+        return 0
+    end
+
+    let problems = 0
+    call reverse( bits )
+    let new_len = len( bits )
+    let cur_len = len( s:code_selectors )
+
+    let s:code_selectors = bits
+    let s:c_ref = has_key( meta_data, 'ref' ) ? meta_data['ref'] : ""
+    let s:c_file = has_key( meta_data, 'file' ) ? meta_data['file'] : ""
+    let s:c_repo = has_key( meta_data, 'repo' ) ? meta_data['repo'] : ""
+
+    if new_len > cur_len
+        let problems = 1
+
+        " Truncate
+        let s:code_selectors = s:code_selectors[0:cur_len-1]
+
+        call s:AppendMessageT("Error: the Zcode " . a:zcode . " is for index of size |" . new_len . "|, current index is of size |" . cur_len . "|. Truncated the Zcode.")
+    elseif new_len < cur_len
+        " Extend with 0s, i.e. values stating unselection
+        call extend( s:code_selectors, repeat( [ 0 ], cur_len - new_len ) )
+    end
+
+    if problems
+        let msg = "Decoded the misadapted Zcode " . a:zcode
+    else
+        let msg = "Succesfully decoded Zcode " . a:zcode
+    end
+
+    " Enumerate decoded fields
+    if s:c_ref != "" || s:c_file != "" || s:c_repo != ""
+        let msg = msg . " with"
+    end
+    let was = 0
+    if s:c_ref != ""
+        let [ was, msg ] = [ 1, msg . " ref: '" . s:c_ref . "'" ]
+    end
+    if s:c_file != ""
+        let msg = msg . (was ? "," : "")
+        let [ was, msg ] = [ 1, msg . " file: '" . s:c_file."'" ]
+    end
+    if s:c_repo != ""
+        let msg = msg . (was ? "," : "")
+        let [ was, msg ] = [ 1, msg . " repo: '" . s:c_repo ."'" ]
+    end
+
+    " How many selections message
+    let msg = msg . (was ? " and with " : ". It is having ")
+    let cnt = 0
+    for i in range(0, len( s:code_selectors ) - 1)
+        let cnt = s:code_selectors[i] ? cnt + 1 : cnt
+    endfor
+    let msg = msg . cnt . " selection(s)."
+
+    call s:AppendMessageT( msg )
+
+    return 1
 endfun
 " 2}}}
 "1}}}
@@ -3020,19 +3097,30 @@ endfun
 " meta_data ]
 "
 fun! s:get_zekyll_bits_for_code( zcode )
-    let bits = s:decode_zcode ( a:zcode )
+    let error = 1
+    let bits = []
+    let meta_reply = {}
 
-    let [ to_skip, meta_reply ] = s:process_meta_data( bits )
-    " meta_reply contains: { file : "", ref : "", repo : "", wordref : "", chksum : "", site : "",
-    "                        unused1 : "", unused2 : "", unused3 : "", error : "" }
-    " to_skip contains: number of final bits that contained the meta data
+    if a:zcode !~ '^\d\+/[[:space:]]*$' && a:zcode !~ '^\d\+/a*$'
+        let bits = s:decode_zcode ( a:zcode )
+        if len( bits ) > 0
+            let [ to_skip, meta_reply ] = s:process_meta_data( bits )
+            " meta_reply contains: { file : "", ref : "", repo : "", wordref : "", chksum : "", site : "",
+            "                        unused1 : "", unused2 : "", unused3 : "", error : "" }
+            " to_skip contains: number of final bits that contained the meta data
 
-    " Skip bits that were processed as meta data
+            if to_skip != -1
+                " Skip bits that were processed as meta data
+                let bits = bits[ 0 : -1*to_skip-1 ]
+                let error = 0
+            end
+        end
+    else
+        " Empty Zcode, signal no error, return empty data structures
+        let error = 0
+    end
 
-    let before = len (bits)
-    let bits = bits[ 0 : -1*to_skip-1 ]
-
-    return [ bits, meta_reply ]
+    return [ error, bits, meta_reply ]
 endfun
 " 2}}
 " 1}}}
