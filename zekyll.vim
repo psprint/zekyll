@@ -1213,7 +1213,7 @@ fun! s:Enter()
         let line2 = substitute( line, '[^|]', "x", "g" )
         let pos1 = stridx( line2, "|" ) + 1
         let pos2 = pos1 + stridx( line2[pos1 :], "|" ) + 1
-        let pos3 = pos2 + stridx( line2[pos1 :], "|" ) + 1
+        let pos3 = pos2 + stridx( line2[pos2 :], "|" ) + 1
         let col = col( "." )
 
         if linenr == s:line_index
