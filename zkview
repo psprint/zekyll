@@ -152,7 +152,7 @@ qprint
 # Skip incomplete zekyll
 #
 
-if [ "${#${zekylls1[-1]}}" = "1" ]; then
+if [[ "${#${zekylls1[-1]}}" = "1" || "${#${zekylls1[-1]}}" = "2" ]]; then
     zekylls1[-1]=()
 fi
 
@@ -160,10 +160,14 @@ fi
 # Obtain section ordered list
 #
 
+# Works on given list of zekylls. Returns 3 lists
+# in reply, reply2 and reply3: zekylls, file names
+# and sections
 filter_for_existing_zekylls "${zekylls1[@]}"
 
 [[ "${#reply}" -eq 0 ]] && qprint && exit 0
 
+# Zekylls, file names and sections
 three_to_section_order "${#reply}" "${reply[@]}" "${reply2[@]}" "${reply3[@]}"
 
 local file
