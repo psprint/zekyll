@@ -2490,7 +2490,7 @@ fun! s:CheckGitState()
     let cmd = "git -C " . shellescape( s:cur_repo_path ) . " status --porcelain"
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
-    let pattern = '^[RA]\|\ D'
+    let pattern = '^[MARCDU?]\|\ [MAUD?]'
     call filter(arr, 'v:val =~ pattern')
 
     if len( arr ) > 0
