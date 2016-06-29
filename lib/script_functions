@@ -225,31 +225,46 @@ cd_will_work_on() {
 # FUNCTION: get_path_from_repo {{{
 # Returns physicall path for given repo string
 get_path_from_repo() {
-    local user repo="zkl" rev="master"
+    local site="gh" user repo="zkl" rev="master"
 
+    # user/repo/rev
     if [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##) ]]; then
         user="${match[1]}"
         repo="${match[2]}"
         rev="${match[3]}"
+    # user/repo
     elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##) ]]; then
         user="${match[1]}"
         repo="${match[2]}"
+    # user
     elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#) ]]; then
         user="${match[1]}"
+
+    # xy@...
+
+    # xy@user/repo/rev
+    elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##) ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        repo="${match[3]}"
+        rev="${match[4]}"
+    # xy@user/repo
+    elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##) ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        repo="${match[3]}"
+    # xy@user
+    elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#) ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+
     else
         perror "Incorrect repository spec. It can contain letters, numbers, underscores and hyphens, and is in format: {user}/{repo}/{rev} or {user}/{repo} or {user}"
         return 1
     fi
 
-    REPLY="$ZKL_REPOS_DIR/${user}---${repo}---${rev}"
+    REPLY="$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}"
     return 0
-}
-# }}}
-# FUNCTION: get_path_from_repo {{{
-# Returns physicall path for given user and repo
-get_path_from_user_repo() {
-    [ "$2" = "" ] && 2="zkl"
-    REPLY="$ZKL_REPOS_DIR/${1}---${2}"
 }
 # }}}
 # FUNCTION: filter_for_existing_zekylls {{{
