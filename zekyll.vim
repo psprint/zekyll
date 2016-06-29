@@ -2086,10 +2086,11 @@ fun! s:GenerateRule( top, ... )
         let delta = a:1
     end
 
+    let length = s:longest_lzsd > 45 ? s:longest_lzsd : 45
     if( a:top == 1 )
-        return s:RPad( s:beg_of_warea_char, s:longest_lzsd + delta, s:beg_of_warea_char )
+        return s:RPad( s:beg_of_warea_char, length + delta, s:beg_of_warea_char )
     else
-        return s:RPad( s:end_of_warea_char, s:longest_lzsd + delta, s:end_of_warea_char )
+        return s:RPad( s:end_of_warea_char, length + delta, s:end_of_warea_char )
     end
 endfun
 " 2}}}
