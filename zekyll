@@ -8,11 +8,13 @@ REPO_DIR="$HOME/.zekyll/zekyll"
 source "$REPO_DIR/lib/math_functions"
 source "$REPO_DIR/lib/codes_huffman"
 source "$REPO_DIR/lib/coding_functions"
+source "$REPO_DIR/lib/sites"
 
 typeset -gH ZKL_YES="NO"
 typeset -gH ZKL_LOCAL_USER="_local"
 typeset -gH ZKL_DEFAULT_PLUGIN="zkl"
 typeset -gH ZKL_DEFAULT_REV="master"
+typeset -gH ZKL_DEFAULT_SITE="gh"
 typeset -gH ZKL_OUTPUT_PATH="$HOME/zekyll_out/"
 typeset -gH ZKL_FIXED_PATH=""
 typeset -gH ZKL_DO_UPDATE="0"
@@ -27,14 +29,16 @@ typeset -ghi ZKL_COLLISION_COUNTER=0
 #
 
 typeset -gaH ZKL_EMIT_ZEKYLLS
-typeset -gaH ZKL_EMIT_REPOS
-typeset -gaH ZKL_EMIT_FILE_NAMES
 typeset -gaH ZKL_EMIT_SECTIONS
+typeset -gaH ZKL_EMIT_REVS
+typeset -gaH ZKL_EMIT_FILE_NAMES
+typeset -gaH ZKL_EMIT_REPOS
 typeset -gaH ZKL_EMIT_DESCRIPTIONS
 typeset -gaH ZKL_EMIT_OUT_PATHS
 
 typeset -gaHU ZKL_EMITTED_PATHS
 
+typeset -gH ZKL_LAST_PROCESSING_SITE
 typeset -gH ZKL_LAST_PROCESSING_USER
 typeset -gH ZKL_LAST_PROCESSING_REPO
 typeset -gH ZKL_LAST_PROCESSING_REV
@@ -65,6 +69,7 @@ typeset -gH ZPLG_HOME_READY
 typeset -gH ZKL_CUR_USER="$ZKL_LOCAL_USER"
 typeset -gH ZKL_CUR_PLUGIN="$ZKL_DEFAULT_PLUGIN"
 typeset -gH ZKL_CUR_REV="master"
+typeset -gH ZKL_CUR_SITE="$ZKL_DEFAULT_SITE"
 
 # Init {{{1
 
@@ -101,14 +106,14 @@ ZKLCOL=(
 -zkl-error()  { echo "${ZKLCOL[error]}ERROR: $*${ZKLCOL[rst]}" >&2; return 0; }
 -zkl-ierror() { echo "${ZKLCOL[error]}ERROR: $*${ZKLCOL[rst]}" >&2; return 0; }
 
-# We want zkl call to be flexible. That's why there are 10 ways
+# We want zkl call to be flexible. That's why there are 19 ways
 # to invoke zkl. The function detects which way is used. The 6
 # ways:
 #
 # - user/repo/rev:zekyll
 # - user/repo/rev zekyll
-# - user/repo rev zekyll    / one of two with 3 nodes
-# - user repo rev zekyll    / the only with 4 nodes
+# - user/repo rev zekyll    / one of two with 3 nodes in this block
+# - user repo rev zekyll    / the only with 4 nodes in this block
 # - user/repo:zekyll
 # - user/repo zekyll
 # - user repo zekyll        / one of two with 3 nodes
@@ -116,7 +121,18 @@ ZKLCOL=(
 # - user zekyll             / sensitive to "zekyll repo"
 # - zekyll                  / sensitive to "zekyll repo" and "zekyll user"
 #
--zkl-any-to-user-repo-rev-zekyll() {
+# - xy@user/repo/rev:zekyll
+# - xy@user/repo/rev zekyll
+# - xy@user/repo rev zekyll
+# - xy@user repo rev zekyll
+# - xy@user/repo:zekyll
+# - xy@user/repo zekyll
+# - xy@user repo zekyll
+# - xy@user:zekyll
+# - xy@user zekyll
+#
+-zkl-any-to-site-user-repo-rev-zekyll() {
+    local site="_unknown"
     local user="_unknown"
     local repo="_unknown"
     local rev="_unknown"
@@ -134,34 +150,64 @@ ZKLCOL=(
     if [[ "$#" -eq "1" ]]; then
         # user/repo/rev:zekyll(s)?
         if [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##)[:]([a-zA-Z0-9_]##) ]]; then
+            site="$ZKL_CUR_SITE"
             user="${match[1]}"
             repo="${match[2]}"
             rev="${match[3]}"
             zekyll="${match[4]}"
         # user/repo:zekyll(s)?
         elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#[/][a-zA-Z0-9_-]##[:][a-zA-Z0-9_]## ]]; then
+            site="$ZKL_CUR_SITE"
             user="${1%%/*}"
             repo="${${1%%:*}##*/}"
             rev="$ZKL_CUR_REV"
             zekyll="${1##*:}"
         # user:zekyll(s)?
         elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#:[a-zA-Z0-9_]## ]]; then
+            site="$ZKL_CUR_SITE"
             user="${1%%:*}"
             repo="$ZKL_CUR_PLUGIN"
             rev="$ZKL_CUR_REV"
             zekyll="${1##*:}"
         # zekyll?
         elif [[ "$1" = [a-zA-Z0-9_]## ]]; then
+            site="$ZKL_CUR_SITE"
             user="$ZKL_CUR_USER"
             repo="$ZKL_CUR_PLUGIN"
             rev="$ZKL_CUR_REV"
             zekyll="$1"
+
+        # xy@user...
+
+        # xy@user/repo/rev:zekyll(s)?
+        elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##)[:]([a-zA-Z0-9_]##) ]]; then
+            site="${match[1]}"
+            user="${match[2]}"
+            repo="${match[3]}"
+            rev="${match[4]}"
+            zekyll="${match[5]}"
+        # xy@user/repo:zekyll(s)?
+        elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[:]([a-zA-Z0-9_]##) ]]; then
+            site="${match[1]}"
+            user="${match[2]}"
+            repo="${match[3]}"
+            rev="$ZKL_CUR_REV"
+            zekyll="${match[4]}"
+        # xy@user:zekyll(s)?
+        elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[:]([a-zA-Z0-9_]##) ]]; then
+            site="${match[1]}"
+            user="${match[2]}"
+            repo="$ZKL_CUR_PLUGIN"
+            rev="$ZKL_CUR_REV"
+            zekyll="${match[3]}"
+
         else
             -zkl-error "Error: improper input: $1"
         fi
     elif [[ "$#" -eq "2" ]]; then
         # user/repo/rev?
         if [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##) ]]; then
+            site="$ZKL_CUR_SITE"
             user="${match[1]}"
             repo="${match[2]}"
             rev="${match[3]}"
@@ -174,26 +220,70 @@ ZKLCOL=(
             fi
         # user/repo?
         elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#[/][a-zA-Z0-9_-]## ]]; then
+            site="$ZKL_CUR_SITE"
+            user="${1%%/*}"
+            repo="${1##*/}"
+            rev="$ZKL_CUR_REV"
             # Should be zekyll(s)
             if [[ "$2" = [a-zA-Z0-9_]## ]]; then
-                user="${1%%/*}"
-                repo="${1##*/}"
-                rev="$ZKL_CUR_REV"
                 zekyll="$2"
             else
                 -zkl-error "Error: improper input (3): $1 $2"
             fi
         # user?
         elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
+            site="$ZKL_CUR_SITE"
+            user="$1"
+            repo="$ZKL_CUR_PLUGIN"
+            rev="$ZKL_CUR_REV"
             # Should be zekyll
             if [[ "$2" = [a-zA-Z0-9_]## ]]; then
-                user="$1"
-                repo="$ZKL_CUR_PLUGIN"
-                rev="$ZKL_CUR_REV"
                 zekyll="$2"
             else
                 -zkl-error "Error: improper input (4): $1 $2"
             fi
+
+        # xy@user...
+
+        # xy@user/repo/rev?
+        elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##) ]]; then
+            site="${match[1]}"
+            user="${match[2]}"
+            repo="${match[3]}"
+            rev="${match[4]}"
+
+            # Should be zekyll(s)
+            if [[ "$2" = [a-zA-Z0-9_]## ]]; then
+                zekyll="$2"
+            else
+                -zkl-error "Error: improper input (2): $1 $2"
+            fi
+        # xy@user/repo?
+        elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##) ]]; then
+            site="${match[1]}"
+            user="${match[2]}"
+            repo="${match[3]}"
+            rev="$ZKL_CUR_REV"
+            # Should be zekyll(s)
+            if [[ "$2" = [a-zA-Z0-9_]## ]]; then
+                zekyll="$2"
+            else
+                -zkl-error "Error: improper input (3): $1 $2"
+            fi
+        # xy@user?
+        elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#) ]]; then
+            site="${match[1]}"
+            user="${match[2]}"
+            repo="$ZKL_CUR_PLUGIN"
+            rev="$ZKL_CUR_REV"
+
+            # Should be zekyll
+            if [[ "$2" = [a-zA-Z0-9_]## ]]; then
+                zekyll="$2"
+            else
+                -zkl-error "Error: improper input (4): $1 $2"
+            fi
+
         else
             -zkl-error "Error: improper input (5): $1 $2"
         fi
@@ -201,15 +291,36 @@ ZKLCOL=(
         integer correct=0
         # Should be user
         if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
+            site="$ZKL_CUR_SITE"
+            user="$1"
             # Should be repo
             if [[ "$2" = [a-zA-Z0-9_-]## ]]; then
+                repo="$2"
                 # Should be rev
                 if [[ "$3" = [a-zA-Z0-9_-]## ]]; then
+                    rev="$3"
                     # Should be zekyll(s)
                     if [[ "$4" = [a-zA-Z0-9_]## ]]; then
-                        user="$1"
-                        repo="$2"
-                        rev="$3"
+                        zekyll="$4"
+                        correct=1
+                    fi
+                fi
+            fi
+
+        # xy@user...
+
+        # xy@user?
+        elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#) ]]; then
+            site="${match[1]}"
+            user="${match[2]}"
+            # Should be repo
+            if [[ "$2" = [a-zA-Z0-9_-]## ]]; then
+                repo="$2"
+                # Should be rev
+                if [[ "$3" = [a-zA-Z0-9_-]## ]]; then
+                    rev="$3"
+                    # Should be zekyll(s)
+                    if [[ "$4" = [a-zA-Z0-9_]## ]]; then
                         zekyll="$4"
                         correct=1
                     fi
@@ -222,10 +333,43 @@ ZKLCOL=(
         fi
     elif [[ "$#" -eq "3" ]]; then
         integer correct=0
-        # user repo zekyll
+        # user repo zekyll?
         # Should be user
         if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
             user="$1"
+            # Should be repo
+            if [[ "$2" = [a-zA-Z0-9_-]## ]]; then
+                repo="$2"
+                # Should be zekyll(s)
+                if [[ "$3" = [a-zA-Z0-9_]## ]]; then
+                    site="$ZKL_CUR_SITE"
+                    rev="$ZKL_CUR_REV"
+                    zekyll="$3"
+                    correct=1
+                fi
+            fi
+        # user/repo rev zekyll?
+        elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##) ]]; then
+            user="${match[1]}"
+            repo="${match[2]}"
+            # Should be rev
+            if [[ "$2" = [a-zA-Z0-9_-]## ]]; then
+                rev="$2"
+                # Should be zekyll(s)
+                if [[ "$3" = [a-zA-Z0-9_]## ]]; then
+                    site="$ZKL_CUR_SITE"
+                    zekyll="$3"
+                    correct=1
+                fi
+            fi
+
+        # xy@user...
+
+        # xy@user repo zekyll?
+        # Should be user
+        elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#) ]]; then
+            site="${match[1]}"
+            user="${match[2]}"
             # Should be repo
             if [[ "$2" = [a-zA-Z0-9_-]## ]]; then
                 repo="$2"
@@ -236,10 +380,11 @@ ZKLCOL=(
                     correct=1
                 fi
             fi
-        # user/repo rev zekyll
-        elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##) ]]; then
-            user="${match[1]}"
-            repo="${match[2]}"
+        # xy@user/repo rev zekyll?
+        elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##) ]]; then
+            site="${match[1]}"
+            user="${match[2]}"
+            repo="${match[3]}"
             # Should be rev
             if [[ "$2" = [a-zA-Z0-9_-]## ]]; then
                 rev="$2"
@@ -256,7 +401,7 @@ ZKLCOL=(
         fi
     fi
 
-    reply=( "$user" "$repo" "$rev" "$zekyll" )
+    reply=( "$site" "$user" "$repo" "$rev" "$zekyll" )
 
     [[ "$user" = "_unknown" || "$repo" = "_unknown" || "$rev" = "_unknown" || "$zekyll" = "_unknown" ]] && return 1
 
@@ -270,36 +415,65 @@ ZKLCOL=(
 # zkllong psprint/zkl:ac8 These are prompt settings
 # zkllong psprint:ac8 These are prompt settings
 # zkllong ac8 These are prompt settings
+# zkllong xy@psprint/zkl/rev:ac8 These are prompt settings
+# zkllong xy@psprint/zkl:ac8 These are prompt settings
+# zkllong xy@psprint:ac8 These are prompt settings
 #
-# Will use $ZKL_CUR_PLUGIN and $ZKL_CUR_USER if the values aren't
-# provided with zekyll
+# Will use $ZKL_CUR_PLUGIN, $ZKL_CUR_USER, $ZKL_CUR_REV, ZKL_CUR_SITE
+# if the values aren't provided with zekyll
 #
--zkl-any2-to-user-repo-rev-zekyll-desc() {
-    local user repo rev zekyll desc
-    if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#:[a-zA-Z0-9]* ]]; then
-        user="${1%:*}"
+-zkl-any2-to-site-user-repo-rev-zekyll-desc() {
+    local site user repo rev zekyll desc
+    # user:zekyll desc
+    if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#:[a-z0-9]* ]]; then
+        user="${1%%:*}"
         1="${1#*:}"
-    elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#/[a-zA-Z0-9_-]##:[a-zA-Z0-9_-][a-zA-Z0-9[:space:]_-]# ]]; then
-        user="${1%/*}"
-        repo="${${1#*/}%:*}"
+    # user/repo:zekyll desc
+    elif [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#/[a-zA-Z0-9_-]##:[a-z0-9]* ]]; then
+        user="${1%%/*}"
+        repo="${${1#*/}%%:*}"
         1="${1#*:}"
-    elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##)[:][a-zA-Z0-9_-][a-zA-Z0-9[:space:]_-]# ]]; then
+    # user/reop/rev:zekyll desc
+    elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##):[a-z0-9]* ]]; then
         user="${match[1]}"
         repo="${match[2]}"
         rev="${match[3]}"
         1="${1#*:}"
+
+    # xy@...
+
+    # xy@user:zekyll desc
+    elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#):[a-z0-9]* ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        1="${1#*:}"
+    # xy@user/repo:zekyll desc
+    elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##):[a-z0-9]* ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        repo="${match[3]}"
+        1="${1#*:}"
+    # xy@user/repo/rev:zekyll desc
+    elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##):[a-z0-9]* ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        repo="${match[3]}"
+        rev="${match[4]}"
+        1="${1#*:}"
     fi
 
     # TODO: discover improper input
+    [ -z "$site" ] && site="$ZKL_CUR_SITE"
+    [[ "$site" = "_unknown" || -z "$site" ]] && -zkl-error "Error: unknown site (1), no active site set" && return 1
 
     [ -z "$user" ] && user="$ZKL_CUR_USER"
-    [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user" && return 1
+    [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user (1), no active user set" && return 1
 
     [ -z "$repo" ] && repo="$ZKL_CUR_PLUGIN"
-    [[ "$repo" = "_unknown" || -z "$repo" ]] && -zkl-error "Error: unknown repo" && return 1
+    [[ "$repo" = "_unknown" || -z "$repo" ]] && -zkl-error "Error: unknown repo (1), no active repository set" && return 1
 
     [ -z "$rev" ] && rev="$ZKL_CUR_REV"
-    [[ "$rev" = "_unknown" || -z "$rev" ]] && -zkl-error "Error: unknown rev" && return 1
+    [[ "$rev" = "_unknown" || -z "$rev" ]] && -zkl-error "Error: unknown rev (1), no active rev set" && return 1
 
     # Obtain zekyll and desc
     local input="${(j: :)@}"
@@ -311,7 +485,7 @@ ZKLCOL=(
     [ "$zekyll" = "$input" ] && -zkl-error "Error: Improper long input string, cannot determine zekyll" && return 1
     zekyll="${zekyll%?}"
     
-    reply=( "$user" "$repo" "$rev" "$zekyll" "$desc" )
+    reply=( "$site" "$user" "$repo" "$rev" "$zekyll" "$desc" )
     return 0
 }
 
@@ -322,36 +496,71 @@ ZKLCOL=(
 # file psprint/zkl:.myvimcfg
 # file psprint:.myvimcfg
 #
--zkl-any3-to-user-repo-rev-zekyllfile() {
-    local user repo rev zekyllfile="$1"
+# file xy@psprint/zkl/nounderscores:.myvimcfg
+# file xy@psprint/zkl:.myvimcfg
+# file xy@psprint:.myvimcfg
+#
+# file .myvimcfg
+#
+-zkl-any3-to-site-user-repo-rev-zekyllfile() {
+    local site user repo rev zekyllfile="$1"
+
     # User:.zekyllfile
-    if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]#:[~/\.a-zA-Z0-9_-]## ]]; then
-        user="${1%:*}"
-        zekyllfile="${1#*:}"
+    if [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#):([~/\.a-zA-Z0-9_-]##) ]]; then
+        user="${match[1]}"
+        zekyllfile="${match[2]}"
     # User/repo:.zekyllfile
-    elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[:]([~/\.a-zA-Z0-9_-]##) ]]; then
+    elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##):([~/\.a-zA-Z0-9_-]##) ]]; then
         user="${match[1]}"
         repo="${match[2]}"
         zekyllfile="${match[3]}"
-    elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##)[:]([~/\.a-zA-Z0-9_-]##) ]]; then
+    # User/repo/rev:.zekyllfile
+    elif [[ "$1" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##):([~/\.a-zA-Z0-9_-]##) ]]; then
         user="${match[1]}"
         repo="${match[2]}"
         rev="${match[3]}"
         zekyllfile="${match[4]}"
+
+    # xy@...
+
+    # xy@user:.zekyllfile
+    elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#):([~/\.a-zA-Z0-9_-]##) ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        zekyllfile="${match[3]}"
+    # xy@user/repo:.zekyllfile
+    elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##):([~/\.a-zA-Z0-9_-]##) ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        repo="${match[3]}"
+        zekyllfile="${match[4]}"
+    # xy@user/repo/rev:.zekyllfile
+    elif [[ "$1" = (#b)([a-zA-Z][a-zA-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##):([~/\.a-zA-Z0-9_-]##) ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        repo="${match[3]}"
+        rev="${match[4]}"
+        zekyllfile="${match[5]}"
+    else
+        -zkl-error "file() was given misformed input. Allowed are: file user/repo/rev:file, user/repo:file, user:file, "\
+                   "xy@user/repo/rev:file, xy@user/repo:file, xy@user:file, file"
     fi
 
     # TODO: discover improper input
 
+    [ -z "$site" ] && site="$ZKL_CUR_SITE"
+    [[ "$site" = "_unknown" || -z "$site" ]] && -zkl-error "Error: unknown site (2), no active site set" && return 1
+
     [ -z "$user" ] && user="$ZKL_CUR_USER"
-    [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user" && return 1
+    [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user (2), no active user set" && return 1
 
     [ -z "$repo" ] && repo="$ZKL_CUR_PLUGIN"
-    [[ "$repo" = "_unknown" || -z "$repo" ]] && -zkl-error "Error: unknown repo" && return 1
+    [[ "$repo" = "_unknown" || -z "$repo" ]] && -zkl-error "Error: unknown repo (2), no active repository set" && return 1
 
     [ -z "$rev" ] && rev="$ZKL_CUR_REV"
-    [[ "$rev" = "_unknown" || -z "$rev" ]] && -zkl-error "Error: unknown rev" && return 1
+    [[ "$rev" = "_unknown" || -z "$rev" ]] && -zkl-error "Error: unknown rev (2), no active rev set" && return 1
 
-    reply=( "$user" "$repo" "$rev" "$zekyllfile" )
+    reply=( "$site" "$user" "$repo" "$rev" "$zekyllfile" )
     return 0
 }
 
@@ -361,8 +570,8 @@ ZKLCOL=(
 # Will use $ZKL_CUR_PLUGIN and $ZKL_CUR_USER if the values aren't
 # provided. That's the main sense of this function
 #
--zkl-user-repo-rev-to-user-repo-rev-defaults() {
-    local user repo rev
+-zkl-site-user-repo-rev-to-site-user-repo-rev-defaults() {
+    local site user repo rev
     # User?
     if [[ "$1" = [a-zA-Z0-9][a-zA-Z0-9-]# ]]; then
         user="$1"
@@ -378,6 +587,28 @@ ZKLCOL=(
     elif [[ "$1" != [[:blank:]]# ]]; then
         -zkl-error "Error: improper user/repo given: $1"
         return 1
+
+    # xy@...
+
+    # xy@user?
+    elif [[ "$1" = (#b)([a-zA-Z][a-z][A-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#) ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+    # xy@user/repo?
+    elif [[ "$1" = (#b)([a-zA-Z][a-z][A-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##) ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        repo="${match[3]}"
+    # xy@user/repo/rev?
+    elif [[ "$1" = (#b)([a-zA-Z][a-z][A-Z])[@]([a-zA-Z0-9][a-zA-Z0-9-]#)[/]([a-zA-Z0-9_-]##)[/]([a-zA-Z0-9_-]##) ]]; then
+        site="${match[1]}"
+        user="${match[2]}"
+        repo="${match[3]}"
+        rev="${match[4]}"
+
+    elif [[ "$1" != [[:blank:]]# ]]; then
+        -zkl-error "Error: improper user/repo given: $1"
+        return 1
     fi
 
     # Rev given separately?
@@ -385,15 +616,19 @@ ZKLCOL=(
         rev="$2"
     fi
 
+    [ -z "$site" ] && site="$ZKL_CUR_SITE"
+    [[ "$site" = "_unknown" || -z "$site" ]] && -zkl-error "Error: unknown site (3), no active site set" && return 1
+
     [ -z "$user" ] && user="$ZKL_CUR_USER"
-    [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user (2), no default user set" && return 1
+    [[ "$user" = "_unknown" || -z "$user" ]] && -zkl-error "Error: unknown user (3), no active user set" && return 1
 
     [ -z "$repo" ] && repo="$ZKL_CUR_PLUGIN"
-    [[ "$repo" = "_unknown" || -z "$repo" ]] && -zkl-error "Error: unknown repo (2), no default repository set" && return 1
+    [[ "$repo" = "_unknown" || -z "$repo" ]] && -zkl-error "Error: unknown repo (3), no active repository set" && return 1
 
     [ -z "$rev" ] && rev="$ZKL_CUR_REV"
+    [[ "$rev" = "_unknown" || -z "$rev" ]] && -zkl-error "Error: unknown rev (3), no active rev set" && return 1
 
-    reply=( "$user" "$repo" "$rev" )
+    reply=( "$site" "$user" "$repo" "$rev" )
     return 0
 }
 
@@ -514,9 +749,9 @@ ZKLCOL=(
 # - signaling inproper input and update mode
 #
 # Has three modes, zkl, zkllong, file. Input differs for all of
-# them. For the first input, reffer to -zkl-any-to-user-repo-rev-zekyll
-# and for the second one to -zkl-any2-to-user-repo-rev-zekyll-desc.
-# Third one extends the one from -zkl-any3-to-user-repo-rev-zekyllfile.
+# them. For the first input, reffer to -zkl-any-to-site-user-repo-rev-zekyll
+# and for the second one to -zkl-any2-to-site-user-repo-rev-zekyll-desc.
+# Third one extends the one from -zkl-any3-to-site-user-repo-rev-zekyllfile.
 #
 -zkl-start-zekyll-input() {
     -zkl-prepare-home
@@ -525,20 +760,20 @@ ZKLCOL=(
     shift
 
     if [ "$optype" = "zkl" ]; then
-        -zkl-any-to-user-repo-rev-zekyll "$1" "$2" "$3" "$4" || return 2
+        -zkl-any-to-site-user-repo-rev-zekyll "$1" "$2" "$3" "$4" || return 2
     elif [ "$optype" = "zkllong" ]; then
-        -zkl-any2-to-user-repo-rev-zekyll-desc "$@" || return 2
+        -zkl-any2-to-site-user-repo-rev-zekyll-desc "$@" || return 2
     elif [ "$optype" = "file" ]; then
-        -zkl-any3-to-user-repo-rev-zekyllfile "$1" || return 2
+        -zkl-any3-to-site-user-repo-rev-zekyllfile "$1" || return 2
     elif [ "$optype" = "zcode" ]; then
-        -zkl-user-repo-rev-to-user-repo-rev-defaults "$1" "$2" || return 2
+        -zkl-site-user-repo-rev-to-site-user-repo-rev-defaults "$1" "$2" || return 2
     else
         return 1
     fi
 
     local -a tmp
     tmp=( "${reply[@]}" )
-    -zkl-repo-preamble "${reply[1]}" "${reply[2]}" "${reply[3]}"
+    -zkl-repo-preamble "${reply[1]}" "${reply[2]}" "${reply[3]}" "${reply[4]}"
     reply=( "${tmp[@]}" )
 
     [ "$ZKL_UPDATE_ONLY" = "1" ] && return 1
@@ -549,12 +784,14 @@ ZKLCOL=(
 # Repository, file operations {{{1
 
 -zkl-setup-repo-dir() {
-    local user="$1" repo="$2" rev="$3" github_path="$1/$2"
-    if [ ! -d "$ZKL_REPOS_DIR/${user}---${repo}---${rev}" ]; then
+    local site="$1" user="$2" repo="$3" rev="$4" github_path="$2/$3"
+    if [ ! -d "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" ]; then
         -zkl-any-colorify-as-uspl2 "$user" "$repo"
-        print "Downloading $REPLY..."
+
         local domain="${sites[$site]}"
-        print "Downloading $REPLY (rev. $rev) from $domain..."
+        [ -z "$domain" ] && { -zkl-error "Error: unknown site '$site' given"; return 1; }
+
+        print "Downloading $REPLY (rev. ${ZKLCOL[error]}$rev${ZKLCOL[rst]}) from ${ZKLCOL[error]}$domain${ZKLCOL[rst]}..."
 
         #
         # Message management
@@ -567,7 +804,8 @@ ZKLCOL=(
         (( left = ${#message_clean}/2 - ${#title_message} / 2 ))
         (( right = ${#message_clean}/2 - ( ${#title_message} - ${#title_message}/2 ) ))
 
-        local text="${(r:left-1::-:):-} $title_message_colors ${(r:right-1::-:):-}"
+        local text="${(r:left-1::-:):-} $title_message_colors ${(r:right::-:):-}"
+        local rule="${(r:${#message_clean}+1::-:):-}"
 
         print
         print -- "$text"
@@ -576,15 +814,23 @@ ZKLCOL=(
         # Actual work
         #
 
-        # Return with error when any problem
-        git clone -q --recursive https://$domain/"$github_path" "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" || return 1
+        # Clone. Return with error when any problem
+        git clone --no-single-branch -q --recursive https://$domain/"$github_path" "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" || {
+            print -- "$rule"
+            return 1
+        }
 
-        # Also return with error when any problem
-        git -C "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" checkout -q --progress "$rev" || return 1
+        # Checkout. Also return with error when any problem
+        git -C "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" checkout -q --progress "$rev" || {
+            print -- "$rule"
+            return 1
+        }
+
+        # Status
         print "The revision checked out is:"
         git -C "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" status -b -unormal
 
-        print -- "${(r:${#message_clean}::-:):-}"
+        print -- "$rule"
         print
     fi
 
@@ -595,21 +841,24 @@ ZKLCOL=(
 # Pulls changes from origin to given repository
 #
 -zkl-update-repo-dir() {
-    local user="$1" repo="$2" rev="$3"
+    local site="$1" user="$2" repo="$3" rev="$4"
 
     -zkl-any-colorify-as-uspl2 "$user" "$repo"
     uspl2col="$REPLY"
 
-    if [ -d "$ZKL_REPOS_DIR/${user}---${repo}---${rev}" ]; then
-        print "Updating $uspl2col rev. $rev..."
+    local domain="${sites[$site]}"
+    [ -z "$domain" ] && { -zkl-error "Error: unknown site '$site' given, cannot update"; return 1; }
+
+    if [ -d "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" ]; then
+        print "Updating $uspl2col (rev. $rev), downloaded from $domain..."
 
         (
-            cd "$ZKL_REPOS_DIR/${user}---${repo}---${rev}"
+            cd "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}"
             git pull
             return
         )
     else
-        -zkl-error "Error: The repository $uspl2col (rev. $rev) doesn't exist"
+        -zkl-error "Error: The repository $uspl2col (rev. $rev, site $domain) doesn't exist"
     fi
 
     return 1
@@ -620,11 +869,11 @@ ZKLCOL=(
 # Guards to do it only once per repo during session
 #
 -zkl-update-repo-dir-once() {
-    local user="$1" repo="$2" rev="$3" github_path="$1/$2"
+    local site="$1" user="$2" repo="$3" rev="$4" github_path="$2/$3"
     (( ${+ZKL_UPDATED_REPOS[$github_path]} )) && return 1
     ZKL_UPDATED_REPOS[$github_path]="1"
 
-    -zkl-update-repo-dir "$user" "$repo" "$rev"
+    -zkl-update-repo-dir "$site" "$user" "$repo" "$rev"
     return
 }
 
@@ -771,6 +1020,7 @@ Options are:
 -zkl-emit() {
     local -a output
 
+    ZKL_LAST_PROCESSING_SITE=""
     ZKL_LAST_PROCESSING_USER=""
     ZKL_LAST_PROCESSING_REPO=""
     ZKL_LAST_PROCESSING_REV=""
@@ -811,19 +1061,22 @@ Options are:
         for (( i=1; i<=size; i++ )); do
             local zekylls="${ZKL_EMIT_ZEKYLLS[i]}"
             local section="${ZKL_EMIT_SECTIONS[i]}"
-            local repo="${ZKL_EMIT_REPOS[i]}"
+            local rev="${ZKL_EMIT_REVS[i]}"
             local file_name="${ZKL_EMIT_FILE_NAMES[i]}"
+            local repo="${ZKL_EMIT_REPOS[i]}"
             local desc="${ZKL_EMIT_DESCRIPTIONS[i]}"
             local out_path="${ZKL_EMIT_OUT_PATHS[i]}"
 
             [ "$selected_section" != "$section" ] && continue
 
-            if [[ "$repo" = (#b)([a-zA-Z0-9][a-zA-Z0-9-]#)---([a-zA-Z0-9_-]##)---([a-zA-Z0-9_-]##) ]]; then
-                local tmp_user="${match[1]}" tmp_repo="${match[2]}" tmp_rev="${match[3]}"
-                if [[ "$ZKL_LAST_PROCESSING_USER" != "$tmp_user" || "$ZKL_LAST_PROCESSING_REPO" != "$tmp_repo" || "$ZKL_LAST_PROCESSING_REV" != "$tmp_rev" ]]; then
+            if [[ "$repo" = (#b)([a-zA-Z][a-zA-Z])---([a-zA-Z0-9][a-zA-Z0-9-]#)---([a-zA-Z0-9_-]##)---([a-zA-Z0-9_-]##) ]]; then
+                local tmp_site="${match[1]}" tmp_user="${match[2]}" tmp_repo="${match[3]}" tmp_rev="${match[4]}"
+                if [[ "$ZKL_LAST_PROCESSING_SITE" != "$tmp_site" || "$ZKL_LAST_PROCESSING_USER" != "$tmp_user" ||
+                        "$ZKL_LAST_PROCESSING_REPO" != "$tmp_repo" || "$ZKL_LAST_PROCESSING_REV" != "$tmp_rev" ]]; then
                     local c1="${ZKLCOL[error]}" c2="${ZKLCOL[info2]}"
-                    -zkl-pinfo2 "\nProcessing for user ${c1}$tmp_user${c2}, repo ${c1}$tmp_repo${c2}, rev ${c1}$tmp_rev${c2}\n"
+                    -zkl-pinfo2 "\nSite ${c1}${sites[$tmp_site]}${c2}, user ${c1}$tmp_user${c2}, repo ${c1}$tmp_repo${c2}, rev ${c1}$tmp_rev${c2}\n"
                 fi
+                ZKL_LAST_PROCESSING_SITE="$tmp_site"
                 ZKL_LAST_PROCESSING_USER="$tmp_user"
                 ZKL_LAST_PROCESSING_REPO="$tmp_repo"
                 ZKL_LAST_PROCESSING_REV="$tmp_rev"
@@ -890,10 +1143,11 @@ Options are:
 
     ZKL_EMIT_ZEKYLLS=( )
     ZKL_EMIT_SECTIONS=( )
-    ZKL_EMIT_REPOS=( )
+    ZKL_EMIT_REVS=( )
     ZKL_EMIT_FILE_NAMES=( )
-    ZKL_EMIT_OUT_PATHS=( )
+    ZKL_EMIT_REPOS=( )
     ZKL_EMIT_DESCRIPTIONS=( )
+    ZKL_EMIT_OUT_PATHS=( )
 
     if [ "$ZKL_UPDATE_ONLY" = "0" ]; then
         -zkl-pinfo "Generated $ZKL_OUTPUT_PATH"
@@ -906,17 +1160,17 @@ Options are:
 #
 
 -zkl-repo-preamble() {
-    local user="$1" repo="$2" rev="$3"
+    local site="$1" user="$2" repo="$3" rev="$4"
 
     integer existed=0
-    [ -d "$ZKL_REPOS_DIR/${user}---${repo}---${rev}" ] && existed=1
+    [ -d "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" ] && existed=1
 
     # Possible clone
-    -zkl-setup-repo-dir "$user" "$repo" "$rev"
+    -zkl-setup-repo-dir "$site" "$user" "$repo" "$rev"
 
     # Update?
     if [[ "$ZKL_DO_UPDATE" = "1" && "$existed" = "1" ]]; then
-        -zkl-update-repo-dir-once "$user" "$repo" "$rev"
+        -zkl-update-repo-dir-once "$site" "$user" "$repo" "$rev"
     fi
 }
 
@@ -938,14 +1192,14 @@ help() {
 # long, passed possibly as longer strings, with allowed
 # underscores, e.g. my_zekyll_generates_my_config
 #
-# This function takes parametes as -zkl-any-to-user-repo-rev-zekyll
+# This function takes parametes as -zkl-any-to-site-user-repo-rev-zekyll
 #
 zkl() {
     [ "$ZKL_YES" = "NO" ] && return
 
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
     -zkl-start-zekyll-input "zkl" "$1" "$2" "$3" "$4" || return
-    local user="${reply[1]}" repo="${reply[2]}" rev="${reply[3]}" zekyll="${reply[4]}"
+    local site="${reply[1]}" user="${reply[2]}" repo="${reply[3]}" rev="${reply[4]}" zekyll="${reply[5]}"
 
     # Allow underscores - remove them now
     zekyll="${zekyll//_/}"
@@ -961,9 +1215,9 @@ zkl() {
         # Skip one or two letter zekylls - they are allowed though not processed
         [[ "${#zzz}" -eq 1 || "${#zzz}" -eq 2 ]] && continue
 
-        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${repo}---${rev}/${zzz}.[A-Z]--*(N.) )
+        zekyll_file=( ${ZKL_REPOS_DIR}/${site}---${user}---${repo}---${rev}/${zzz}.[A-Z]--*(N.) )
         if [[ "${#zekyll_file}" -eq 0 ]]; then
-            echo "Zekyll $zzz doesn't exist, skipping"
+            echo "Zekyll '$zzz' doesn't exist (1), skipping"
             continue
         fi
 
@@ -973,10 +1227,11 @@ zkl() {
         # Store gathered data
         ZKL_EMIT_ZEKYLLS+=( "$zekyll" )
         ZKL_EMIT_SECTIONS+=( "$section" )
-        ZKL_EMIT_REPOS+=( "${user}---${repo}---${rev}" )
+        ZKL_EMIT_REVS+=( "$rev" )
         ZKL_EMIT_FILE_NAMES+=( "$file_name" )
-        ZKL_EMIT_OUT_PATHS+=( "" )
+        ZKL_EMIT_REPOS+=( "${site}---${user}---${repo}---${rev}" )
         ZKL_EMIT_DESCRIPTIONS+=( "" )
+        ZKL_EMIT_OUT_PATHS+=( "" )
     done
 }
 
@@ -991,21 +1246,21 @@ zkllong() {
 
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
     -zkl-start-zekyll-input "zkllong" "$@" || return
-    local user="${reply[1]}" repo="${reply[2]}" rev="${reply[3]}" zekyll="${reply[4]}" desc="${reply[5]}"
+    local site="${reply[1]}" user="${reply[2]}" repo="${reply[3]}" rev="${reply[4]}" zekyll="${reply[5]}" desc="${reply[6]}"
 
     if [ "${#zekyll}" -eq 1 ]; then
-        echo "Skipping single letter zekyll $zekyll"
+        echo "Skipping single letter zekyll $zekyll (1)"
         return
     fi
 
     if [ "${#zekyll}" -eq 2 ]; then
-        echo "Skipping two letter zekyll $zekyll"
+        echo "Skipping two letter zekyll $zekyll (2)"
         return
     fi
 
-    zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${repo}---${rev}/${zekyll}.[A-Z]--*(N.) )
+    zekyll_file=( ${ZKL_REPOS_DIR}/${site}---${user}---${repo}---${rev}/${zekyll}.[A-Z]--*(N.) )
     if [[ "${#zekyll_file}" -eq 0 ]]; then
-        echo "Zekyll $zekyll ($desc) doesn't exist, skipping"
+        echo "Zekyll '$zekyll' ($desc) doesn't exist (2), skipping"
         return
     fi
 
@@ -1015,10 +1270,11 @@ zkllong() {
     # Store gathered data
     ZKL_EMIT_ZEKYLLS+=( "$zekyll" )
     ZKL_EMIT_SECTIONS+=( "$section" )
-    ZKL_EMIT_REPOS+=( "${user}---${repo}---${rev}" )
+    ZKL_EMIT_REVS+=( "$rev" )
     ZKL_EMIT_FILE_NAMES+=( "$file_name" )
-    ZKL_EMIT_OUT_PATHS+=( "" )
+    ZKL_EMIT_REPOS+=( "${site}---${user}---${repo}---${rev}" )
     ZKL_EMIT_DESCRIPTIONS+=( "$desc" )
+    ZKL_EMIT_OUT_PATHS+=( "" )
 }
 
 zcode() {
@@ -1056,7 +1312,7 @@ zcode() {
 
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
     -zkl-start-zekyll-input "zcode" "${mdata[repo]}" "${mdata[ref]}" || return
-    local user="${reply[1]}" repo="${reply[2]}" rev="${reply[3]}"
+    local site="${reply[1]}" user="${reply[2]}" repo="${reply[3]}" rev="${reply[4]}"
 
     # Allow underscores - remove them now
     zekylls_str="${zekylls_str//_/}"
@@ -1072,9 +1328,9 @@ zcode() {
         # Skip one or two letter zekylls - they are allowed though not processed
         [[ "${#zzz}" -eq 1 || "${#zzz}" -eq 2 ]] && continue
 
-        zekyll_file=( ${ZKL_REPOS_DIR}/${user}---${repo}---${rev}/${zzz}.[A-Z]--*(N.) )
+        zekyll_file=( ${ZKL_REPOS_DIR}/${site}---${user}---${repo}---${rev}/${zzz}.[A-Z]--*(N.) )
         if [[ "${#zekyll_file}" -eq 0 ]]; then
-            echo "Zekyll $zzz doesn't exist, skipping"
+            echo "Zekyll '$zzz' doesn't exist (3), skipping"
             continue
         fi
 
@@ -1084,8 +1340,9 @@ zcode() {
         # Store gathered data
         ZKL_EMIT_ZEKYLLS+=( "$zekylls_str" )
         ZKL_EMIT_SECTIONS+=( "$section" )
-        ZKL_EMIT_REPOS+=( "${user}---${repo}---${rev}" )
+        ZKL_EMIT_REVS+=( "$rev" )
         ZKL_EMIT_FILE_NAMES+=( "$file_name" )
+        ZKL_EMIT_REPOS+=( "${site}---${user}---${repo}---${rev}" )
         ZKL_EMIT_OUT_PATHS+=( "$specific_path" )
         ZKL_EMIT_DESCRIPTIONS+=( "" )
     done
@@ -1141,6 +1398,17 @@ default_rev() {
 }
 
 #
+# Sets site to default
+#
+default_site() {
+    # Quick exit when not generating
+    [ "$ZKL_YES" = "NO" ] && return
+
+    [[ "$#" -ne "0" ]] && -zkl-ierror "$0 takes no argument"
+    ZKL_CUR_SITE="$ZKL_DEFAULT_SITE"
+}
+
+#
 # Sets current user
 #
 user() {
@@ -1171,6 +1439,21 @@ rev() {
 
     [[ "$#" -ne "1" ]] && -zkl-ierror "$0 takes one argument" && default_rev && return
     ZKL_CUR_REV="$1"
+}
+
+#
+# Sets current site
+#
+site() {
+    # Quick exit when not generating
+    [ "$ZKL_YES" = "NO" ] && return
+
+    [[ "$#" -ne "1" ]] && -zkl-ierror "$0 takes one argument" && default_site && return
+
+    local domain="${sites[$1]}"
+    [ -z "$domain" ] && { -zkl-ierror "Unknown site '$site' given, reverting to default '$ZKL_DEFAULT_SITE'"; default_site; return 1; }
+
+    ZKL_CUR_SITE="$1"
 }
 
 #
@@ -1217,23 +1500,25 @@ file() {
 
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
     -zkl-start-zekyll-input "file" "$1" || return
-    local user="${reply[1]}" repo="${reply[2]}" rev="${reply[3]}" zekyllfile="${reply[4]}"
+    local site="${reply[1]}" user="${reply[2]}" repo="${reply[3]}" rev="${reply[4]}" zekyllfile="${reply[5]}"
 
     # Expand leading ~
     zekyllfile="${zekyllfile/(#s)~/$HOME}"
 
     # Now CD into given "$user" "$repo" and source zekyllfile
-    [ ! -d "$ZKL_REPOS_DIR/${user}---${repo}---${rev}" ] && -zkl-error "Repository ${user}/${repo} rev. $rev doesn't exist" && return 1
+    [ ! -d "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" ] && -zkl-error "Repository ${site}@${user}/${repo} (rev: $rev) doesn't exist" && return 1
 
-    cd "$ZKL_REPOS_DIR/${user}---${repo}---${rev}"
+    cd "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}"
 
-    local bkp_user="$ZKL_CUR_USER" bkp_repo="$ZKL_CUR_PLUGIN" bkp_rev="$ZKL_CUR_REV"
+    local bkp_site="$ZKL_CUR_SITE" bkp_user="$ZKL_CUR_USER" bkp_repo="$ZKL_CUR_PLUGIN" bkp_rev="$ZKL_CUR_REV"
+    ZKL_CUR_SITE="$site"
     ZKL_CUR_USER="$user"
     ZKL_CUR_PLUGIN="$repo"
     ZKL_CUR_REV="$rev"
 
     source "$zekyllfile"
 
+    ZKL_CUR_SITE="$bkp_site"
     ZKL_CUR_USER="$bkp_user"
     ZKL_CUR_PLUGIN="$bkp_repo"
     ZKL_CUR_REV="$bkp_rev"
