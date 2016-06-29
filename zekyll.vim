@@ -134,7 +134,7 @@ let s:pat_BTOps             = '\[[[:space:]]\+New Branch:[[:space:]]*<\?\(.\{-1,
                               \'\[[[:space:]]\+Delete Branch:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]' . '[[:space:]]\+|[[:space:]]\+' .
                               \'\[[[:space:]]\+Delete Tag:[[:space:]]*<\?\(.\{-1,}\)>\?[[:space:]]\+\]'
 
-let s:pat_Save_IndexSize  = 'Save[[:blank:]]\+(\?<\?\([a-zA-Z]\{-1,}\)>\?)\?[[:blank:]]\+with[[:blank:]]\+index[[:blank:]]\+size[[:blank:]]\+<\?\([0-9]\+\)>\?'
+let s:pat_Save_IndexSize  = 'Save[[:space:]]\+(\?<\?\([a-zA-Z]\{-1,}\)>\?)\?[[:space:]]\+with[[:space:]]\+index[[:space:]]\+size[[:space:]]\+<\?\([0-9]\+\)>\?'
 
 let s:pat_Code            = '\[[[:space:]]\+Code:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
                           \ '\[[[:space:]]\+Ref:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
@@ -2187,8 +2187,8 @@ endfun
 fun! s:TrimBlanks( ... )
     let result = []
     for entry in a:000
-        let new_entry = substitute( entry, "^[[:blank:]]*", "", "" )
-        let new_entry = substitute( new_entry, "[[:blank:]]*$", "", "" )
+        let new_entry = substitute( entry, "^[[:space:]]*", "", "" )
+        let new_entry = substitute( new_entry, "[[:space:]]*$", "", "" )
         call add( result, new_entry )
     endfor
 
