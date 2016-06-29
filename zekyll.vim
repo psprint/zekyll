@@ -2736,6 +2736,9 @@ endfun
 " 2}}}
 " FUNCTION: BitsCompareSuffix() {{{2
 fun! s:BitsCompareSuffix( long_bits, short_bits )
+    if len( a:long_bits ) < len( a:short_bits )
+        return 0
+    end
     " Check if short_bits occur at the end of long_bits
     let range = range( len( a:long_bits ) - len( a:short_bits ) + 1, len( a:long_bits ) )
     let equal = 1
