@@ -553,12 +553,39 @@ ZKLCOL=(
     if [ ! -d "$ZKL_REPOS_DIR/${user}---${repo}---${rev}" ]; then
         -zkl-any-colorify-as-uspl2 "$user" "$repo"
         print "Downloading $REPLY..."
+        local domain="${sites[$site]}"
+        print "Downloading $REPLY (rev. $rev) from $domain..."
+
+        #
+        # Message management
+        #
+
+        local message_clean="Downloading $user/$repo (rev. $rev) from $domain..."
+        local title_message="Running git clone and git checkout"
+        local title_message_colors="Running git ${ZKLCOL[info1]}clone${ZKLCOL[rst]} and git ${ZKLCOL[info1]}checkout${ZKLCOL[rst]}"
+        local left right
+        (( left = ${#message_clean}/2 - ${#title_message} / 2 ))
+        (( right = ${#message_clean}/2 - ( ${#title_message} - ${#title_message}/2 ) ))
+
+        local text="${(r:left-1::-:):-} $title_message_colors ${(r:right-1::-:):-}"
+
+        print
+        print -- "$text"
+
+        #
+        # Actual work
+        #
 
         # Return with error when any problem
-        git clone --recursive https://github.com/"$github_path" "$ZKL_REPOS_DIR/${user}---${repo}---${rev}" || return 1
+        git clone -q --recursive https://$domain/"$github_path" "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" || return 1
 
         # Also return with error when any problem
-        git -C "$ZKL_REPOS_DIR/${user}---${repo}---${rev}" checkout "$rev" || return 1
+        git -C "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" checkout -q --progress "$rev" || return 1
+        print "The revision checked out is:"
+        git -C "$ZKL_REPOS_DIR/${site}---${user}---${repo}---${rev}" status -b -unormal
+
+        print -- "${(r:${#message_clean}::-:):-}"
+        print
     fi
 
     return 0
