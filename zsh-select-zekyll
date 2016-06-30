@@ -1119,6 +1119,19 @@ else
 fi
 
 sel-list "${list[@]}"
+#sel-list "${list[@]}"
+
+local -a zekylls
+zekylls=( "${(@)@//(#b)(#s)([a-z0-9][a-z0-9][a-z0-9])*/${match[1]}}" )
+integer size="${#zekylls}" i number
+for (( i=1; i<=size; i++ )); do
+    local zekyll="${zekylls[i]}"
+    get_integer_from_base_36 "$zekyll"
+    if [ "$?" -gt 0 ]; then
+        print "Malformed zekyll or zcode given, will try to continue"
+    if
+    integer number="$REPLY"
+done
 
 if [ "$REPLY" -gt 0 ]; then
     selected="$reply[REPLY]"

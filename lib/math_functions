@@ -3,7 +3,7 @@ setopt typesetsilent
 local -a characters
 characters=( a b c d e f g h i j k l m n o p q r s t u v w x y z 0 1 2 3 4 5 6 7 8 9 )
 
-#
+# FUNCTION: letters_to_numbers {{{
 # Converts each character of input string into number 0..35
 #
 letters_to_numbers() {
@@ -12,7 +12,7 @@ letters_to_numbers() {
     reply=( )
 
     if [[ "$letters" != [a-z0-9]## ]]; then
-        echo "Incorrect character detected in: '$letters'. Zekylls should consist only from a-z 0-9"
+        print "Incorrect character detected in: '$letters'. Zekylls should consist only from a-z 0-9 characters, and have #/ prefix"
         return 1
     fi
 
@@ -25,16 +25,17 @@ letters_to_numbers() {
 
     return 0
 }
-
+#}}}
 #
-# Converts array of numbers into string [a-z0-9]+
+# }}}
+# Converts array of numbers into string [a-z0-9]+ {{{
 #
 numbers_to_letters() {
     REPLY=""
     integer i
     for i in "$@"; do
         if [[ "$i" -lt 0 || "$i" -gt 35 ]]; then
-            echo "Incorrect number during character conversion: $i"
+            print "Incorrect number during character conversion: $i"
             return 1
         fi
         REPLY+="${characters[i+1]}"
@@ -42,6 +43,7 @@ numbers_to_letters() {
 
     return 0
 }
+# }}}
 
 #
 # Takes zekyl code, i.e. 1/someletters
@@ -56,9 +58,6 @@ decode_zcode() {
         return 1
     fi
 
-    # Compute first element pointed to by index
-    integer first=$(( (number-1)*150 + 1 ))
-
     # The zcode can have at most 30 digits
     # This is the 150 bits (150 zekylls)
     # written in base 36. We have to obtain
@@ -71,10 +70,39 @@ decode_zcode() {
         div2 "$workingvar"
         workingvar="${reply[1]}"
         bits=( "${reply[2]}" "${bits[@]}" )
-        #echo "After div $workingvar/${reply[2]}"
+        # print "After div $workingvar/${reply[2]}"
     done
-    #echo "Bits of the letters $letters are: ${(j::)bits[@]}"
+    # print "Bits of the letters $letters are: ${(j::)bits[@]}"
     reply=( "${bits[@]}" )
+}
+
+# Converts given base-36 string into integer
+# Warning: it tagets integer (signed), so
+# the size of number is limited here (while
+# decode_zcode generates series of bits of
+# arbitrary length)
+get_integer_from_base_36() {
+    local letters="$1"
+    local -a bits
+    local workingvar="$letters"
+
+    # Get base-2 generated array consisting of 1 and 0
+    while [ "${workingvar//a/}" != "" ]; do
+        div2 "$workingvar"
+        workingvar="${reply[1]}"
+        bits=( "${reply[2]}" "${bits[@]}" )
+    done
+
+    # Now sum up the obtained 0 and 1
+    integer i mul=1 size="${#bits}"
+    REPLY="0"
+    for (( i=size; i>=1; i-- )); do
+        REPLY=$(( REPLY + bits[i]*mul ))
+        mul=$(( mul * 2 ))
+    done
+
+    # TODO: detect overflow and other problems
+    return 0
 }
 
 #
@@ -124,7 +152,7 @@ encode_zcode_8-bit_pack_numbers() {
         done
     done
 
-    # echo "Base36 numbers of $str01 are: ${(j:,:)nums_base36[@]}"
+    # print "Base36 numbers of $str01 are: ${(j:,:)nums_base36[@]}"
     numbers_to_letters "${nums_base36[@]}"
     reply=( "${nums_base36[@]}" )
 }
@@ -139,7 +167,7 @@ div2() {
 
     local letters="$1"
     local -a numbers
-    letters_to_numbers "$letters"
+    letters_to_numbers "$letters" || return 1
     numbers=( "${reply[@]}" )
 
     #
@@ -174,7 +202,7 @@ div2() {
     # Now convert the result to letters
     #
 
-    numbers_to_letters "${result[@]}"
+    numbers_to_letters "${result[@]}" || return 2
 
     #
     # Return
@@ -234,7 +262,7 @@ div_8-bit_pack_numbers_36() {
     local -a numbers
     numbers=( "$@" )
 
-    # echo "Dividing numbers: " "${numbers[@]}"
+    # print "Dividing numbers: " "${numbers[@]}"
 
     #
     # Now operate on the array performing long-division
@@ -264,8 +292,8 @@ div_8-bit_pack_numbers_36() {
         prepared_for_division=256*subtracted+${numbers[cur]}
     done
 
-    # echo "Result of division: " "${result[@]}"
-    # echo "Remainder: $subtracted"
+    # print "Result of division: " "${result[@]}"
+    # print "Remainder: $subtracted"
 
     #
     # Return
