@@ -8,13 +8,22 @@ characters=( a b c d e f g h i j k l m n o p q r s t u v w x y z 0 1 2 3 4 5 6 7
 #
 letters_to_numbers() {
     local letters="$1" l
-    integer number
+
     reply=( )
+
+    if [[ "$letters" != [a-z0-9]## ]]; then
+        echo "Incorrect character detected in: '$letters'. Zekylls should consist only from a-z 0-9"
+        return 1
+    fi
+
+    integer number
     for l in "${(@s::)letters}"; do
         number="${characters[(i)$l]}"
         number=number-1
         reply+=( "$number" )
     done
+
+    return 0
 }
 
 #
@@ -24,8 +33,14 @@ numbers_to_letters() {
     REPLY=""
     integer i
     for i in "$@"; do
+        if [[ "$i" -lt 0 || "$i" -gt 35 ]]; then
+            echo "Incorrect number during character conversion: $i"
+            return 1
+        fi
         REPLY+="${characters[i+1]}"
     done
+
+    return 0
 }
 
 #
