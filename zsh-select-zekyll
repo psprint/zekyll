@@ -677,6 +677,7 @@ reply=()
 
 integer term_height="$LINES"
 integer term_width="$COLUMNS"
+# Comparison is safe because "" -lt \d\+ is allowed
 if [[ "$term_height" -lt 1 || "$term_width" -lt 1 ]]; then
     local stty_out=$( stty size )
     term_height="${stty_out% *}"

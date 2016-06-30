@@ -170,17 +170,17 @@ filter_for_existing_zekylls "${zekylls1[@]}"
 # Zekylls, file names and sections
 three_to_section_order "${#reply}" "${reply[@]}" "${reply2[@]}" "${reply3[@]}"
 
+local -a files
+files=( "${reply2[@]}" )
+
 local file
-for file in "${reply2[@]}"; do
+for file in "${files[@]}"; do
     qinfo2 "-> $file"
 done
 
 #
 # Display list of zekylls and open editor for any selection
 #
-
-local -a files
-files=( ${^reply}.[A-Z]--*(N.) )
 
 while (( 1 )); do
     local selection=""
