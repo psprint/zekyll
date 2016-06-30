@@ -2,6 +2,10 @@
 
 emulate -L zsh
 
+#
+# Configuration
+#
+
 # Should the list (text, borders) be drawn in bold
 # Value 1 is the default
 local bold=0
@@ -40,6 +44,19 @@ local IFS="
 "
 
 NLIST_REMEMBER_STATE=0
+typeset -g REPLY
+typeset -ga reply
+
+#
+# Load needed libraries
+#
+
+ZERO="${(%):-%N}"
+REPO_DIR="${ZERO%/*}"
+[ "$ZERO" = "$REPO_DIR" ] && REPO_DIR="$HOME/.zekyll/zekyll"
+source "$REPO_DIR/lib/math_functions"
+source "$REPO_DIR/lib/codes_huffman"
+source "$REPO_DIR/lib/coding_functions"
 
 #######################################################################################
 
