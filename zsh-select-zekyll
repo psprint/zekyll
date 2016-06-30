@@ -44,8 +44,11 @@ local IFS="
 "
 
 NLIST_REMEMBER_STATE=0
-typeset -g REPLY
-typeset -ga reply
+#typeset -g REPLY
+#typeset -ga reply reply2 reply3
+#reply=()
+#reply2=()
+#reply3=()
 
 #
 # Load needed libraries
@@ -690,7 +693,11 @@ fi
 
 REPLY="-1"
 typeset -ga reply
+typeset -ga reply2
+typeset -ga reply3
 reply=()
+#reply2=()
+#reply3=()
 
 integer term_height="$LINES"
 integer term_width="$COLUMNS"
@@ -1135,20 +1142,31 @@ else
     fi
 fi
 
-sel-list "${list[@]}"
-#sel-list "${list[@]}"
-
-local -a zekylls
+local -a zekylls numbers
 zekylls=( "${(@)@//(#b)(#s)([a-z0-9][a-z0-9][a-z0-9])*/${match[1]}}" )
-integer size="${#zekylls}" i number
+
+filter_for_existing_zekylls "${zekylls[@]}"
+three_to_section_order "${#reply}" "${reply[@]}" "${reply2[@]}" "${reply3[@]}"
+
+echo "t1 ${(t)reply} t2 ${(t)reply2} t3 ${(t)reply3}"
+local -a existing files sections
+existing=( "${reply[@]}" )
+files=( "${reply2[@]}" )
+sections=( "${reply3[@]}" )
+
+echo "existing count: ${#existing}, files count: ${#files}, sections count: ${#sections}"
+
+integer size="${#existing}" i
 for (( i=1; i<=size; i++ )); do
-    local zekyll="${zekylls[i]}"
+    local zekyll="${zexisting[i]}"
     get_integer_from_base_36 "$zekyll"
-    if [ "$?" -gt 0 ]; then
-        print "Malformed zekyll or zcode given, will try to continue"
-    if
-    integer number="$REPLY"
+    [ "$?" -gt 0 ] && print "Malformed zekyll or zcode given, trying to continue"
+    numbers[i]="$REPLY"
+    echo "Obtained $REPLY for $zekyll"
 done
+
+
+#sel-list "${list[@]}"
 
 if [ "$REPLY" -gt 0 ]; then
     selected="$reply[REPLY]"

@@ -190,6 +190,8 @@ files=( "${reply[@]}" )
 if [ "$ZKL_SIZE" = "" ]; then
     qinfo "You didn't request resize. Here are files of index $ZKL_INDEX, bye:"
     print -rl -- "${files[@]}"
+    # TODO propose command
+
     exit 6
 fi
 

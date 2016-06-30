@@ -291,6 +291,7 @@ filter_for_existing_zekylls() {
     done
 
     typeset -ga reply2 reply3
+    echo "T1 ${(t)reply} T2 ${(t)reply2} T3 ${(t)reply3}"
     reply=( "${existing[@]}" )
     reply2=( "${files[@]}" )
     reply3=( "${sections[@]}" )
