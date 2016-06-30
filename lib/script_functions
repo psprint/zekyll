@@ -8,6 +8,7 @@ perrorn() { print -n -- "${fg_bold[red]}$*$reset_color" >&2; }
 
 qprint()  { quiet || print -- "$*"; }
 qprintn() { quiet || print -n -- "$*"; }
+qprintrl(){ quiet || print -rl -- "$@"; }
 qinfo()   { quiet || print -- "${fg_bold[green]}$*$reset_color"; }
 qinfon()  { quiet || print -n -- "${fg_bold[green]}$*$reset_color"; }
 qinfo2()  { quiet || print -- "${fg_bold[yellow]}$*$reset_color"; }
@@ -37,7 +38,7 @@ help-nansi() { print -- "-n/--noansi         -- don't use colors in output"; }
 help-sect()  { print -- "--section           -- use given section name when e.g. creating zekylls"; }
 help-desc()  { print -- "--desc              -- use given description when e.g. creating zekylls"; }
 help-cons()  { print -- "--consistent        -- check if index is consistent, output inconsistent files/zekylls"; }
-help-list()  { print -- "--list              -- list files belonging to index, even inconsistent ones"; }
+help-list()  { print -- "-l/--list           -- list files belonging to index, even when it's inconsistent"; }
 # }}}
 # FUNCTION: quiet {{{
 # Returns if quiet mode

@@ -37,44 +37,44 @@ get_files_of_index() {
 #
 # It also returns the files
 compute_index_size_check_consistency() {
-    local -a files
-
     get_files_of_index
 
     # Save for return
     local -a files
     files=( "${reply[@]}" )
 
+    # Detected inconsistent files
+    typeset -ga reply2
+    reply2=()
+
     # Focus on listing?
     integer listing=0
     [ "$2" = "-f" ] && listing=1
 
     # Will work on reply
-    integer size=${#reply} start_size end_size end=0 consistent=1
+    integer start_size end_size end=0 consistent=1
     local zzz
     for zzz in "${ZKL_INDEX_ZEKYLLS[@]}"; do
         start_size="${#reply}"
         reply=( "${reply[@]:#$zzz.*(#m)}" )
         end_size="${#reply}"
 
-        #echo "start_size vs end_size - $start_size vs $end_size"
+        # Are the sizes different, i.e. was there
+        # a match of the $zzz zekyll?
         if [[ "$start_size" -eq "$end_size" ]]; then
             # No match -> end
             end=1
         else
             # Match: must not have been ended earlier
             if (( end == 1 )); then
-                if (( listing == 0 )); then
-                    # Normal mode: report inconsistent files
-                    if [[ "$consistent" -eq "1" ]]; then
-                        files=( "$MATCH" )
-                        consistent=0
-                    else
-                        files+=( "$MATCH" )
-                    fi
-                else
-                    # Listing mode: report all files
-                    consistent=0
+                consistent=0
+                reply2+=( "$MATCH" )
+
+                # Should focus on listing index's files?
+                # Or wait till the end to gather all
+                # inconsistent files? First inconsistent
+                # file is still reported
+                if [[ "$listing" -eq "1" ]]; then
                     break
                 fi
             fi
@@ -226,3 +226,4 @@ get_zekylls_for_code() {
     reply=( "${meta_reply[@]}" )
 }
 
+# vim:ft=zsh
