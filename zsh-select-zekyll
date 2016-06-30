@@ -43,10 +43,12 @@ NLIST_REMEMBER_STATE=0
 
 #######################################################################################
 
+# FUNCTION: _sellist_compute_first_to_show_idx {{{
 _sellist_compute_first_to_show_idx() {
     from_what_idx_list_is_shown=0+((current_idx-1)/page_height)*page_height+1
 }
-
+# }}}
+# FUNCTION: _sellist_update_from_keywords {{{
 _sellist_update_from_keywords() {
     keywordisfresh="1"
     if [ "$nkeywords" -gt 0 ]; then
@@ -58,7 +60,8 @@ _sellist_update_from_keywords() {
         fi
     fi
 }
-
+# }}}
+# FUNCTION: _sellist_iterate_theme {{{
 _sellist_iterate_theme() {
     themeisfresh="1"
     if [ "$1" = "1" ]; then
@@ -79,7 +82,8 @@ _sellist_iterate_theme() {
         zcurses bg inner "$colorpair"
     fi
 }
-
+# }}}
+# FUNCTION: _sellist_rotate_buffer {{{
 _sellist_rotate_buffer() {
     setopt localoptions noglob
 
@@ -92,7 +96,8 @@ _sellist_rotate_buffer() {
 
     buffer="${(j: :)words}$space"
 }
-
+# }}}
+# FUNCTION: sel-list-input {{{
 sel-list-input() {
     typeset -ga reply
     reply=( -1 '' )
@@ -409,9 +414,8 @@ sel-list-input() {
     reply[9]="$f_mode"
 
 }
-
-#######################################################################################
-
+# }}}
+# FUNCTION: _sellist_print_with_ansi {{{
 _sellist_print_with_ansi() {
     local win="$1" text="$2" out col chunk Xout
     integer text_offset="$3" max_text_len="$4" text_len=0 no_match=0 nochunk_text_len to_skip_from_chunk to_chop_off_from_chunk before_len
@@ -489,7 +493,8 @@ _sellist_print_with_ansi() {
         fi
     done
 }
-
+# }}}
+# FUNCTION: sel-list-draw {{{
 sel-list-draw() {
     integer highlight="$1"
     integer page_height="$2"
@@ -535,10 +540,10 @@ sel-list-draw() {
 
     zcurses attr "$win" white/black
 }
-
-#######################################################################################
-
+# }}}
+# FUNCTION: _sellist_exit {{{
 # Cleanup before any exit
+
 _sellist_exit() {
     setopt localoptions
     setopt extendedglob
@@ -552,7 +557,8 @@ _sellist_exit() {
     _sellist_cursor_visibility 1
     unset _sellist_has_terminfo
 }
-
+#}}}
+# FUNCTION: _sellist_status_msg {{{
 # Outputs a message in the bottom of the screen
 _sellist_status_msg() {
     # -1 for border, -1 for 0-based indexing
@@ -562,7 +568,8 @@ _sellist_status_msg() {
     #status_msg_strlen is localized in caller
     status_msg_strlen=$#1
 }
-
+# }}}
+# FUNCTION: _sellist_cursor_visibility {{{
 # Prefer tput, then module terminfo
 _sellist_cursor_visibility() {
     # NOP, because Ctrl-C will cause problems
@@ -577,7 +584,8 @@ _sellist_cursor_visibility() {
         [ "$1" = "0" ] && [ -n $terminfo[civis] ] && echo -n $terminfo[civis]
     fi 
 }
-
+# }}}
+# FUNCTION: _sellist_alternate_screen {{{
 # Reason for this function is that on some systems
 # smcup and rmcup are not knowing why left empty
 _sellist_alternate_screen() {
@@ -597,7 +605,8 @@ _sellist_alternate_screen() {
             ;;
     esac
 }
-
+# }}}
+# FUNCTION: _sellist_compute_user_vars_difference {{{
 _sellist_compute_user_vars_difference() {
         if [[ "${(t)NLIST_NONSELECTABLE_ELEMENTS}" != "array" &&
                 "${(t)NLIST_NONSELECTABLE_ELEMENTS}" != "array-local" ]]
@@ -613,14 +622,16 @@ _sellist_compute_user_vars_difference() {
             done
         fi
 }
-
+# }}}
+# FUNCTION: _sellist_verify_vars {{{
 # List was processed, check if variables aren't off range
 _sellist_verify_vars() {
     [ "$NLIST_CURRENT_IDX" -gt "$last_element" ] && NLIST_CURRENT_IDX="$last_element"
     [[ "$NLIST_CURRENT_IDX" -eq 0 && "$last_element" -ne 0 ]] && NLIST_CURRENT_IDX=1
     (( NLIST_FROM_WHAT_IDX_LIST_IS_SHOWN=0+((NLIST_CURRENT_IDX-1)/page_height)*page_height+1 ))
 }
-
+# }}}
+# FUNCTION: _sellist_setup_user_vars {{{
 # Compute the variables which are shown to the user
 _sellist_setup_user_vars() {
     if [ "$1" = "1" ]; then
@@ -633,7 +644,8 @@ _sellist_setup_user_vars() {
         NLIST_USER_LAST_ELEMENT=$(( last_element - last_element_difference ))
     fi
 }
-
+# }}}
+# FUNCTION: _sellist_colorify_disp_list {{{
 _sellist_colorify_disp_list() {
     local col=$'\x1b[00;34m' reset=$'\x1b[0m'
     [ -n "$NLIST_COLORING_COLOR" ] && col="$NLIST_COLORING_COLOR"
@@ -645,10 +657,9 @@ _sellist_colorify_disp_list() {
         disp_list=( "${(@)disp_list/(#mi)$~NLIST_COLORING_PATTERN/$col${MATCH}$reset}" )
     fi
 }
-
-#
+# }}}
+# FUNCTION: sel-list {{{
 # Main sel-list code
-#
 sel-list() {
 
 #trap "REPLY=-2; reply=(); return" TERM INT QUIT
@@ -1031,6 +1042,7 @@ while (( 1 )); do
 done
 
 }
+# }}}
 
 #######################################################################################
 
