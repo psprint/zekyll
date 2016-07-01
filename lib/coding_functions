@@ -51,31 +51,54 @@ compute_index_size_check_consistency() {
     [ "$2" = "-f" ] && listing=1
 
     # Will work on reply
-    integer start_size end_size end=0 consistent=1
+    integer start_size end_size nomatch=0 consistent=1
     local zzz
     for zzz in "${ZKL_INDEX_ZEKYLLS[@]}"; do
         start_size="${#reply}"
         reply=( "${reply[@]:#$zzz.*(#m)}" )
         end_size="${#reply}"
 
-        # Are the sizes different, i.e. was there
-        # a match of the $zzz zekyll?
+        # Are the sizes equal, meaning no match of $zzz zekyll?
         if [[ "$start_size" -eq "$end_size" ]]; then
-            # No match -> end
-            end=1
+            consistent=0
+
+            # Remember the not existing zekyll.
+            # Zekylls that are after-last actual
+            # zekyll will not be reported as the
+            # loop will not run, because reply
+            # will be empty
+            reply2+=( "$zzz >> not existing <<" )
+
+            nomatch=1
+        # Was this a multiple match?
+        elif (( start_size - end_size > 1 )); then
+            consistent=0
+
+            # Remember the multiple-matching zekyll
+            reply2+=( "$MATCH >> multiple match for $zzz <<" )
+
+            # End on first error if listing,
+            # not consistency investigating
+            [[ "$listing" -eq "1" ]] && break
+        # Normal match
         else
-            # Match: must not have been ended earlier
-            if (( end == 1 )); then
+            # Match after no match?
+            if (( nomatch == 1 )); then
                 consistent=0
-                reply2+=( "$MATCH" )
+
+                # After regaining matching of any zekyll
+                # pretend that the index is consistent, so
+                # that only right-after-unmatched zekylls
+                # will be reported
+                nomatch=0
+
+                reply2+=( "$MATCH >> first after the not existing <<" )
 
                 # Should focus on listing index's files?
-                # Or wait till the end to gather all
+                # Or wait till the nomatch to gather all
                 # inconsistent files? First inconsistent
                 # file is still reported
-                if [[ "$listing" -eq "1" ]]; then
-                    break
-                fi
+                [[ "$listing" -eq "1" ]] && break
             fi
         fi
 
