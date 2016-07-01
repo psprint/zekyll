@@ -143,7 +143,7 @@ zekylls1=( ${(@s:_:)${zekylls_string//(#b)([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9])/$m
 
 qinfo "Checking current zekyll for duplicates..."
 if ! detect_duplicates "${zekylls1[@]}"; then
-    qerror "Duplicates found, restaring, but continuing to listing the zekylls"
+    qerror "Duplicates found, but continuing to listing the zekylls"
 fi
 
 qprint
@@ -182,11 +182,4 @@ done
 # Display list of zekylls and open editor for any selection
 #
 
-while (( 1 )); do
-    local selection=""
-    selection=$( "$REPO_DIR/zsh-select-zekyll" "${files[@]}" "END SELECTION" )
-
-    [[ "$selection" = "" || "$selection" = "END SELECTION" ]] && qprint && break
-
-    "${EDITOR:-vim}" "$selection"
-done
+"$REPO_DIR/zsh-select-zekyll" "${files[@]}"

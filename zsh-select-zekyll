@@ -44,8 +44,11 @@ local IFS="
 "
 
 NLIST_REMEMBER_STATE=0
-typeset -g REPLY
-typeset -ga reply
+typeset -g REPLY="-1"
+typeset -ga reply reply2 reply3
+reply=()
+reply2=()
+reply3=()
 
 #
 # Load needed libraries
@@ -54,6 +57,8 @@ typeset -ga reply
 ZERO="${(%):-%N}"
 REPO_DIR="${ZERO%/*}"
 [ "$ZERO" = "$REPO_DIR" ] && REPO_DIR="$HOME/.zekyll/zekyll"
+source "$REPO_DIR/lib/script_vars"
+source "$REPO_DIR/lib/script_functions"
 source "$REPO_DIR/lib/math_functions"
 source "$REPO_DIR/lib/codes_huffman"
 source "$REPO_DIR/lib/coding_functions"
@@ -688,10 +693,6 @@ if [ "$#" -lt 1 ]; then
     return 1
 fi
 
-REPLY="-1"
-typeset -ga reply
-reply=()
-
 integer term_height="$LINES"
 integer term_width="$COLUMNS"
 # Comparison is safe because "" -lt \d\+ is allowed
@@ -1064,7 +1065,7 @@ done
 
 #######################################################################################
 
-local list selected
+local -a entries
 integer stdout_FD
 
 # Remember where to direct output
@@ -1101,17 +1102,17 @@ if [ -t 0 ]; then
     # Form: zsh-select -- data1 data2 ...
     if [ "$1" = "--" ]; then
         shift
-        list=( "$@" )
+        entries=( "$@" )
     # Form: zsh-select -c command arg1 arg2 ...
     elif [ "$1" = "-c" ]; then
         shift
         # This loop makes script faster on some Zsh's (e.g. 5.0.8)
         repeat 1; do
-            list=( `"$@"` )
+            entries=( `"$@"` )
         done
     # Form: zsh-select data1 data2 ...
     else
-        list=( "$@" )
+        entries=( "$@" )
     fi
 
     # TODO: $? doesn't reach user
@@ -1125,7 +1126,7 @@ else
 
     # This loop makes script faster on some Zsh's (e.g. 5.0.8)
     repeat 1; do
-        list=( "${(@f)"$(<&0)"}" )
+        entries=( "${(@f)"$(<&0)"}" )
     done
 
     if [[ ! -c /dev/tty ]]; then
@@ -1135,22 +1136,92 @@ else
     fi
 fi
 
-sel-list "${list[@]}"
-#sel-list "${list[@]}"
+#
+# Compute all zekyll standard data
+#
 
-local -a zekylls
-zekylls=( "${(@)@//(#b)(#s)([a-z0-9][a-z0-9][a-z0-9])*/${match[1]}}" )
-integer size="${#zekylls}" i number
+local -a zekylls1
+zekylls1=( "${entries[@]//(#b)(#s)([a-z0-9][a-z0-9][a-z0-9])*/${match[1]}}" )
+
+filter_for_existing_zekylls "${zekylls1[@]}"
+three_to_section_order "${#reply}" "${reply[@]}" "${reply2[@]}" "${reply3[@]}"
+
+local -a existing files sections numbers indices
+existing=( "${reply[@]}" )
+files=( "${reply2[@]}" )
+sections=( "${reply3[@]}" )
+numbers=()
+indices=()
+
+#
+# Compute additional zekyll-related data:
+# - index to which each zekyll belongs
+# - number that each zekyll encodes
+#
+
+local -A index_map numbers_map
+numbers_map=()
+index_map=()
+
+integer size="${#existing}" i
 for (( i=1; i<=size; i++ )); do
-    local zekyll="${zekylls[i]}"
+    local zekyll="${existing[i]}"
     get_integer_from_base_36 "$zekyll"
-    if [ "$?" -gt 0 ]; then
-        print "Malformed zekyll or zcode given, will try to continue"
-    if
-    integer number="$REPLY"
+
+    [ "$?" -gt 0 ] && print "Malformed zekyll or zcode given, trying to continue" && continue
+
+    numbers+=( "$REPLY" )
+    numbers_map[$zekyll]="$REPLY"
+
+    # Num counts from zero
+    integer num="$REPLY"
+    num=num+150
+    integer quotient=num/150
+
+    # Index nr counts from 1
+    indices+=( "$quotient" )
+    index_map[$zekyll]="$quotient"
 done
 
+#
+# Compute list that is to be passed to sel-list
+#
+
+unset i
+integer i j p=0
+local -a full_list full_is_selected
+for i in "${(voun)index_map[@]}"; do
+    set_index "$i" 
+    compute_index_size_check_consistency 
+    integer count="$REPLY"
+    local -a files
+    files=( "${reply[@]}" )
+
+    full_list+=( "Index $i, size $REPLY" )
+    p=${#full_list}
+    NLIST_NONSELECTABLE_ELEMENTS+=( $p )
+    NLIST_HOP_INDEXES+=( $p )
+
+    for (( j=1; j<=count; j++ )); do
+        full_list+=( "${files[j]}" )
+        local zekyll="${files[j]//(#b)(#s)([a-z0-9][a-z0-9][a-z0-9])*/${match[1]}}"
+        if [ "${zekylls1[(r)$zekyll]}" = "$zekyll" ]; then
+            full_is_selected+=( 1 )
+            full_list[-1]="${full_list[-1]} Selected $zekyll"
+        else
+            full_is_selected+=( 0 )
+        fi
+    done
+done
+
+#
+# Finally call sel-list
+#
+
+sel-list "${full_list[@]}"
+
 if [ "$REPLY" -gt 0 ]; then
+    local selected
     selected="$reply[REPLY]"
     print -r -- "$selected" >&$stdout_FD
 fi
