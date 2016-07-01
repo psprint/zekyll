@@ -2223,7 +2223,7 @@ fun! s:ReadRepo()
         let s:listing= s:listing[1:]
         let s:consistent = "yes"
 
-        " call s:DebugMsgT("Listing:", s:listing)
+        call s:DebugMsgT(0, "Listing:", s:listing)
     end
 
 endfun
@@ -2321,7 +2321,7 @@ fun! s:IndexChangeSize()
         return
     end
 
-    let cmd = "zkiresize -p " . shellescape(s:repos_paths[0]."/psprint---zkl") . " -i " . s:cur_index .
+    let cmd = "zkiresize -p " . shellescape(s:cur_repo_path) . " -i " . s:cur_index .
                 \ " -q -w -n -s " . s:index_size_new . " --desc 'New Zekyll' --section A"
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
