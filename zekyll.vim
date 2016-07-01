@@ -519,8 +519,10 @@ fun! s:ProcessBuffer( active )
             let ref = result[3]
             if s:CheckGitState()
                 call s:DoCheckout( ref )
+                call s:DeepRender()
+            else
+                call s:NormalRender()
             end
-            call s:NormalRender()
         else
             call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (9)" )
             call s:NormalRender()
