@@ -48,7 +48,7 @@ compute_index_size_check_consistency() {
 
     # Focus on listing?
     integer listing=0
-    [ "$2" = "-f" ] && listing=1
+    [ "$1" = "-f" ] && listing=1
 
     # Will work on reply
     integer start_size end_size nomatch=0 consistent=1

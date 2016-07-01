@@ -148,7 +148,7 @@ set_index "$ZKL_INDEX"
 if [ "$ZKL_LIST" != "1" ]; then
 
     # Focus on checking consistency
-    if compute_index_size_check_consistency "$ZKL_INDEX"; then
+    if compute_index_size_check_consistency; then
         if [ "$ZKL_CONSISTENT" = "1" ]; then
             print "consistent"
             print -rl "${reply[@]}"
@@ -173,7 +173,7 @@ if [ "$ZKL_LIST" != "1" ]; then
 else
 
     # Focus on listing the files
-    if compute_index_size_check_consistency "$ZKL_INDEX" -f; then
+    if compute_index_size_check_consistency -f; then
         print -rl -- "${reply[@]}"
         exit 0
     else
