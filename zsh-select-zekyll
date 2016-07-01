@@ -11,7 +11,10 @@ emulate -L zsh
 local bold=0
 
 # Main color pair (foreground/background)
-local colorpair="black/blue"
+local colorpair="magenta/black"
+
+# Foreground color used to highlight active zekylls
+local selectioncolor="white"
 
 # Should draw the border?
 local border=0
@@ -57,6 +60,10 @@ reply3=()
 ZERO="${(%):-%N}"
 REPO_DIR="${ZERO%/*}"
 [ "$ZERO" = "$REPO_DIR" ] && REPO_DIR="$HOME/.zekyll/zekyll"
+
+autoload -Uz colors
+colors
+
 source "$REPO_DIR/lib/script_vars"
 source "$REPO_DIR/lib/script_functions"
 source "$REPO_DIR/lib/math_functions"
@@ -543,13 +550,32 @@ sel-list-draw() {
     zcurses attr "$win" "$bold" "$colorpair"
 
     integer i text_len
-    local text
+    local text zidx
     for (( i=1; i<=end_idx; i++ )); do
         zcurses move "$win" $y "$x_offset"
 
+        # Highlighted element
         [ "$i" = "$highlight" ] && zcurses attr "$win" +"$active_text"
-        _sellist_print_with_ansi "$win" "$@[i]" "$text_offset" "$max_text_len"
+
+        # Get selection state
+        element="$@[i]"
+        zidx="${element//(#b)([0-9x]#)*(#m)/${match[1]}}"
+        element="${element#${zidx}_}"
+
+        # Selected element drawn in distinct color
+        if [[ "$zidx" = <-> && "${NLIST_IS_SELECTED[zidx]}" = "1" ]]; then
+            zcurses attr "$win" -bold "white/$background"
+        fi
+
+        _sellist_print_with_ansi "$win" "$element" "$text_offset" "$max_text_len"
         zcurses clear "$win" eol
+
+        # Turn of highlighting of selected element
+        if [[ "$zidx" = <-> && "${NLIST_IS_SELECTED[zidx]}" = "1" ]]; then
+            zcurses attr "$win" "$bold" "$colorpair"
+        fi
+
+        # Highlighted element 2/2
         [ "$i" = "$highlight" ] && zcurses attr "$win" -"$active_text"
 
         y+=1
@@ -559,8 +585,6 @@ sel-list-draw() {
         zcurses move "$win" $y "$x_offset"
         zcurses clear "$win" eol
     fi
-
-    zcurses attr "$win" white/black
 }
 # }}}
 # FUNCTION: _sellist_exit {{{
@@ -782,8 +806,11 @@ zcurses addwin inner "$inner_height" "$inner_width" 1 2
 # From sel-list.conf
 [ "$colorpair" = "" ] && colorpair="white/black"
 [ "$border" = "0" ] || border="1"
+local foreground="${colorpair%/*}"
 local background="${colorpair#*/}"
 local backuptheme="$colorpair/$bold"
+local selectioncolor2="${fg[$selectioncolor]}"
+local fgcolor2="${fg[$foreground]}"
 zcurses bg main "$colorpair"
 zcurses bg inner "$colorpair"
 if [ "$NLIST_IS_SEARCH_MODE" -ne 1 ]; then
@@ -885,16 +912,30 @@ while (( 1 )); do
             disp_list=( "${(@)list[NLIST_FROM_WHAT_IDX_LIST_IS_SHOWN, end_idx]}" )
 
             if [ -n "$colsearch_pattern" ]; then
-                local red=$'\x1b[00;31m' reset=$'\x1b[00;00m'
-                # The repeat will make the matching work on a fresh heap
-                repeat 1; do
-                    if [ "$NLIST_IS_F_MODE" -eq "1" ]; then
-                        disp_list=( "${(@)disp_list//(#mia1)($~colsearch_pattern)/$red${MATCH}$reset}" )
-                    elif [ "$NLIST_IS_F_MODE" -eq "2" ]; then
-                        disp_list=( "${(@)disp_list//(#mia2)($~colsearch_pattern)/$red${MATCH}$reset}" )
+                local red=$'\x1b[00;31m' foreground="$fgcolor2" reset=$'\x1b[00;00m'
+
+                integer i size="${#disp_list}"
+                local zidx
+                for (( i=1; i<=size; i++ )); do
+                    # Is selected?
+                    element="${disp_list[i]}"
+                    zidx="${element//(#b)([0-9x]#)*(#m)/${match[1]}}"
+                    if [ "${NLIST_IS_SELECTED[$zidx]}" = "1" ]; then
+                        foreground="$selectioncolor2"
                     else
-                        disp_list=( "${(@)disp_list//(#mi)($~colsearch_pattern)/$red${MATCH}$reset}" )
+                        foreground="$fgcolor2"
                     fi
+
+                    # Colorify
+                    if [ "$NLIST_IS_F_MODE" -eq "1" ]; then
+                        element="${element//(#mia1)($~colsearch_pattern)/${red}${MATCH}${foreground}}"
+                    elif [ "$NLIST_IS_F_MODE" -eq "2" ]; then
+                        element="${element//(#mia2)($~colsearch_pattern)/${red}${MATCH}${foreground}}"
+                    else
+                        element="${element//(#mi)($~colsearch_pattern)/${red}${MATCH}${foreground}}"
+                    fi
+
+                    disp_list[i]="$element"
                 done
             fi
 
@@ -1188,8 +1229,8 @@ done
 #
 
 unset i
-integer i j p=0
-local -a full_list full_is_selected
+integer i j idx=0 p=0
+local -a full_list NLIST_IS_SELECTED
 for i in "${(voun)index_map[@]}"; do
     set_index "$i" 
     compute_index_size_check_consistency 
@@ -1197,19 +1238,22 @@ for i in "${(voun)index_map[@]}"; do
     local -a files
     files=( "${reply[@]}" )
 
-    full_list+=( "Index $i, size $REPLY" )
+    full_list+=( "x_${fg_bold[red]}Index $i, size $REPLY${reset_color}" )
     p=${#full_list}
     NLIST_NONSELECTABLE_ELEMENTS+=( $p )
     NLIST_HOP_INDEXES+=( $p )
 
     for (( j=1; j<=count; j++ )); do
-        full_list+=( "${files[j]}" )
+        # Index in NLIST_IS_SELECTED array
+        idx=idx+1
+        full_list+=( "${idx}_${files[j]}" )
+
+        # Update the meta-data table
         local zekyll="${files[j]//(#b)(#s)([a-z0-9][a-z0-9][a-z0-9])*/${match[1]}}"
         if [ "${zekylls1[(r)$zekyll]}" = "$zekyll" ]; then
-            full_is_selected+=( 1 )
-            full_list[-1]="${full_list[-1]} Selected $zekyll"
+            NLIST_IS_SELECTED+=( 1 )
         else
-            full_is_selected+=( 0 )
+            NLIST_IS_SELECTED+=( 0 )
         fi
     done
 done
