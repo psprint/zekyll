@@ -2308,10 +2308,18 @@ fun! s:Rename2LZSD(lzsd_lzsd)
 
     " Message
     if len( renarr ) == 1
-        call s:AppendMessageT( "Renamed: " . renarr[0] )
+        if result > 0
+            call s:AppendMessageT( "Error: problem during rename: " . renarr[0] )
+        else
+            call s:AppendMessageT( "Renamed: " . renarr[0] )
+        end
     elseif len( renarr ) >= 2
         call map( renarr, '" *>* " . v:val' )
-        call s:AppendMessageT( "Renamed: ", renarr )
+        if result >0
+            call s:AppendMessageT( "Error: problems during rename: ", renarr )
+        else
+            call s:AppendMessageT( "Renamed: ", renarr )
+        end
     end
 
     return result
@@ -2400,7 +2408,7 @@ fun! s:DoCommit()
     exec cmd
 
     if v:shell_error == 0
-        call s:AppendMessageT( "(err:" . v:shell_error . ") Commit ended successfully" )
+        call s:AppendMessageT( "(err:" . v:shell_error . ") Commit ended successfully (Ctrl-G to see Git's output)" )
     else
         call s:AppendMessageT( "(err:" . v:shell_error . ") Problem during commit. Press Ctrl-G to view Git's output." )
     end
