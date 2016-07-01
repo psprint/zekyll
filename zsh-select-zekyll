@@ -164,10 +164,15 @@ sel-list-input() {
             [ "$current_idx" -lt 1 ] && current_idx=1;
             _sellist_compute_first_to_show_idx
             ;;
-        (NPAGE|" ")
+        (NPAGE)
             current_idx=current_idx+page_height
             [ "$current_idx" -gt "$last_element" ] && current_idx=last_element;
             _sellist_compute_first_to_show_idx
+            ;;
+        (" ")
+            element=${list[current_idx]}
+            zidx="${element//(#b)([0-9x]#)*(#m)/${match[1]}}"
+            NLIST_IS_SELECTED[zidx]=$(( 1 - NLIST_IS_SELECTED[zidx] ))
             ;;
         ($'\C-U')
             current_idx=current_idx-page_height/2
