@@ -519,8 +519,8 @@ fun! s:ProcessBuffer( active )
             let ref = result[3]
             if s:CheckGitState()
                 call s:DoCheckout( ref )
-                call s:NormalRender()
             end
+            call s:NormalRender()
         else
             call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (9)" )
             call s:NormalRender()
@@ -2491,7 +2491,7 @@ fun! s:CheckGitState()
     let cmd = "git -C " . shellescape( s:cur_repo_path ) . " status --porcelain"
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
-    let pattern = '^[MARCDU?]\|\ [MAUD?]'
+    let pattern = '^[MARCDU]\|\ [MAUD]'
     call filter(arr, 'v:val =~ pattern')
 
     if len( arr ) > 0
