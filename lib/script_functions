@@ -290,8 +290,7 @@ filter_for_existing_zekylls() {
             fi
         fi
     done
-
-    typeset -ga reply2 reply3
+    typeset -ga reply reply2 reply3
     reply=( "${existing[@]}" )
     reply2=( "${files[@]}" )
     reply3=( "${sections[@]}" )
@@ -319,7 +318,6 @@ three_to_section_order() {
         done
     done
 
-    typeset -ga reply2 reply3
     reply=( "${out_zekylls[@]}" ) ; reply2=( "${out_files[@]}" ) ; reply3=( "${out_sections[@]}" )
 }
 # }}}

@@ -44,7 +44,6 @@ compute_index_size_check_consistency() {
     files=( "${reply[@]}" )
 
     # Detected inconsistent files
-    typeset -ga reply2
     reply2=()
 
     # Focus on listing?
