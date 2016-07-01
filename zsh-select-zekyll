@@ -1218,12 +1218,16 @@ done
 # Finally call sel-list
 #
 
-sel-list "${full_list[@]}"
+while (( 1 )); do
+    sel-list "${full_list[@]}"
 
-if [ "$REPLY" -gt 0 ]; then
-    local selected
-    selected="$reply[REPLY]"
-    print -r -- "$selected" >&$stdout_FD
-fi
+    if [ "$REPLY" -gt 0 ]; then
+        local selected
+        selected="$reply[REPLY]"
+        "${EDITOR:-vim}" "$selected"
+    else
+        break
+    fi
+done
 
 # vim: set filetype=zsh:
