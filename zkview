@@ -101,6 +101,7 @@ cd_will_work_on "$REPLY" "$ZKL_VERBOSE" || exit 1
 # on it, overwriting any user given -z/--zkl string
 #
 
+local -A mdata
 if [ -n "$ZKL_CODE" ]; then
     if [[ "$ZKL_CODE" = (#b)([0-9]##)/([a-z0-9]##) ]]; then
         integer index="${match[1]}"
@@ -112,7 +113,6 @@ if [ -n "$ZKL_CODE" ]; then
         ZKL_ZEKYLLS="$REPLY"
 
         if [ "$ZKL_METADATA" = "1" ]; then
-            local -A mdata
             mdata=( "${reply[@]}" )
             [ -n "${mdata[rev]}" ] && print "Meta-data/rev: ${mdata[rev]}"
             [ -n "${mdata[file]}" ] && print "Meta-data/file: ${mdata[file]}"
@@ -182,4 +182,9 @@ done
 # Display list of zekylls and open editor for any selection
 #
 
+export ZEKYLL_ZCODE="$ZKL_CODE"
+export ZEKYLL_REV="${mdata[rev]}"
+export ZEKYLL_FILE="${mdata[file]}"
+export ZEKYLL_REPO="${mdata[repo]}"
+export ZEKYLL_SITE="${mdata[site]}"
 "$REPO_DIR/zsh-select-zekyll" "${files[@]}"

@@ -881,7 +881,7 @@ btZcode=(
     label   "Zcode:"
     state   "inactive"
     type    "text"
-    content ""
+    contents "$ZEKYLL_ZCODE"
 )
 
 btRev=(
@@ -892,7 +892,7 @@ btRev=(
     label   "Rev:"
     state   "inactive"
     type    "text"
-    content ""
+    contents "$ZEKYLL_REV"
 )
 
 btFile=(
@@ -903,7 +903,7 @@ btFile=(
     label   "File:"
     state   "inactive"
     type    "text"
-    content ""
+    contents "$ZEKYLL_FILE"
 )
 
 btRepo=(
@@ -914,7 +914,7 @@ btRepo=(
     label   "Repo:"
     state   "inactive"
     type    "text"
-    content ""
+    contents "$ZEKYLL_REPO"
 )
 
 btSite=(
@@ -925,7 +925,7 @@ btSite=(
     label   "Site:"
     state   "inactive"
     type    "toggle"
-    content ""
+    contents "$ZEKYLL_SITE"
 )
 
 local -a buttons
@@ -1051,7 +1051,7 @@ while (( 1 )); do
         button=( "${(@Pkv)b}" )
 
         NLIST_IS_BUTTON_MODE="1"
-        NLIST_BUTTON_BUFFER="${button[content]}"
+        NLIST_BUTTON_BUFFER="${button[contents]}"
     else
         NLIST_IS_BUTTON_MODE="0"
         NLIST_BUTTON_BUFFER=""
@@ -1077,11 +1077,11 @@ while (( 1 )); do
             appendix=()
             BitsStart
             appendix+=( "${reply[@]}" )
-            BitsRev "${btRev[content]}"
+            BitsRev "${btRev[contents]}"
             appendix+=( "${reply[@]}" )
-            BitsFile "${btFile[content]}"
+            BitsFile "${btFile[contents]}"
             appendix+=( "${reply[@]}" )
-            BitsRepo "${btRepo[content]}"
+            BitsRepo "${btRepo[contents]}"
             appendix+=( "${reply[@]}" )
             #BitsSite
             #appendix+=( "${reply[@]}" )
@@ -1105,7 +1105,7 @@ while (( 1 )); do
             fi
 
             encode_zcode_arr01 "${bits[@]}"
-            btZcode[content]="$REPLY"
+            btZcode[contents]="${index}/${REPLY}"
         fi
     fi
 
@@ -1311,19 +1311,19 @@ while (( 1 )); do
     # buttons=( btZcode btRev btFile btRepo btSite )
     case $current_button in
         (1)
-            btZcode[content]="$NLIST_BUTTON_BUFFER"
+            btZcode[contents]="$NLIST_BUTTON_BUFFER"
             ;;
         (2)
-            btRev[content]="$NLIST_BUTTON_BUFFER"
+            btRev[contents]="$NLIST_BUTTON_BUFFER"
             ;;
         (3)
-            btFile[content]="$NLIST_BUTTON_BUFFER"
+            btFile[contents]="$NLIST_BUTTON_BUFFER"
             ;;
         (4)
-            btRepo[content]="$NLIST_BUTTON_BUFFER"
+            btRepo[contents]="$NLIST_BUTTON_BUFFER"
             ;;
         (5)
-            btSite[content]="$NLIST_BUTTON_BUFFER"
+            btSite[contents]="$NLIST_BUTTON_BUFFER"
             ;;
     esac
 
@@ -1429,8 +1429,8 @@ draw-buttons() {
             zcurses attr "main" "$bold" "$colorpair"
         fi
 
-        local content="${button[content]}"
-        integer clen="${#content}"
+        local contents="${button[contents]}"
+        integer clen="${#contents}"
         local label="${button[label]}"
         integer llen="${#label}"
 
@@ -1439,9 +1439,9 @@ draw-buttons() {
         zcurses move main $(( term_height - 3 - 1 + button[y] )) $(( button[x] + llen + 3 ))
         integer size="$(( ${button[w]} - 4 - ${#label} ))"
         if (( clen >= (button[w]-4-llen) )); then
-            zcurses string main "…${content[-size+2,-1]}"
+            zcurses string main "…${contents[-size+2,-1]}"
         else
-            zcurses string main "${content}"
+            zcurses string main "${contents}"
         fi
 
         zcurses attr "main" "$bold" "$colorpair"
