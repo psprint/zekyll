@@ -1524,7 +1524,7 @@ local -a full_list NLIST_IS_SELECTED NLIST_TINDEX_TO_ZEKYLL
 local -A NLIST_ZEKYLL_TO_INDEX NLIST_ZEKYLL_TO_NUMBER
 for i in "${(oun)indices[@]}"; do
     set_index "$i" 
-    compute_index_size_check_consistency 
+    compute_index_size_check_consistency -f
     integer count="$REPLY"
     local -a files
     files=( "${reply[@]}" )
