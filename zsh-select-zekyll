@@ -1535,7 +1535,7 @@ BitsRev() {
 
     # Rev preamble
     if [[ "${#bits}" -gt "0" ]]; then
-        bits=( "${(@s::)codes[ref]}" "${bits[@]}" )
+        bits=( "${(@s::)codes[rev]}" "${bits[@]}" )
     fi
 
     reply=( "${bits[@]}" )

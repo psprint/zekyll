@@ -4,9 +4,9 @@ local -A codes
 codes=(
 'ss'           "110011"
 'file'         "110000"
-'ref'          "110001"
+'rev'          "110001"
 'repo'         "110100"
-'wordref'      "101000"
+'wordrev'      "101000"
 'chksum'       "101001"
 'site'         "000010"
 'unused1'      "010010"
@@ -84,9 +84,9 @@ local -A rcodes
 rcodes=(
 "110011"          'ss'
 "110000"          'file'
-"110001"          'ref'
+"110001"          'rev'
 "110100"          'repo'
-"101000"          'wordref'
+"101000"          'wordrev'
 "101001"          'chksum'
 "000010"          'site'
 "010010"          'unused1'

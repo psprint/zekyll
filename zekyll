@@ -1297,8 +1297,8 @@ zcode() {
     local -A mdata
     mdata=( "${reply[@]}" )
 
-    if [ -n "${mdata[ref]}" ]; then
-        print "Zcode meta-data/ref: ${mdata[ref]}"
+    if [ -n "${mdata[rev]}" ]; then
+        print "Zcode meta-data/rev: ${mdata[rev]}"
     fi
 
     if [ -n "${mdata[file]}" ]; then
@@ -1311,7 +1311,7 @@ zcode() {
     fi
 
     # Strictly, this will propagate error code from -zkl-start-zekyll-input
-    -zkl-start-zekyll-input "zcode" "${mdata[repo]}" "${mdata[ref]}" || return
+    -zkl-start-zekyll-input "zcode" "${mdata[repo]}" "${mdata[rev]}" || return
     local site="${reply[1]}" user="${reply[2]}" repo="${reply[3]}" rev="${reply[4]}"
 
     # Allow underscores - remove them now
