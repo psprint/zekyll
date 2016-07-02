@@ -11,7 +11,7 @@ emulate -L zsh
 local bold=0
 
 # Main color pair (foreground/background)
-local colorpair="black/blue"
+local colorpair="magenta/black"
 
 # Foreground color used to highlight active zekylls
 local selectioncolor="white"
@@ -178,8 +178,8 @@ sel-list-input() {
             ;;
         (" ")
             element=${list[current_idx]}
-            zidx="${element//(#b)([0-9x]#)*(#m)/${match[1]}}"
-            [ "$zidx" != "x" ] && NLIST_IS_SELECTED[zidx]=$(( 1 - NLIST_IS_SELECTED[zidx] ))
+            tidx="${element//(#b)([0-9x]#)*/${match[1]}}"
+            [ "$tidx" != "x" ] && NLIST_IS_SELECTED[tidx]=$(( 1 - NLIST_IS_SELECTED[tidx] ))
             ;;
         ($'\C-U')
             current_idx=current_idx-page_height/2
@@ -684,7 +684,7 @@ sel-list-draw() {
     zcurses attr "$win" "$bold" "$colorpair"
 
     integer i text_len
-    local text zidx
+    local text
     for (( i=1; i<=end_idx; i++ )); do
         zcurses move "$win" $y "$x_offset"
 
@@ -693,11 +693,11 @@ sel-list-draw() {
 
         # Get selection state
         element="$@[i]"
-        zidx="${element//(#b)([0-9x]#)*(#m)/${match[1]}}"
-        element="${element#${zidx}_}"
+        tidx="${element//(#b)([0-9x]#)*/${match[1]}}"
+        element="${element#${tidx}_}"
 
         # Selected element drawn in distinct color
-        if [[ "$zidx" = <-> && "${NLIST_IS_SELECTED[zidx]}" = "1" ]]; then
+        if [[ "$tidx" = <-> && "${NLIST_IS_SELECTED[tidx]}" = "1" ]]; then
             zcurses attr "$win" "$bold" "$selectioncolor/$background"
         fi
 
@@ -705,7 +705,7 @@ sel-list-draw() {
         zcurses clear "$win" eol
 
         # Turn of highlighting of selected element
-        if [[ "$zidx" = <-> && "${NLIST_IS_SELECTED[zidx]}" = "1" ]]; then
+        if [[ "$tidx" = <-> && "${NLIST_IS_SELECTED[tidx]}" = "1" ]]; then
             zcurses attr "$win" "$bold" "$colorpair"
         fi
 
@@ -1033,6 +1033,8 @@ repeat 1; do
     list=( "$@" )
 done
 
+local element tidx zekyll index
+
 last_element="$#list"
 
 while (( 1 )); do
@@ -1047,6 +1049,18 @@ while (( 1 )); do
     else
         NLIST_IS_BUTTON_MODE="0"
         NLIST_BUTTON_BUFFER=""
+    fi
+
+    recompute_zcode="1"
+
+    if [ "$recompute_zcode" = "1" ]; then
+        # Find at which index user is
+        element="${list[NLIST_CURRENT_IDX]}"
+        tidx="${element//(#b)([0-9x]#)*/${match[1]}}"
+        if [[ "$tidx" = <-> ]]; then
+            zekyll="${NLIST_TINDEX_TO_ZEKYLL[$tidx]}"
+            index="${NLIST_ZEKYLL_TO_INDEX[$zekyll]}"
+        fi
     fi
 
     # Do searching (filtering with string)
@@ -1124,12 +1138,12 @@ while (( 1 )); do
                 local red=$'\x1b[00;31m' foreground="$fgcolor2" reset=$'\x1b[00;00m'
 
                 integer i size="${#disp_list}"
-                local zidx
+                local tidx
                 for (( i=1; i<=size; i++ )); do
                     # Is selected?
                     element="${disp_list[i]}"
-                    zidx="${element//(#b)([0-9x]#)*(#m)/${match[1]}}"
-                    if [ "${NLIST_IS_SELECTED[$zidx]}" = "1" ]; then
+                    tidx="${element//(#b)([0-9x]#)*/${match[1]}}"
+                    if [ "${NLIST_IS_SELECTED[$tidx]}" = "1" ]; then
                         foreground="$selectioncolor2"
                     else
                         foreground="$fgcolor2"
@@ -1474,28 +1488,18 @@ local -a existing files sections numbers indices
 existing=( "${reply[@]}" )
 files=( "${reply2[@]}" )
 sections=( "${reply3[@]}" )
-numbers=()
 indices=()
 
 #
-# Compute additional zekyll-related data:
-# - index to which each zekyll belongs
-# - number that each zekyll encodes
+# Gather what indexes are needed
 #
-
-local -A index_map numbers_map
-numbers_map=()
-index_map=()
 
 integer size="${#existing}" i
 for (( i=1; i<=size; i++ )); do
     local zekyll="${existing[i]}"
     get_integer_from_base_36 "$zekyll"
 
-    [ "$?" -gt 0 ] && print "Malformed zekyll or zcode given, trying to continue" && continue
-
-    numbers+=( "$REPLY" )
-    numbers_map[$zekyll]="$REPLY"
+    [ "$?" -gt 0 ] && print "Malformed zekyll ($zekyll) or zcode given, trying to continue (1)" && continue
 
     # Num counts from zero
     integer num="$REPLY"
@@ -1504,17 +1508,21 @@ for (( i=1; i<=size; i++ )); do
 
     # Index nr counts from 1
     indices+=( "$quotient" )
-    index_map[$zekyll]="$quotient"
 done
 
 #
-# Compute list that is to be passed to sel-list
+# Compute list that is to be passed to sel-list and
+# some additional data:
+# - tindex to zekyll array
+# - zekyll to index map
+# - zekyll to number map
 #
 
 unset i
 integer i j idx=0 p=0
-local -a full_list NLIST_IS_SELECTED
-for i in "${(voun)index_map[@]}"; do
+local -a full_list NLIST_IS_SELECTED NLIST_TINDEX_TO_ZEKYLL
+local -A NLIST_ZEKYLL_TO_INDEX NLIST_ZEKYLL_TO_NUMBER
+for i in "${(oun)indices[@]}"; do
     set_index "$i" 
     compute_index_size_check_consistency 
     integer count="$REPLY"
@@ -1533,11 +1541,34 @@ for i in "${(voun)index_map[@]}"; do
 
         # Update the meta-data table
         local zekyll="${files[j]//(#b)(#s)([a-z0-9][a-z0-9][a-z0-9])*/${match[1]}}"
+
+        # Store zekyll to which corresponding full_list element belongs
+        NLIST_TINDEX_TO_ZEKYLL+=( "$zekyll" )
+
+        # Store if the zekyll is active
         if [ "${zekylls1[(r)$zekyll]}" = "$zekyll" ]; then
             NLIST_IS_SELECTED+=( 1 )
         else
             NLIST_IS_SELECTED+=( 0 )
         fi
+
+        #
+        # Compute associative maps
+        #
+
+        get_integer_from_base_36 "$zekyll"
+        [ "$?" -gt 0 ] && print "Malformed zekyll ($zekyll) or zcode given, trying to continue (2)" && continue
+
+        NLIST_ZEKYLL_TO_NUMBER[$zekyll]="$REPLY"
+
+        # Num counts from zero
+        integer num="$REPLY"
+        num=num+150
+        integer quotient=num/150
+
+        # Index nr counts from 1
+        NLIST_ZEKYLL_TO_INDEX[$zekyll]="$quotient"
+
     done
 done
 
