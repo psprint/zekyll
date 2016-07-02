@@ -110,8 +110,8 @@ get_integer_from_base_36() {
 # and encodes it to base 36 number expressed via a-z0-9
 #
 encode_zcode_str01() {
-    str_01_to_8-bit_pack_numbers "$1"
-    encode_zcode_8-bit_pack_numbers "${reply[@]}"
+    str_01_to_24-bit_pack_numbers "$1"
+    encode_zcode_24-bit_pack_numbers "${reply[@]}"
 
 }
 
@@ -121,15 +121,15 @@ encode_zcode_str01() {
 # via a-z0-9
 #
 encode_zcode_arr01() {
-    arr_01_to_8-bit_pack_numbers "$@"
-    encode_zcode_8-bit_pack_numbers "${reply[@]}"
+    arr_01_to_24-bit_pack_numbers "$@"
+    encode_zcode_24-bit_pack_numbers "${reply[@]}"
 }
 
 #
-# Takes 8-bit pack numbers whose bits mark which zekylls are active
+# Takes 24-bit pack numbers whose bits mark which zekylls are active
 # and encodes them to base 36 number expressed via a-z0-9
 #
-encode_zcode_8-bit_pack_numbers() {
+encode_zcode_24-bit_pack_numbers() {
     numbers=( "$@" )
 
     local -a nums_base36 workingvar
@@ -141,7 +141,7 @@ encode_zcode_8-bit_pack_numbers() {
     done
 
     while (( sum != 0 )); do
-        div_8-bit_pack_numbers_36 "${workingvar[@]}"
+        div_24-bit_pack_numbers_36 "${workingvar[@]}"
         workingvar=( "${reply[@]}" )
         nums_base36=( "$REPLY" "${nums_base36[@]}" )
 
@@ -216,21 +216,21 @@ div2() {
 
 #
 # Takes STRING of 0 and 1 and converts it to array of numbers
-# that are 8-bit packs taken from right to left, from the string
+# that are 24-bit packs taken from right to left, from the string
 #
-str_01_to_8-bit_pack_numbers() {
+str_01_to_24-bit_pack_numbers() {
     local -a bits
     bits=( "${(@s::)1}" )
-    arr_01_to_8-bit_pack_numbers "${bits[@]}"
+    arr_01_to_24-bit_pack_numbers "${bits[@]}"
 
     return 0
 }
 
 #
 # Takes ARRAY (@) of 0 and 1 and converts it to array of numbers
-# that are 8-bit packs taken from right to left, from the string
+# that are 24-bit packs taken from right to left, from the string
 #
-arr_01_to_8-bit_pack_numbers() {
+arr_01_to_24-bit_pack_numbers() {
     local -a bits pack numbers
     bits=( "$@" )
     integer count=0 i size="${#bits}"
@@ -239,7 +239,7 @@ arr_01_to_8-bit_pack_numbers() {
     for (( i=size; i>=1; i-- )); do
         pack=( "$bits[i]" "${pack[@]}" )
         count+=1
-        (( count < 8 && i != 1 )) && continue
+        (( count < 24 && i != 1 )) && continue
         count=0
 
         # Convert the max. 8 bit pack to number
@@ -258,7 +258,7 @@ arr_01_to_8-bit_pack_numbers() {
 
 # $1 - series of 0 and 1 (bits marking which zekyll is active)
 # $reply - ( "series of 0 and 1, result of division" "remainder 0 ... 35" )
-div_8-bit_pack_numbers_36() {
+div_24-bit_pack_numbers_36() {
     local -a numbers
     numbers=( "$@" )
 
@@ -289,7 +289,7 @@ div_8-bit_pack_numbers_36() {
             break
         fi
 
-        prepared_for_division=256*subtracted+${numbers[cur]}
+        prepared_for_division=16777216*subtracted+${numbers[cur]}
     done
 
     # print "Result of division: " "${result[@]}"
