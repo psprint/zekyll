@@ -1273,8 +1273,9 @@ while (( 1 )); do
             "$disp_list[@]"
     fi
 
-    draw-buttons
+    local status_msg_strlen
     status-msg
+    draw-buttons
 
     # Wait for input
     zcurses input main key keypad
@@ -1365,7 +1366,6 @@ done
 # }}}
 # FUNCTION: status-msg {{{
 status-msg() {
-    local status_msg_strlen
     local keywordmsg=""
     if [ "$keywordisfresh" = "1" ]; then
         keywordmsg="($curkeyword/$nkeywords) "
@@ -1411,7 +1411,6 @@ status-msg() {
     zcurses string main $top_msg
 
     zcurses refresh main inner
-    zcurses move main $(( term_height - 3 - 1 )) $(( status_msg_strlen + 2 ))
 }
 # }}}
 # FUNCTION: draw-buttons {{{
@@ -1446,6 +1445,16 @@ draw-buttons() {
 
         zcurses attr "main" "$bold" "$colorpair"
     done
+
+    if [ "$current_button" = "$(( ${#buttons} + 1 ))" ]; then
+        zcurses move main $(( term_height - 3 - 1 )) $(( status_msg_strlen + 2 ))
+    else
+        b="${buttons[current_button]}"
+        local -A button
+        button=( "${(@Pkv)b}" )
+
+        zcurses move main $(( term_height - 3 - 1 + button[y] )) $(( ${button[x]} + ${#button[label]} + ${#button[contents]} + 3 ))
+    fi
 }
 # }}}
 SetMessage() {
