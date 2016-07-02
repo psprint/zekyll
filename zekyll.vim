@@ -3096,7 +3096,7 @@ fun! s:process_meta_data( bits )
             else
                 " File names use "/" to encode "." character. "/" itself is unavailable
                 if mat == "/" && current_selector == "file"
-                    mat = "."
+                    let mat = "."
                 end
 
                 let decoded[ current_selector ] = decoded[ current_selector ] . mat
