@@ -234,6 +234,9 @@ sel-list-input() {
         ($'\t')
             reply=( $current_idx "LEAVE" )
             ;;
+        ('`')
+            reply=( $current_idx "BACK_LEAVE" )
+            ;;
         ($'\C-L')
             reply=( -1 "REDRAW" )
             ;;
@@ -513,6 +516,9 @@ sel-list-input() {
             ;;
         ($'\t')
             reply=( $current_idx "LEAVE" )
+            ;;
+        ('`')
+            reply=( $current_idx "BACK_LEAVE" )
             ;;
 
         #
