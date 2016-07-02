@@ -2202,7 +2202,7 @@ fun! s:SetupSyntaxHighlighting()
     setlocal ft=help
     syn match helpOption          "'.\{-1,\}'"
     syn match helpType            "(err:0)"
-    syn match helpHyperTextJump   "(err:[1-9]\d*)"
+    syn match helpHyperTextJump   "(err:-\?[1-9]\d*)"
     syn match helpHyperTextJump   "Error:"
     syn match helpUnderlined      "\d\+/[a-z0-9]\+"
 endfun
@@ -2438,6 +2438,12 @@ fun! s:DoStatus()
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) .
+            \ " for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(refname:short) - %(objectname:short) - %(contents:subject) - %(authorname) (%(committerdate:relative))'"
+
+    let cmd_output = system( cmd )
+    call extend( arr, split( cmd_output, '\n\+' ) )
+
     if v:shell_error == 0
         call map( arr, '" " . v:val' )
         call s:AppendMessageT( "(err:" . v:shell_error . ") Status successful >", arr )
@@ -2482,16 +2488,34 @@ fun! s:DoPush(destination, branch)
         let branch = "master"
     end
 
-    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " push " . shellescape( destination ) . " " . shellescape( branch )
+    " Get status of what is going to be done
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " status -sb"
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
 
-    if v:shell_error == 0
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " diff origin/" . branch . ".." . branch . " --name-status"
+    let cmd_output = system( cmd )
+    if len( split( cmd_output, '\n\+' ) ) > 0
+        call extend( arr, split( cmd_output, '\n\+' ) )
+
+        let cmd = "git -C " . shellescape( s:cur_repo_path ) . " log --pretty=\"format:%ad %h (%an): %s\" --max-count=3 --date=relative origin/" . branch . ".." . branch
+        let cmd_output = system( cmd )
+        call extend( arr, split( cmd_output, '\n\+' ) )
+
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "(err:" . v:shell_error . ") Push " . destination . " " . branch . " successful >", arr )
+        call s:AppendMessageT( "Changes to be pushed for branch '" . branch . "': >", arr )
+    end
+
+    " Execute the push Git command
+    let cmd = ":!echo \"===============================================\" && git -C " . 
+            \ shellescape( s:cur_repo_path ) . " push " . shellescape( destination ) . " " . shellescape( branch )
+    exec cmd
+    let error = v:shell_error
+
+    if error == 0
+        call s:AppendMessageT( "(err:" . error . ") Push " . destination . " " . branch . " successful. Use Ctrl-G to see Git's output" )
     else
-        call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "(err:" . v:shell_error . ") Problem with push " . destination . " " . branch . " >", arr )
+        call s:AppendMessageT( "(err:" . error . ") Problem with push " . destination . " " . branch . ". Use Ctrl-G to see Git's output" )
     end
 endfun
 " 2}}}
