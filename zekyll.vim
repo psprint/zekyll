@@ -25,8 +25,8 @@ let s:repos_paths = [ fnameescape( $HOME )."/.zekyll/repos" ]
 let s:lzsd = []
 let s:listing = []
 let s:inconsistent_listing = []
-" Current ref, is detached, all refs, branches, tags
-let s:refs = [ "master", 0, [], [], [] ]
+" Current rev, is detached, all revs, branches, tags
+let s:revs = [ "master", 0, [], [], [] ]
 let s:srcdst = [ "origin" ]
 
 let s:cur_index = 1
@@ -51,7 +51,7 @@ let s:do_dtag = "nop"
 
 " Used by zcode buttons
 let s:c_code = ""
-let s:c_ref = ""
+let s:c_rev = ""
 let s:c_file = ""
 let s:c_repo = ""
 
@@ -137,7 +137,7 @@ let s:pat_BTOps             = '\[[[:space:]]\+New Branch:[[:space:]]*<\?\(.\{-1,
 let s:pat_Save_IndexSize  = 'Save[[:space:]]\+(\?<\?\([a-zA-Z]\{-1,}\)>\?)\?[[:space:]]\+with[[:space:]]\+index[[:space:]]\+size[[:space:]]\+<\?\([0-9]\+\)>\?'
 
 let s:pat_Code            = '\[[[:space:]]\+Code:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
-                          \ '\[[[:space:]]\+Ref:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
+                          \ '\[[[:space:]]\+Rev:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
                           \ '\[[[:space:]]\+File Name:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
                           \ '\[[[:space:]]\+Repo:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*'
 
@@ -195,7 +195,7 @@ fun! s:NormalRender( ... )
     call s:ResetState( depth )
 
     if depth >= 1
-        let s:refs = s:ListAllRefs()
+        let s:revs = s:ListAllRevs()
     end
 
     if depth >= 2
@@ -228,7 +228,7 @@ fun! s:NormalRender( ... )
         call setline( s:line_commit,     s:GenerateCommitResetLine() )
         call setline( s:line_gitops2,    s:GenerateStatusPushPullLine() )
         call setline( s:line_btops,      s:GenerateBTOpsLine() )
-        call setline( s:line_code,       s:GenerateCodeLine( s:cur_index, s:c_code, s:c_ref, s:c_file, s:c_repo ) )
+        call setline( s:line_code,       s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo ) )
         call setline( s:line_save,       s:GenerateSaveIndexSizeLine() )
         call setline( s:line_rule,       s:GenerateRule( 1 ) )
         call cursor(s:last_line+1,1)
@@ -248,7 +248,7 @@ fun! s:NormalRender( ... )
 
     if depth >= 0
         let [ correct_generation, s:c_code ] = s:GenerateCodeFromState()
-        call setline( s:line_code, s:GenerateCodeLine( s:cur_index, s:c_code, s:c_ref, s:c_file, s:c_repo ) )
+        call setline( s:line_code, s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo ) )
 
         if !correct_generation
             call s:AppendMessageT( "Error: couldn't generate code for current index, selections and meta-data" )
@@ -516,9 +516,9 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_CHECKOUT
         let result = matchlist( getline( s:line_checkout ), s:pat_Commit_Reset_Checkout )
         if len( result ) > 0
-            let ref = result[3]
+            let rev = result[3]
             if s:CheckGitState()
-                call s:DoCheckout( ref )
+                call s:DoCheckout( rev )
                 call s:DeepRender()
             else
                 call s:NormalRender()
@@ -1059,7 +1059,7 @@ fun! s:GenerateCommitResetLine()
     else
         let line = line . "  ]   "
     end
-    let line = line . "   | [ Checkout: <" . s:refs[0]. "> ]"
+    let line = line . "   | [ Checkout: <" . s:revs[0]. "> ]"
     return line
 endfun
 " 2}}}
@@ -1071,9 +1071,9 @@ fun! s:GenerateIndexLine()
 endfun
 " 2}}}
 " FUNCTION: GenerateCodeLine() {{{2
-fun! s:GenerateCodeLine( index, code, ref, file_name, repo )
+fun! s:GenerateCodeLine( index, code, rev, file_name, repo )
     let line = "[ Code: " . a:index . "/" . s:RPad( a:code, 15, " " ) . " ] "
-    let line = line . "[ Ref: " . s:RPad( a:ref, 15, " " ) . " ] "
+    let line = line . "[ Rev: " . s:RPad( a:rev, 15, " " ) . " ] "
     let line = line . "[ File Name: " . s:RPad( a:file_name, 15, " " ) . " ] "
     let line = line . "[ Repo: " . s:RPad( a:repo, 15, " " ) . " ] ~"
     return line
@@ -1337,12 +1337,12 @@ fun! s:ComputeCodingState( op )
             let msg = "Succesfully created code"
 
             " Enumerate used fields
-            if s:c_ref != "" || s:c_file != "" || s:c_repo != ""
+            if s:c_rev != "" || s:c_file != "" || s:c_repo != ""
                 let msg = msg . " for"
             end
             let was = 0
-            if s:c_ref != ""
-                let [ was, msg ] = [ 1, msg . " ref: '" . s:c_ref . "'" ]
+            if s:c_rev != ""
+                let [ was, msg ] = [ 1, msg . " rev: '" . s:c_rev . "'" ]
             end
             if s:c_file != ""
                 let msg = msg . (was ? "," : "")
@@ -1413,11 +1413,11 @@ endfun
 fun! s:GenerateCodeFromBuffer()
     let result = matchlist( getline( s:line_code ), s:pat_Code )
     if len( result ) > 0
-        let s:c_ref = result[2]
+        let s:c_rev = result[2]
         let s:c_file = result[3]
         let s:c_repo = result[4]
 
-        let [ s:c_ref, s:c_file, s:c_repo ] = s:TrimBlanks( s:c_ref, s:c_file, s:c_repo )
+        let [ s:c_rev, s:c_file, s:c_repo ] = s:TrimBlanks( s:c_rev, s:c_file, s:c_repo )
 
         return s:GenerateCodeFromState()
     else
@@ -1432,7 +1432,7 @@ endfun
 fun! s:GenerateCodeFromState()
     let appendix = []
     call extend( appendix, s:BitsStart() )
-    call extend( appendix, s:BitsRef(s:c_ref) )
+    call extend( appendix, s:BitsRev(s:c_rev) )
     call extend( appendix, s:BitsFile(s:c_file) )
     call extend( appendix, s:BitsRepo(s:c_repo) )
     call extend( appendix, s:BitsStop() )
@@ -1474,7 +1474,7 @@ fun! s:UpdateStateForZcode( zcode )
     let cur_len = len( s:code_selectors )
 
     let s:code_selectors = bits
-    let s:c_ref = has_key( meta_data, 'ref' ) ? meta_data['ref'] : ""
+    let s:c_rev = has_key( meta_data, 'rev' ) ? meta_data['rev'] : ""
     let s:c_file = has_key( meta_data, 'file' ) ? meta_data['file'] : ""
     let s:c_repo = has_key( meta_data, 'repo' ) ? meta_data['repo'] : ""
 
@@ -1507,12 +1507,12 @@ fun! s:UpdateStateForZcode( zcode )
     end
 
     " Enumerate decoded fields
-    if s:c_ref != "" || s:c_file != "" || s:c_repo != ""
+    if s:c_rev != "" || s:c_file != "" || s:c_repo != ""
         let msg = msg . " with"
     end
     let was = 0
-    if s:c_ref != ""
-        let [ was, msg ] = [ 1, msg . " ref: '" . s:c_ref . "'" ]
+    if s:c_rev != ""
+        let [ was, msg ] = [ 1, msg . " rev: '" . s:c_rev . "'" ]
     end
     if s:c_file != ""
         let msg = msg . (was ? "," : "")
@@ -1810,8 +1810,8 @@ fun! s:Space()
                         let s:do_reset = "yes"
                     end
                 elseif col > pos2
-                    let choices = s:refs[2]
-                    let s:refs[0] = s:IterateOver( choices, s:refs[0] )
+                    let choices = s:revs[2]
+                    let s:revs[0] = s:IterateOver( choices, s:revs[0] )
 
                     " Only one button in use
                     call s:TurnOff()
@@ -1868,7 +1868,7 @@ fun! s:Space()
                             call s:TurnOff("NoPush")
                         end
                     elseif col > posb
-                        let choices = [ "nop" ] + s:refs[3] + [ "..." ]
+                        let choices = [ "nop" ] + s:revs[3] + [ "..." ]
                         let s:push_what = s:IterateOver( choices, p_result[3] )
 
                         if s:push_what !=? "nop"
@@ -1888,7 +1888,7 @@ fun! s:Space()
                             call s:TurnOff("NoPull")
                         end
                     elseif col > posb
-                        let choices = [ "nop" ] + s:refs[3] + [ "..." ]
+                        let choices = [ "nop" ] + s:revs[3] + [ "..." ]
                         let s:pull_what = s:IterateOver( choices, p_result[5] )
 
                         if s:pull_what !=? "nop"
@@ -2415,8 +2415,8 @@ fun! s:DoCommit()
 endfun
 " 2}}}
 " FUNCTION: DoCheckout() {{{2
-fun! s:DoCheckout(ref)
-    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " checkout " . shellescape(a:ref)
+fun! s:DoCheckout(rev)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " checkout " . shellescape(a:rev)
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     
@@ -2506,7 +2506,7 @@ fun! s:CheckGitState()
 
     if len( arr ) > 0
         call map( arr, '" " . v:val' )
-        call s:AppendMessageT( "Please commit or reset before checking out other ref. The problematic, uncommited files are: >", arr )
+        call s:AppendMessageT( "Please commit or reset before checking out other rev. The problematic, uncommited files are: >", arr )
         return 0
     else
         call map( arr, '" " . v:val' )
@@ -2516,8 +2516,8 @@ fun! s:CheckGitState()
     return 1
 endfun
 " 2}}}
-" FUNCTION: ListAllRefs() {{{2
-fun! s:ListAllRefs()
+" FUNCTION: ListAllRevs() {{{2
+fun! s:ListAllRevs()
     "
     " Branch
     "
@@ -2554,23 +2554,23 @@ fun! s:ListAllRefs()
     let arr1 = []
     let active = ""
     let detached = 0
-    for ref in arr
-        if ref =~ "^\*.*"
-            let ref = substitute( ref, "^\* ", "", "" )
-            if ref =~ "(.*)"
+    for rev in arr
+        if rev =~ "^\*.*"
+            let rev = substitute( rev, "^\* ", "", "" )
+            if rev =~ "(.*)"
                 let detached = 1
-                let ref = substitute( ref, '(HEAD detached at \(.*\))', '\1', "" )
+                let rev = substitute( rev, '(HEAD detached at \(.*\))', '\1', "" )
             end
-            let active = ref
+            let active = rev
         end
-        call add( arr1, ref )
+        call add( arr1, rev )
     endfor
 
     " Remove whitespace from all arr1 and arr2 elements
     call map( arr1, 'substitute( v:val, "^ \\+", "", "g" )' )
     call map( arr2, 'substitute( v:val, "^ \\+", "", "g" )' )
 
-    " Make ref list unique
+    " Make rev list unique
     let all = sort(arr1 + arr2)
     let all = filter(copy(all), 'index(all, v:val, v:key+1)==-1')
 
@@ -2578,8 +2578,8 @@ fun! s:ListAllRefs()
 endfun
 " 2}}}
 " FUNCTION: DoNewBranch() {{{2
-fun! s:DoNewBranch(ref)
-    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " checkout -b " . shellescape(a:ref)
+fun! s:DoNewBranch(rev)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " checkout -b " . shellescape(a:rev)
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     call map( arr, '" " . v:val' )
@@ -2592,8 +2592,8 @@ fun! s:DoNewBranch(ref)
 endfun
 " 2}}}
 " FUNCTION: DoAddTag() {{{2
-fun! s:DoAddTag(ref)
-    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " tag " . shellescape(a:ref)
+fun! s:DoAddTag(rev)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " tag " . shellescape(a:rev)
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     call map( arr, '" " . v:val' )
@@ -2606,8 +2606,8 @@ fun! s:DoAddTag(ref)
 endfun
 " 2}}}
 " FUNCTION: DoDeleteBranch() {{{2
-fun! s:DoDeleteBranch(ref)
-    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " branch -d " . shellescape(a:ref)
+fun! s:DoDeleteBranch(rev)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " branch -d " . shellescape(a:rev)
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     call map( arr, '" " . v:val' )
@@ -2620,8 +2620,8 @@ fun! s:DoDeleteBranch(ref)
 endfun
 " 2}}}
 " FUNCTION: DoDeleteTag() {{{2
-fun! s:DoDeleteTag(ref)
-    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " tag -d " . shellescape(a:ref)
+fun! s:DoDeleteTag(rev)
+    let cmd = "git -C " . shellescape( s:cur_repo_path ) . " tag -d " . shellescape(a:rev)
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
     call map( arr, '" " . v:val' )
@@ -2645,23 +2645,23 @@ fun! s:BitsStop()
     return s:bits['ss']
 endfun
 " 2}}}
-" FUNCTION: BitsRef() {{{2
-fun! s:BitsRef( ref )
+" FUNCTION: BitsRev() {{{2
+fun! s:BitsRev( rev )
     let bits = []
 
-    let ref = deepcopy( a:ref )
+    let rev = deepcopy( a:rev )
 
-    for lt in split( ref, '\zs' )
+    for lt in split( rev, '\zs' )
         if has_key( s:bits, lt )
             call extend( bits, s:bits[lt] )
         else
-            call s:AppendMessageT( "Incorrect character in ref name: `" . lt . "'" )
+            call s:AppendMessageT( "Incorrect character in rev name: `" . lt . "'" )
         end
     endfor
 
-    " Ref preamble
+    " Rev preamble
     if len( bits ) > 0
-        let bits = s:bits['ref'] + bits
+        let bits = s:bits['rev'] + bits
     end
 
     return bits
@@ -3023,7 +3023,7 @@ endfun
 " 2}}}
 " FUNCTION: process_meta_data() {{{2
 " Arg 1 - bits decoded from zcode
-" reply - [ bits to skip, { file : "", ref : "", repo : "", wordref : "", chksum : "", site : "",
+" reply - [ bits to skip, { file : "", rev : "", repo : "", wordrev : "", chksum : "", site : "",
 "                           unused1 : "", unused2 : "", unused3 : "", error : "" } ]
 fun! s:process_meta_data( bits )
     let bits = reverse( deepcopy( a:bits ) )
@@ -3033,9 +3033,9 @@ fun! s:process_meta_data( bits )
 
     let decoded = {
       \  "file"     : "",
-      \  "ref"      : "",
+      \  "rev"      : "",
       \  "repo"     : "",
-      \  "wordref"  : "",
+      \  "wordrev"  : "",
       \  "chksum"   : "",
       \  "site"     : "",
       \  "unused1"  : "",
@@ -3088,7 +3088,7 @@ fun! s:process_meta_data( bits )
             " Handle what has been matched, either selector or data
             if mat == "ss"
                 break
-            elseif mat == "file" || mat == "ref" || mat == "repo" || mat == "wordref" || mat == "chksum" || mat == "site"
+            elseif mat == "file" || mat == "rev" || mat == "repo" || mat == "wordrev" || mat == "chksum" || mat == "site"
                 let current_selector = mat
             elseif mat == "unused1" || mat == "unused2" || mat == "unused3"
                 let current_selector = mat
@@ -3113,7 +3113,7 @@ endfun
 " FUNCTION: get_zekyll_bits_for_code() {{{2
 "
 " Gets zekyll bits for given code ($1)
-" Also gets meta data: ref, file, repo
+" Also gets meta data: rev, file, repo
 " and puts it into return array [ bits,
 " meta_data ]
 "
@@ -3126,7 +3126,7 @@ fun! s:get_zekyll_bits_for_code( zcode )
         let bits = s:decode_zcode ( a:zcode )
         if len( bits ) > 0
             let [ to_skip, meta_reply ] = s:process_meta_data( bits )
-            " meta_reply contains: { file : "", ref : "", repo : "", wordref : "", chksum : "", site : "",
+            " meta_reply contains: { file : "", rev : "", repo : "", wordrev : "", chksum : "", site : "",
             "                        unused1 : "", unused2 : "", unused3 : "", error : "" }
             " to_skip contains: number of final bits that contained the meta data
 
@@ -3150,9 +3150,9 @@ endfun
 let s:bits = {
 \ 'ss'       :  [ 1,1,0,0,1,1 ],
 \ 'file'     :  [ 1,1,0,0,0,0 ],
-\ 'ref'      :  [ 1,1,0,0,0,1 ],
+\ 'rev'      :  [ 1,1,0,0,0,1 ],
 \ 'repo'     :  [ 1,1,0,1,0,0 ],
-\ 'wordref'  :  [ 1,0,1,0,0,0 ],
+\ 'wordrev'  :  [ 1,0,1,0,0,0 ],
 \ 'chksum'   :  [ 1,0,1,0,0,1 ],
 \ 'site'     :  [ 0,0,0,0,1,0 ],
 \ 'unused1'  :  [ 0,1,0,0,1,0 ],
@@ -3228,9 +3228,9 @@ let s:bits = {
 let s:codes={
 \ 'ss'          : "110011",
 \ 'file'        : "110000",
-\ 'ref'         : "110001",
+\ 'rev'         : "110001",
 \ 'repo'        : "110100",
-\ 'wordref'     : "101000",
+\ 'wordrev'     : "101000",
 \ 'chksum'      : "101001",
 \ 'site'        : "000010",
 \ 'unused1'     : "010010",
@@ -3307,9 +3307,9 @@ let s:codes={
 let s:rcodes = {
 \ "110011"         : 'ss',
 \ "110000"         : 'file',
-\ "110001"         : 'ref',
+\ "110001"         : 'rev',
 \ "110100"         : 'repo',
-\ "101000"         : 'wordref',
+\ "101000"         : 'wordrev',
 \ "101001"         : 'chksum',
 \ "000010"         : 'site',
 \ "010010"         : 'unused1',
