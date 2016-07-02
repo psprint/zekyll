@@ -1065,6 +1065,39 @@ while (( 1 )); do
             local -a bits
             bits=( "${(@)NLIST_IS_SELECTED[beg_tidx,end_tidx]}" )
             bits=( "${(Oa)bits[@]}" )
+
+            # Now create the appendix
+            local -a appendix
+            appendix=()
+            BitsStart
+            appendix+=( "${reply[@]}" )
+            BitsRev "${btRev[content]}"
+            appendix+=( "${reply[@]}" )
+            BitsFile "${btFile[content]}"
+            appendix+=( "${reply[@]}" )
+            BitsRepo "${btRepo[content]}"
+            appendix+=( "${reply[@]}" )
+            #BitsSite
+            #appendix+=( "${reply[@]}" )
+            BitsStop
+            appendix+=( "${reply[@]}" )
+            BitsRemoveIfStartStop "${appendix[@]}"
+            appendix=( "${reply[@]}" )
+
+            if [ "${#appendix}" = "0" ]; then
+                local -a rev_bits 
+                rev_bits=( "${(@s::)codes['ss']}" )
+                rev_bits=( "${(Oa)rev_bits[@]}" )
+                if BitsCompareSuffix "${(j::)bits}" "${(j::)rev_bits}"; then
+                    # No metadata but 'ss' at end – add another one to
+                    # mark that the 'ss' is a real data
+                    bits=( "${bits[@]}" "${rev_bits[@]}" )
+                fi
+            else
+                appendix=( "${(Oa)appendix[@]}" )
+                bits=( "${bits[@]}" "${appendix[@]}" )
+            fi
+
             encode_zcode_arr01 "${bits[@]}"
             btZcode[content]="$REPLY"
         fi
@@ -1408,6 +1441,152 @@ draw-buttons() {
         zcurses attr "main" "$bold" "$colorpair"
     done
 }
+# }}}
+SetMessage() {
+    echo "$1"
+}
+# Bits functions {{{1
+# FUNCTION: BitsCompareSuffix {{{2
+# Compares suffix of the longer "$1" with whole "$2"
+BitsCompareSuffix() {
+    local -a long_bits short_bits
+    long_bits=( "${(@s::)1}" )
+    short_bits=( "${(@s::)2}" )
+
+    if [[ "${#long_bits}" -lt "${#short_bits}" ]]; then
+        return 1
+    fi
+
+    # Check if short_bits occur at the end of long_bits
+    integer beg_idx=$(( ${#long_bits} - ${#short_bits} + 1 ))
+    integer end_idx="${#long_bits}"
+    integer l not_equal=0 s=1
+    for (( l=beg_idx; l <= end_idx; l++ )); do
+        if [[ "${long_bits[$l]}" != "${short_bits[s]}" ]]; then
+            not_equal=1
+            break
+        fi
+        s+=1
+    done
+
+    return $not_equal
+}
+# 2}}}
+# FUNCTION: BitsRemoveIfStartStop() {{{2
+# This function removes any SS bits if meta-data is empty
+BitsRemoveIfStartStop() {
+    local -a appendix
+    appendix=( "$@" )
+
+    if BitsCompareSuffix "${(j::)appendix}" "${codes[ss]}"; then
+        integer end_idx=$(( ${#appendix} - ${#codes[ss]} ))
+        appendix=( "${(@)appendix[1,end_idx]}" )
+
+        if BitsCompareSuffix "${(j::)appendix}" "${codes[ss]}"; then
+            end_idx=$(( ${#appendix} - ${#codes[ss]} ))
+            appendix=( "${(@)appendix[1,end_idx]}" )
+
+            # Two consecutive SS bits occured, correct removal
+        else
+            # We couldn't remove second SS bits, so it means
+            # that there is some meta data, and we should
+            # restore already removed last SS bits
+            appendix+=( "${(@s::)codes[ss]}" )
+        fi
+    else
+        # This shouldn't happen, this function must be
+        # called after adding SS bits
+        reply=()
+        return 1
+    fi
+
+    reply=( "${appendix[@]}" )
+    return 0
+}
+# 2}}}
+# FUNCTION: BitsStart() {{{2
+BitsStart() {
+    reply=( "${(@s::)codes[ss]}" )
+}
+# 2}}}
+# FUNCTION: BitsStop() {{{2
+BitsStop() {
+    reply=( "${(@s::)codes[ss]}" )
+}
+# 2}}}
+# FUNCTION: BitsRef() {{{2
+BitsRev() {
+    local -a bits
+    local rev="$1"
+
+    for lt in "${(@s::)rev}"; do
+        if [ -n "${codes[$lt]}" ];then
+            bits+=( "${(@s::)codes[$lt]}" )
+        elif [ -n "$lt" ]; then
+            SetMessage "Incorrect character in rev name: '$lt', trying to continue"
+        fi
+    done
+
+    # Rev preamble
+    if [[ "${#bits}" -gt "0" ]]; then
+        bits=( "${(@s::)codes[ref]}" "${bits[@]}" )
+    fi
+
+    reply=( "${bits[@]}" )
+    return 0
+}
+# 2}}}
+# FUNCTION: BitsFile() {{{2
+BitsFile() {
+    local -a bits
+    local file="$1"
+
+    for lt in "${(@s::)file}"; do
+        if [ "$lt" = "." ]; then
+            bits+=( "${(@s::)codes[/]}" )
+        elif [ "$lt" = "/" ]; then
+             SetMessage "Incorrect character in file name: '$lt'"
+        else
+            if [ -n "${codes[$lt]}" ];then
+                bits+=( "${(@s::)codes[$lt]}" )
+            elif [ -n "$lt" ]; then
+                SetMessage "Incorrect character in file name: '$lt', trying to continue"
+            fi
+        fi
+    done
+
+    # File preamble
+    if [[ "${#bits}" -gt "0" ]]; then
+        bits=( "${(@s::)codes[file]}" "${bits[@]}" )
+    fi
+
+    reply=( "${bits[@]}" )
+    return 0
+}
+# 2}}}
+# FUNCTION: BitsRepo() {{{2
+BitsRepo() {
+    local -a bits
+    local repo="$1"
+
+    for lt in "${(@s::)repo}"; do
+        if [ -n "${codes[$lt]}" ]; then
+            bits+=( "${(@s::)codes[$lt]}" )
+        elif [ -n "$lt" ]; then
+            SetMessage "Incorrect character in repo name: '$lt', trying to continue"
+        fi
+    done
+
+    # Repo preamble
+    if [[ "${#bits}" -gt "0" ]]; then
+        bits=( "${(@s::)codes[repo]}" "${bits[@]}" )
+    fi
+
+    reply=( "${bits[@]}" )
+    return 0
+}
+# 2}}}
+# 1}}}
 #######################################################################################
 
 local -a entries

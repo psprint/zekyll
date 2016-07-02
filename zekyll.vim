@@ -2718,8 +2718,7 @@ fun! s:BitsRepo( repo )
 endfun
 " 2}}}
 " FUNCTION: BitsRemoveIfStartStop() {{{2
-" This function also ensures that the code ends
-" at double SS bits if data ends at SS bits
+" This function removes any SS bits if meta-data is empty
 fun! s:BitsRemoveIfStartStop( appendix )
     let appendix = deepcopy( a:appendix )
 
