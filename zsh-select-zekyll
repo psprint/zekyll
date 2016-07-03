@@ -1786,6 +1786,8 @@ while (( 1 )); do
     if [ "$REPLY" -gt 0 ]; then
         local selected
         selected="$reply[REPLY]"
+        tidx="${selected/(#b)([0-9]#)*/${match[1]}}"
+        selected="${selected#${tidx}_}"
         "${EDITOR:-vim}" "$selected"
     else
         break
