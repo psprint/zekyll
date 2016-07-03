@@ -219,12 +219,12 @@ fun! s:NormalRender( ... )
         call setline( s:line_welcome,   "     Welcome to Zekyll Manager" )
         if s:consistent ==? "no" || s:are_errors ==? "yes"
             call setline( s:line_welcome+1, ">" )
-            let prefix = " "
+            let s:prefix = " "
         else
             call setline( s:line_welcome+1, "" )
-            let prefix = ""
+            let s:prefix = ""
         end
-        call setline( s:line_consistent, prefix . s:GenerateIndexLine() )
+        call setline( s:line_consistent, s:GenerateIndexLine() )
         call setline( s:line_commit,     s:GenerateCommitResetLine() )
         call setline( s:line_gitops2,    s:GenerateStatusPushPullLine() )
         call setline( s:line_btops,      s:GenerateBTOpsLine() )
@@ -1065,7 +1065,11 @@ endfun
 " 2}}}
 " FUNCTION: GenerateIndexLine() {{{2
 fun! s:GenerateIndexLine()
-    return s:RPad( "Consistent: " . s:consistent, 21 ) . " | " .
+    let pad = 21
+    if s:prefix == " "
+        let pad = 20
+    end
+    return s:.prefix . s:RPad( "Consistent: " . s:consistent, pad ) . " | " .
          \ s:RPad( "Errors: " . s:are_errors, 21 ) . " | " .
          \ s:RPad( "[ Current index: <" . s:cur_index. "> ]", 16 )
 endfun
