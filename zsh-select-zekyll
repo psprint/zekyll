@@ -66,7 +66,7 @@ source "$REPO_DIR/lib/coding_functions"
 
 local IFS="
 "
-NLIST_REMEMBER_STATE=0
+NLIST_REMEMBER_STATE=2
 typeset -g REPLY="-1"
 typeset -ga reply reply2 reply3
 reply=()
