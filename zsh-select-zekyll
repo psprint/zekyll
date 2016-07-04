@@ -868,7 +868,7 @@ if [[ "$term_height" -lt 1 || "$term_width" -lt 1 ]]; then
 fi
 integer inner_height=term_height-5
 integer inner_width=term_width-5
-integer page_height=inner_height
+integer page_height=inner_height-2
 integer page_width=inner_width
 
 typeset -A btZcode btRev btFile btRepo btSite
