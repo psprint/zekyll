@@ -1492,7 +1492,7 @@ draw-buttons() {
             options=( "${(@s:|:)button[list]}" )
             integer current="${button[current]}"
             (( current = ( (current-1)%${#options} ) + 1 ))
-            local value="${options[current]}"
+            local value="<${options[current]}>"
             local c="${b}[contents]"
             : ${(P)c::=$value};
             button[contents]="$value"
