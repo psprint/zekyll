@@ -1064,8 +1064,7 @@ while (( 1 )); do
         element="${list[NLIST_CURRENT_IDX]}"
         tidx="${element//(#b)([0-9x]#)*/${match[1]}}"
         if [[ "$tidx" = <-> ]]; then
-            zekyll="${NLIST_TINDEX_TO_ZEKYLL[$tidx]}"
-            index="${NLIST_ZEKYLL_TO_INDEX[$zekyll]}"
+            index="${NLIST_TIDX_TO_INDEX[$tidx]}"
             integer beg_tidx="${NLIST_INDEX_TO_BEG_TIDX[$index]}"
             integer end_tidx="${NLIST_INDEX_TO_END_TIDX[$index]}"
             local -a bits
@@ -1683,12 +1682,9 @@ local -a zekylls1
 zekylls1=( "${entries[@]//(#b)(#s)([a-z0-9][a-z0-9][a-z0-9])*/${match[1]}}" )
 
 filter_for_existing_zekylls "${zekylls1[@]}"
-three_to_section_order "${#reply}" "${reply[@]}" "${reply2[@]}" "${reply3[@]}"
 
-local -a existing files sections numbers indices
+local -a existing indices
 existing=( "${reply[@]}" )
-files=( "${reply2[@]}" )
-sections=( "${reply3[@]}" )
 indices=()
 
 #
@@ -1712,68 +1708,69 @@ for (( i=1; i<=size; i++ )); do
 done
 
 #
-# Compute list that is to be passed to sel-list and
-# some additional data:
-# - tindex to zekyll array
-# - zekyll to index map
-# - zekyll to number map
+# Compute list that is to be passed to sel-list and also
+# list of what zekylls are selected, together with maps
+# that allow to access the data
 #
 
 unset i
-integer i j idx=0 p=0
-local -a full_list NLIST_IS_SELECTED NLIST_TINDEX_TO_ZEKYLL
-local -A NLIST_ZEKYLL_TO_INDEX NLIST_ZEKYLL_TO_NUMBER
-local -A NLIST_INDEX_TO_BEG_TIDX NLIST_INDEX_TO_END_TIDX
+integer i j tidx=0 p=0
+local -a files full_list sub_list section_list NLIST_IS_SELECTED
+local -A NLIST_TIDX_TO_INDEX NLIST_INDEX_TO_BEG_TIDX NLIST_INDEX_TO_END_TIDX
+local zekyll section
 for i in "${(oun)indices[@]}"; do
     set_index "$i" 
     compute_index_size_check_consistency -f
-    integer count="$REPLY"
-    local -a files
     files=( "${reply[@]}" )
+    integer count="${#files}"
 
     full_list+=( "x_${fg_bold[red]}Index $i, size $REPLY${reset_color}" )
     p=${#full_list}
     NLIST_NONSELECTABLE_ELEMENTS+=( $p )
     NLIST_HOP_INDEXES+=( $p )
 
-    NLIST_INDEX_TO_BEG_TIDX[$i]=$(( idx+1 ))
-    NLIST_INDEX_TO_END_TIDX[$i]=$(( idx+1+count-1 ))
+    NLIST_INDEX_TO_BEG_TIDX[$i]=$(( tidx+1 ))
 
+    sub_list=()
+    section_list=()
     for (( j=1; j<=count; j++ )); do
-        # Index in NLIST_IS_SELECTED array
-        idx=idx+1
-        full_list+=( "${idx}_${files[j]}" )
-
-        # Update the meta-data table
-        local zekyll="${files[j]//(#b)(#s)([a-z0-9][a-z0-9][a-z0-9])*/${match[1]}}"
-
-        # Store zekyll to which corresponding full_list element belongs
-        NLIST_TINDEX_TO_ZEKYLL+=( "$zekyll" )
-
-        # Store if the zekyll is active
-        if [ "${zekylls1[(r)$zekyll]}" = "$zekyll" ]; then
-            NLIST_IS_SELECTED+=( 1 )
+        if [[ "${files[j]}" = (#b)(#s)([a-z0-9][a-z0-9][a-z0-9]).([A-Z])* ]]; then
+            zekyll="${match[1]}"
+            section="${match[2]}"
         else
-            NLIST_IS_SELECTED+=( 0 )
+            print "Improper input data detected (${files[j]}), trying to continue"
+            continue
         fi
-
-        #
-        # Compute associative maps
-        #
 
         get_integer_from_base_36 "$zekyll"
         [ "$?" -gt 0 ] && print "Malformed zekyll ($zekyll) or zcode given, trying to continue (2)" && continue
-
-        NLIST_ZEKYLL_TO_NUMBER[$zekyll]="$REPLY"
 
         # Num counts from zero
         integer num="$REPLY"
         num=num+150
         integer quotient=num/150
 
-        # Index nr counts from 1
-        NLIST_ZEKYLL_TO_INDEX[$zekyll]="$quotient"
+        tidx=tidx+1
+
+        NLIST_TIDX_TO_INDEX[$tidx]="$quotient"
+        sub_list+=( "${tidx}_${files[j]}" )
+        section_list+=( "$section" )
+
+        # Store if the zekyll is active
+        if [ "${zekylls1[(r)$zekyll]}" = "$zekyll" ];then
+            NLIST_IS_SELECTED+=( 1 )
+        else
+            NLIST_IS_SELECTED+=( 0 )
+        fi
     done
+
+    NLIST_INDEX_TO_END_TIDX[$i]="$tidx"
+
+    #two_to_section_order "${#sub_list}" "${sub_list[@]}" "${section_list[@]}"
+    #sub_list=( "${reply[@]}" )
+
+    full_list+=( "${sub_list[@]}" )
+
 done
 
 #
