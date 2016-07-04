@@ -1766,8 +1766,8 @@ for i in "${(oun)indices[@]}"; do
 
     NLIST_INDEX_TO_END_TIDX[$i]="$tidx"
 
-    #two_to_section_order "${#sub_list}" "${sub_list[@]}" "${section_list[@]}"
-    #sub_list=( "${reply[@]}" )
+    two_to_section_order "${#sub_list}" "${sub_list[@]}" "${section_list[@]}"
+    sub_list=( "${reply[@]}" )
 
     full_list+=( "${sub_list[@]}" )
 

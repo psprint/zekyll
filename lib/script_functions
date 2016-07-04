@@ -321,5 +321,29 @@ three_to_section_order() {
     reply=( "${out_zekylls[@]}" ) ; reply2=( "${out_files[@]}" ) ; reply3=( "${out_sections[@]}" )
 }
 # }}}
+# FUNCTION: two_to_section_order {{{
+# Converts lists of zekylls, files and sections into
+# section order
+two_to_section_order() {
+    local -a zekylls files sections out_data out_sections
+    integer size="$1"
+    shift
+
+    data=( "${@[1,size]}" ) ; sections=( "${@[1+size,size*2]}" )
+
+    integer a i secsize="${#section_letters}"
+    for (( a=1; a<=secsize; a++ )); do
+        selected_section="${section_letters[a]}"
+        for (( i=1; i<=size; i++ )); do
+            [ "$selected_section" != "${sections[i]#.}" ] && continue
+
+            out_data+=( "${data[i]}" )
+            out_sections+=( "${sections[i]}" )
+        done
+    done
+
+    reply=( "${out_data[@]}" ) ; reply2=( "${out_sections[@]}" )
+}
+# }}}
 
 # vim:ft=zsh
