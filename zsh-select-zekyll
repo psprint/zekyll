@@ -866,12 +866,12 @@ if [[ "$term_height" -lt 1 || "$term_width" -lt 1 ]]; then
     term_height="${stty_out% *}"
     term_width="${stty_out#* }"
 fi
-integer inner_height=term_height-5
-integer inner_width=term_width-5
+integer inner_height=term_height-6
+integer inner_width=term_width-2
 integer page_height=inner_height-2
 integer page_width=inner_width
 
-typeset -A btZcode btRev btFile btRepo btSite
+typeset -A btZcode btRev btFile btRepo btSite btOrder
 
 btZcode=(
     x       3
@@ -924,12 +924,27 @@ btSite=(
     h       1
     label   "Site:"
     state   "inactive"
-    type    "toggle"
+    type    "list"
     contents "$ZEKYLL_SITE"
+    list    "gh|gl|bb"
+    current 1
+)
+
+btOrder=(
+    x       3
+    y       3
+    w       20
+    h       1
+    label   "Order:"
+    state   "inactive"
+    type    "list"
+    contents ""
+    list    "section|zekyll"
+    current 1
 )
 
 local -a buttons
-buttons=( btZcode btRev btFile btRepo btSite )
+buttons=( btZcode btRev btFile btRepo btSite btOrder )
 integer current_button="$(( ${#buttons} + 1 ))"
 
 typeset -a list disp_list
@@ -1308,24 +1323,12 @@ while (( 1 )); do
     NLIST_IS_BUTTON_MODE="$reply[10]"
     NLIST_BUTTON_BUFFER="$reply[11]"
 
-    # buttons=( btZcode btRev btFile btRepo btSite )
-    case $current_button in
-        (1)
-            btZcode[contents]="$NLIST_BUTTON_BUFFER"
-            ;;
-        (2)
-            btRev[contents]="$NLIST_BUTTON_BUFFER"
-            ;;
-        (3)
-            btFile[contents]="$NLIST_BUTTON_BUFFER"
-            ;;
-        (4)
-            btRepo[contents]="$NLIST_BUTTON_BUFFER"
-            ;;
-        (5)
-            btSite[contents]="$NLIST_BUTTON_BUFFER"
-            ;;
-    esac
+    # buttons=( btZcode btRev btFile btRepo btSite btOrder )
+    if [[ "$current_button" -le "${#buttons}" ]]; then
+        local b="${buttons[current_button]}"
+        local c="${b}[contents]"
+        : ${(P)c::=$NLIST_BUTTON_BUFFER};
+    fi
 
     if [ -z "$action" ]; then
         continue
@@ -1333,6 +1336,18 @@ while (( 1 )); do
         REPLY="$selection"
         reply=( "$list[@]" )
         break
+    elif [ "$action" = "ACCEPT" ]; then
+        if [[ "$current_button" -le "${#buttons}" ]]; then
+            local b
+            b="${buttons[$current_button]}"
+            button=( "${(@Pkv)b}" )
+            if [ "${button[type]}" = "list" ]; then
+                integer current="${button[current]}"
+                current+=1
+                local c="${b}[current]"
+                : ${(P)c::=$current};
+            fi
+        fi
     elif [ "$action" = "QUIT" ]; then
         REPLY=-1
         reply=( "$list[@]" )
@@ -1427,6 +1442,17 @@ draw-buttons() {
             zcurses attr "main" "$bold" "$colorpair"
         fi
 
+        if [ "${button[type]}" = "list" ]; then
+            local -a options
+            options=( "${(@s:|:)button[list]}" )
+            integer current="${button[current]}"
+            (( current = ( (current-1)%${#options} ) + 1 ))
+            local value="${options[current]}"
+            local c="${b}[contents]"
+            : ${(P)c::=$value};
+            button[contents]="$value"
+        fi
+
         local contents="${button[contents]}"
         integer clen="${#contents}"
         local label="${button[label]}"
@@ -1436,7 +1462,7 @@ draw-buttons() {
         zcurses string main "[ ${(r:${button[w]}-4:: :)label} ]"
         zcurses move main $(( term_height - 3 - 1 + button[y] )) $(( button[x] + llen + 3 ))
         integer size="$(( ${button[w]} - 4 - ${#label} ))"
-        if (( clen >= (button[w]-4-llen) )); then
+        if (( clen >= size )); then
             zcurses string main "…${contents[-size+2,-1]}"
         else
             zcurses string main "${contents}"
@@ -1451,8 +1477,13 @@ draw-buttons() {
         b="${buttons[current_button]}"
         local -A button
         button=( "${(@Pkv)b}" )
+        local contents="${button[contents]}"
+        integer size="$(( ${button[w]} - 4 - ${#label} ))"
+        integer add=$(( ${#contents} + 3 ))
 
-        zcurses move main $(( term_height - 3 - 1 + button[y] )) $(( ${button[x]} + ${#button[label]} + ${#button[contents]} + 3 ))
+        (( ${#contents} > size )) && add=size+4
+
+        zcurses move main $(( term_height - 3 - 1 + button[y] )) $(( ${button[x]} + ${#button[label]} + add ))
     fi
 }
 # }}}
