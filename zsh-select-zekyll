@@ -871,6 +871,7 @@ integer inner_width=term_width-2
 integer page_height=inner_height-2
 integer page_width=inner_width
 
+readonly BUTTON_ZCODE=1 BUTTON_REV=2 BUTTON_FILE=3 BUTTON_REPO=4 BUTTON_SITE=5 BUTTON_ORDER=6
 typeset -A btZcode btRev btFile btRepo btSite btOrder
 
 btZcode=(
@@ -1067,6 +1068,15 @@ while (( 1 )); do
 
         NLIST_IS_BUTTON_MODE="1"
         NLIST_BUTTON_BUFFER="${button[contents]}"
+
+        if [ "$current_button" = $BUTTON_ORDER ]; then
+            integer current="${button[current]}"
+            if [ "$current" = "1" ]; then
+                NLIST_CURRENT_ORDER="section"
+            elif [ "$current" = "2" ]; then
+                NLIST_CURRENT_ORDER="zekyll"
+            fi
+        fi
     else
         NLIST_IS_BUTTON_MODE="0"
         NLIST_BUTTON_BUFFER=""
@@ -1127,11 +1137,13 @@ while (( 1 )); do
     if [ -n "$NLIST_SEARCH_BUFFER" ]; then
         # Compute new list?
         if [[ "$NLIST_SEARCH_BUFFER" != "$prev_search_buffer" || "$NLIST_IS_UNIQ_MODE" -ne "$prev_uniq_mode"
-                || "$NLIST_IS_F_MODE" -ne "$prev_f_mode" ]]
+                || "$NLIST_IS_F_MODE" -ne "$prev_f_mode" || "$NLIST_CURRENT_ORDER" != "$prev_order" ]]
         then
             prev_search_buffer="$NLIST_SEARCH_BUFFER"
             prev_uniq_mode="$NLIST_IS_UNIQ_MODE"
             prev_f_mode="$NLIST_IS_F_MODE"
+            prev_order="$NLIST_CURRENT_ORDER"
+
             # regenerating list -> regenerating disp_list
             prev_start_idx=-1
 
@@ -1140,6 +1152,22 @@ while (( 1 )); do
             repeat 1; do
                 list=( "$@" )
             done
+
+            local -a elements
+            integer beg_tidx end_tidx
+            if [ "$NLIST_CURRENT_ORDER" = "zekyll" ]; then
+                for idx in "${(@k)NLIST_INDEX_TO_BEG_FIDX}"; do
+                    beg_fidx="${NLIST_INDEX_TO_BEG_FIDX[$idx]}"
+                    end_fidx="${NLIST_INDEX_TO_END_FIDX[$idx]}"
+                    elements=( "${(@)list[beg_fidx,end_fidx]}" )
+                    elements=( "${(@on)elements}" )
+                    list[beg_fidx,end_fidx]=( "${elements[@]}" )
+                done
+            elif [ "$NLIST_CURRENT_ORDER" = "section" ]; then
+                for i in "${(@k)NLIST_INDEX_TO_BEG_TIDX}"; do
+                    elements=()
+                done
+            fi
 
             # Remove non-selectable elements
             [ "$#NLIST_NONSELECTABLE_ELEMENTS" -gt 0 ] && for i in "${(nO)NLIST_NONSELECTABLE_ELEMENTS[@]}"; do
@@ -1236,9 +1264,10 @@ while (( 1 )); do
         # OR
         # Uniq mode was entered or left out
         # -> compute new list
-        if [[ -n "$prev_search_buffer" || "$NLIST_IS_UNIQ_MODE" -ne "$prev_uniq_mode" ]]; then
+        if [[ -n "$prev_search_buffer" || "$NLIST_IS_UNIQ_MODE" -ne "$prev_uniq_mode" || "$NLIST_CURRENT_ORDER" != "$prev_order" ]]; then
             prev_search_buffer=""
             prev_uniq_mode="$NLIST_IS_UNIQ_MODE"
+            prev_order="$NLIST_CURRENT_ORDER"
             # regenerating list -> regenerating disp_list
             prev_start_idx=-1
 
@@ -1247,6 +1276,22 @@ while (( 1 )); do
             repeat 1; do
                 list=( "$@" )
             done
+
+            local -a elements
+            integer beg_tidx end_tidx
+            if [ "$NLIST_CURRENT_ORDER" = "zekyll" ]; then
+                for idx in "${(@k)NLIST_INDEX_TO_BEG_FIDX}"; do
+                    beg_fidx="${NLIST_INDEX_TO_BEG_FIDX[$idx]}"
+                    end_fidx="${NLIST_INDEX_TO_END_FIDX[$idx]}"
+                    elements=( "${(@)list[beg_fidx,end_fidx]}" )
+                    elements=( "${(@on)elements}" )
+                    list[beg_fidx,end_fidx]=( "${elements[@]}" )
+                done
+            elif [ "$NLIST_CURRENT_ORDER" = "section" ]; then
+                for i in "${(@k)NLIST_INDEX_TO_BEG_TIDX}"; do
+                    elements=()
+                done
+            fi
 
             # Remove non-selectable elements only when in uniq mode
             [ "$NLIST_IS_UNIQ_MODE" -eq 1 ] && [ "$#NLIST_NONSELECTABLE_ELEMENTS" -gt 0 ] &&
@@ -1748,6 +1793,8 @@ unset i
 integer i j tidx=0 p=0
 local -a files full_list sub_list section_list NLIST_IS_SELECTED
 local -A NLIST_TIDX_TO_INDEX NLIST_INDEX_TO_BEG_TIDX NLIST_INDEX_TO_END_TIDX
+# Full list pointers
+local -A NLIST_INDEX_TO_BEG_FIDX NLIST_INDEX_TO_END_FIDX
 local zekyll section
 for i in "${(oun)indices[@]}"; do
     set_index "$i" 
@@ -1796,12 +1843,14 @@ for i in "${(oun)indices[@]}"; do
     done
 
     NLIST_INDEX_TO_END_TIDX[$i]="$tidx"
+    NLIST_INDEX_TO_BEG_FIDX[$i]=$(( ${#full_list} + 1 ))
 
     two_to_section_order "${#sub_list}" "${sub_list[@]}" "${section_list[@]}"
     sub_list=( "${reply[@]}" )
 
     full_list+=( "${sub_list[@]}" )
 
+    NLIST_INDEX_TO_END_FIDX[$i]="${#full_list}"
 done
 
 #
