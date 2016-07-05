@@ -588,6 +588,7 @@ sel-list-input() {
 _sellist_print_with_ansi() {
     local win="$1" text="$2" out col chunk Xout
     integer text_offset="$3" max_text_len="$4" text_len=0 no_match=0 nochunk_text_len to_skip_from_chunk to_chop_off_from_chunk before_len
+    local current_cp="$5"
 
     # 1 - non-escaped text, 2 - first number in the escaped text, with ;
     # 3 - second number, 4 - text after whole escape text
@@ -657,7 +658,7 @@ _sellist_print_with_ansi() {
             if (( col >= 30 && col <= 37 )); then
                 zcurses attr "$win" $c[col-29]/"$background"
             elif [[ "$col" -eq 0 ]]; then
-                zcurses attr "$win" "$colorpair"
+                zcurses attr "$win" "$current_cp"
             fi
         fi
     done
@@ -690,7 +691,7 @@ sel-list-draw() {
     zcurses attr "$win" "$bold" "$colorpair"
 
     integer i text_len
-    local text
+    local text current_cp
     for (( i=1; i<=end_idx; i++ )); do
         zcurses move "$win" $y "$x_offset"
 
@@ -705,15 +706,14 @@ sel-list-draw() {
         # Selected element drawn in distinct color
         if [[ "$tidx" = <-> && "${NLIST_IS_SELECTED[tidx]}" = "1" ]]; then
             zcurses attr "$win" "$bold" "$selectioncolor/$background"
-        fi
-
-        _sellist_print_with_ansi "$win" "$element" "$text_offset" "$max_text_len"
-        zcurses clear "$win" eol
-
-        # Turn of highlighting of selected element
-        if [[ "$tidx" = <-> && "${NLIST_IS_SELECTED[tidx]}" = "1" ]]; then
+            current_cp="$selectioncolor/$background"
+        else
             zcurses attr "$win" "$bold" "$colorpair"
+            current_cp="$colorpair"
         fi
+
+        _sellist_print_with_ansi "$win" "$element" "$text_offset" "$max_text_len" "$current_cp"
+        zcurses clear "$win" eol
 
         # Highlighted element 2/2
         [ "$i" = "$highlight" ] && zcurses attr "$win" -"$active_text"
@@ -725,6 +725,8 @@ sel-list-draw() {
         zcurses move "$win" $y "$x_offset"
         zcurses clear "$win" eol
     fi
+
+    zcurses attr "$win" "$bold" "$colorpair"
 }
 # }}}
 # FUNCTION: _sellist_exit {{{
@@ -1148,27 +1150,20 @@ while (( 1 )); do
             disp_list=( "${(@)list[NLIST_FROM_WHAT_IDX_LIST_IS_SHOWN, end_idx]}" )
 
             if [ -n "$colsearch_pattern" ]; then
-                local red=$'\x1b[00;31m' foreground="$fgcolor2" reset=$'\x1b[00;00m'
+                local red=$'\x1b[00;31m' reset=$'\x1b[00;00m'
 
                 integer i size="${#disp_list}"
-                local tidx
                 for (( i=1; i<=size; i++ )); do
                     # Is selected?
                     element="${disp_list[i]}"
-                    tidx="${element//(#b)([0-9x]#)*/${match[1]}}"
-                    if [ "${NLIST_IS_SELECTED[$tidx]}" = "1" ]; then
-                        foreground="$selectioncolor2"
-                    else
-                        foreground="$fgcolor2"
-                    fi
 
                     # Colorify
                     if [ "$NLIST_IS_F_MODE" -eq "1" ]; then
-                        element="${element//(#mia1)($~colsearch_pattern)/${red}${MATCH}${foreground}}"
+                        element="${element//(#mia1)($~colsearch_pattern)/${red}${MATCH}${reset}}"
                     elif [ "$NLIST_IS_F_MODE" -eq "2" ]; then
-                        element="${element//(#mia2)($~colsearch_pattern)/${red}${MATCH}${foreground}}"
+                        element="${element//(#mia2)($~colsearch_pattern)/${red}${MATCH}${reset}}"
                     else
-                        element="${element//(#mi)($~colsearch_pattern)/${red}${MATCH}${foreground}}"
+                        element="${element//(#mi)($~colsearch_pattern)/${red}${MATCH}${reset}}"
                     fi
 
                     disp_list[i]="$element"
