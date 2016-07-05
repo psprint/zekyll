@@ -264,6 +264,7 @@ else
         qprint "mv ${ZKLCOL[info2]}$f${ZKLCOL[rst]} _$f"
         if [ "$ZKL_PERFORM_WRITE" = "1" ]; then
             command mv "$f" "_${f}-$ts"
+            [ "$USE_GIT" = "1" ] && git add "$f"
         fi
     done
 fi
