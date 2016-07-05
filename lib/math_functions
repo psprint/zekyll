@@ -1,7 +1,7 @@
 setopt typesetsilent
 
 local -a characters
-characters=( a b c d e f g h i j k l m n o p q r s t u v w x y z 0 1 2 3 4 5 6 7 8 9 )
+characters=( 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z )
 
 # FUNCTION: letters_to_numbers {{{
 # Converts each character of input string into number 0..35
@@ -63,7 +63,7 @@ decode_zcode() {
 
     local -a bits
     local workingvar="$letters"
-    while [ "${workingvar//a/}" != "" ]; do
+    while [ "${workingvar//0/}" != "" ]; do
         div2 "$workingvar"
         workingvar="${reply[1]}"
         bits=( "${reply[2]}" "${bits[@]}" )
@@ -85,7 +85,7 @@ get_integer_from_base_36() {
     local workingvar="$letters"
 
     # Get base-2 generated array consisting of 1 and 0
-    while [ "${workingvar//a/}" != "" ]; do
+    while [ "${workingvar//0/}" != "" ]; do
         div2 "$workingvar"
         workingvar="${reply[1]}"
         bits=( "${reply[2]}" "${bits[@]}" )

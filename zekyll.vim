@@ -61,8 +61,8 @@ let s:working_area_end = 1
 let s:longest_lzsd = 0
 
 let s:code_selectors = []
-let s:characters = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
-                 \   "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
+let s:characters = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h",
+                \  "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" ]
 
 
 let s:after_zekyll_spaces = "    "
@@ -3038,7 +3038,7 @@ fun! s:decode_zcode( zcode )
 
     let bits = []
     let workingvar = letters
-    while workingvar !~ "^a*$"
+    while workingvar !~ "^0*$"
         let reply = s:div2( workingvar )
         let workingvar = reply[0]
         call insert( bits, reply[1] )
@@ -3150,7 +3150,7 @@ fun! s:get_zekyll_bits_for_code( zcode )
     let bits = []
     let meta_reply = {}
 
-    if a:zcode !~ '^\d\+/[[:space:]]*$' && a:zcode !~ '^\d\+/a*$'
+    if a:zcode !~ '^\d\+/[[:space:]]*$' && a:zcode !~ '^\d\+/0*$'
         let bits = s:decode_zcode ( a:zcode )
         if len( bits ) > 0
             let [ to_skip, meta_reply ] = s:process_meta_data( bits )
