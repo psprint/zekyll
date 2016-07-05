@@ -92,7 +92,7 @@ compute_index_size_check_consistency() {
                 # will be reported
                 nomatch=0
 
-                reply2+=( "$MATCH >> first after the not existing <<" )
+                reply2+=( "$MATCH >> first after not existing <<" )
 
                 # Should focus on listing index's files?
                 # Or wait till the nomatch to gather all
