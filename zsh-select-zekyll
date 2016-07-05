@@ -1151,22 +1151,15 @@ while (( 1 )); do
 
             if [ -n "$colsearch_pattern" ]; then
                 local red=$'\x1b[00;31m' reset=$'\x1b[00;00m'
-
-                integer i size="${#disp_list}"
-                for (( i=1; i<=size; i++ )); do
-                    # Is selected?
-                    element="${disp_list[i]}"
-
-                    # Colorify
+                # The repeat will make the matching work on a fresh heap
+                repeat 1; do
                     if [ "$NLIST_IS_F_MODE" -eq "1" ]; then
-                        element="${element//(#mia1)($~colsearch_pattern)/${red}${MATCH}${reset}}"
+                        disp_list=( "${(@)disp_list//(#mia1)($~colsearch_pattern)/$red${MATCH}$reset}" )
                     elif [ "$NLIST_IS_F_MODE" -eq "2" ]; then
-                        element="${element//(#mia2)($~colsearch_pattern)/${red}${MATCH}${reset}}"
+                        disp_list=( "${(@)disp_list//(#mia2)($~colsearch_pattern)/$red${MATCH}$reset}" )
                     else
-                        element="${element//(#mi)($~colsearch_pattern)/${red}${MATCH}${reset}}"
+                        disp_list=( "${(@)disp_list//(#mi)($~colsearch_pattern)/$red${MATCH}$reset}" )
                     fi
-
-                    disp_list[i]="$element"
                 done
             fi
 
