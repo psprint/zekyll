@@ -2256,18 +2256,29 @@ fun! s:RemoveLZSD(lzsd)
 
     let result = 0
     let delarr = []
+    let sum_shell_error = 0
     for entry in a:lzsd
         let entry[3] = substitute( entry[3], " ", "_", "g" )
         let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
-        let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv -f " . shellescape(file_name) . " _" . shellescape(file_name) . "-" . shellescape(ts)
+        let cmd = "cd " . shellescape( s:cur_repo_path ) . " && mv -f " . shellescape(file_name) .
+                    \ " _" . shellescape(file_name) . "-" . shellescape(ts)
         let cmd_output = system( cmd )
         let arr = split( cmd_output, '\n\+' )
 
         call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
         let result = result + v:shell_error
+        let sum_shell_error = v:shell_error
+
+        let cmd = "git -C ".shellescape( s:cur_repo_path ). " add " . shellescape(file_name)
+        let cmd_output = system( cmd )
+        let arr = split( cmd_output, '\n\+' )
+
+        call s:DebugMsgT( v:shell_error > 0, " Command [" . v:shell_error . "]: " . cmd, arr )
+        let result = result + v:shell_error
+        let sum_shell_error = sum_shell_error + 1000*v:shell_error
 
         " Message
-        call add( delarr, "(err:" . v:shell_error . ") {" . entry[1] . "." . entry[2] . "} " . entry[3] )
+        call add( delarr, "(err:" . sum_shell_error . ") {" . entry[1] . "." . entry[2] . "} " . entry[3] )
     endfor
 
     if result > 0
