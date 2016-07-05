@@ -55,6 +55,7 @@ compute_index_size_check_consistency() {
     local zzz
     for zzz in "${ZKL_INDEX_ZEKYLLS[@]}"; do
         start_size="${#reply}"
+        [[ "$start_size" -eq 0 ]] && break
         reply=( "${reply[@]:#$zzz.*(#m)}" )
         end_size="${#reply}"
 
@@ -100,10 +101,6 @@ compute_index_size_check_consistency() {
                 # file is still reported
                 [[ "$listing" -eq "1" ]] && break
             fi
-        fi
-
-        if [[ "$end_size" -eq 0 ]]; then
-            break
         fi
     done
 
