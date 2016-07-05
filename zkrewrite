@@ -312,9 +312,9 @@ for (( i=1; i<=size; i++ )); do
         fi
     else
         if [ "$USE_GIT" = "1" ]; then
-            qprint git mv "_$file1" "$file2"
+            qprint git mv "_$file" "$file"
         else
-            qprint mv "_$file1" "$file2"
+            qprint mv "_$file" "$file"
         fi
     fi
 done
