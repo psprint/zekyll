@@ -25,11 +25,9 @@ letters_to_numbers() {
 
     return 0
 }
-#}}}
-#
 # }}}
-# Converts array of numbers into string [a-z0-9]+ {{{
-#
+# FUNCTION: numbers_to_letters {{{
+# Converts array of numbers into string [a-z0-9]+
 numbers_to_letters() {
     REPLY=""
     integer i
@@ -44,8 +42,7 @@ numbers_to_letters() {
     return 0
 }
 # }}}
-
-#
+# FUNCTION: decode_zcode {{{
 # Takes zekyl code, i.e. 1/someletters
 # and decodes it to series of zekylls
 #
@@ -75,7 +72,8 @@ decode_zcode() {
     # print "Bits of the letters $letters are: ${(j::)bits[@]}"
     reply=( "${bits[@]}" )
 }
-
+# }}}
+# FUNCTION: get_integer_from_base_36 {{{
 # Converts given base-36 string into integer
 # Warning: it tagets integer (signed), so
 # the size of number is limited here (while
@@ -104,8 +102,8 @@ get_integer_from_base_36() {
     # TODO: detect overflow and other problems
     return 0
 }
-
-#
+# }}}
+# FUNCTION: encode_zcode_str01 {{{
 # Takes string of 0 and 1 that mark which zekylls are active
 # and encodes it to base 36 number expressed via a-z0-9
 #
@@ -114,8 +112,8 @@ encode_zcode_str01() {
     encode_zcode_24-bit_pack_numbers "${reply[@]}"
 
 }
-
-#
+# }}}
+# FUNCTION: encode_zcode_arr01 {{{
 # Takes array (positional parameters) of 0 and 1 that mark which
 # zekylls are active and encodes it to base 36 number expressed
 # via a-z0-9
@@ -124,8 +122,8 @@ encode_zcode_arr01() {
     arr_01_to_24-bit_pack_numbers "$@"
     encode_zcode_24-bit_pack_numbers "${reply[@]}"
 }
-
-#
+# }}}
+# FUNCTION: encode_zcode_24-bit_pack_numbers {{{
 # Takes 24-bit pack numbers whose bits mark which zekylls are active
 # and encodes them to base 36 number expressed via a-z0-9
 #
@@ -156,7 +154,8 @@ encode_zcode_24-bit_pack_numbers() {
     numbers_to_letters "${nums_base36[@]}"
     reply=( "${nums_base36[@]}" )
 }
-
+# }}}
+# FUNCTION: div2 {{{
 # $1 - zcode's letters
 # $reply - ( "zcode's letters after division" "remainder 0 or 1" )
 div2() {
@@ -212,9 +211,8 @@ div2() {
 
     return 0
 }
-
-
-#
+# }}}
+# FUNCTION: str_01_to_24-bit_pack_numbers {{{
 # Takes STRING of 0 and 1 and converts it to array of numbers
 # that are 24-bit packs taken from right to left, from the string
 #
@@ -225,8 +223,8 @@ str_01_to_24-bit_pack_numbers() {
 
     return 0
 }
-
-#
+# }}}
+# FUNCTION: arr_01_to_24-bit_pack_numbers {{{
 # Takes ARRAY (@) of 0 and 1 and converts it to array of numbers
 # that are 24-bit packs taken from right to left, from the string
 #
@@ -255,7 +253,8 @@ arr_01_to_24-bit_pack_numbers() {
     reply=( "${numbers[@]}" )
     return 0
 }
-
+# }}}
+# FUNCTION: div_24-bit_pack_numbers_36 {{{
 # $1 - series of 0 and 1 (bits marking which zekyll is active)
 # $reply - ( "series of 0 and 1, result of division" "remainder 0 ... 35" )
 div_24-bit_pack_numbers_36() {
@@ -304,8 +303,8 @@ div_24-bit_pack_numbers_36() {
 
     return 0
 }
-
-#
+# }}}
+# FUNCTION: convert_integer_to_base_36 {{{
 # Takes number in $1, returns string [a-z0-9]+
 # that is representation of the number in base 36
 #
@@ -330,5 +329,6 @@ convert_integer_to_base_36() {
 
     numbers_to_letters "${digits[@]}"
 }
+# }}}
 
 # vim:ft=zsh
