@@ -871,81 +871,6 @@ integer inner_width=term_width-2
 integer page_height=inner_height-2
 integer page_width=inner_width
 
-readonly BUTTON_ZCODE=1 BUTTON_REV=2 BUTTON_FILE=3 BUTTON_REPO=4 BUTTON_SITE=5 BUTTON_ORDER=6
-typeset -A btZcode btRev btFile btRepo btSite btOrder
-
-btZcode=(
-    x       3
-    y       1
-    w       80
-    h       1
-    label   "Zcode:"
-    state   "inactive"
-    type    "text"
-    contents "$ZEKYLL_ZCODE"
-)
-
-btRev=(
-    x       3
-    y       2
-    w       20
-    h       1
-    label   "Rev:"
-    state   "inactive"
-    type    "text"
-    contents "$ZEKYLL_REV"
-)
-
-btFile=(
-    x       $(( btRev[x] + btRev[w] + 1 ))
-    y       2
-    w       21
-    h       1
-    label   "File:"
-    state   "inactive"
-    type    "text"
-    contents "$ZEKYLL_FILE"
-)
-
-btRepo=(
-    x       $(( btFile[x] + btFile[w] + 1 ))
-    y       2
-    w       20
-    h       1
-    label   "Repo:"
-    state   "inactive"
-    type    "text"
-    contents "$ZEKYLL_REPO"
-)
-
-btSite=(
-    x       $(( btRepo[x] + btRepo[w] + 1 ))
-    y       2
-    w       16
-    h       1
-    label   "Site:"
-    state   "inactive"
-    type    "list"
-    contents "$ZEKYLL_SITE"
-    list    "gh|gl|bb"
-    current 1
-)
-
-btOrder=(
-    x       3
-    y       3
-    w       20
-    h       1
-    label   "Order:"
-    state   "inactive"
-    type    "list"
-    contents ""
-    list    "section|zekyll"
-    current 1
-)
-
-local -a buttons
-buttons=( btZcode btRev btFile btRepo btSite btOrder )
 integer current_button="$(( ${#buttons} + 1 ))"
 
 typeset -a list disp_list
@@ -958,6 +883,7 @@ integer current_difference=0
 local prev_search_buffer=""
 integer prev_uniq_mode=0
 integer prev_start_idx=-1
+local prev_order="section"
 local MBEGIN MEND MATCH mbegin mend match
 
 # Iteration over predefined keywords
@@ -989,6 +915,7 @@ if [[ -z "$NLIST_REMEMBER_STATE" || "$NLIST_REMEMBER_STATE" -eq 0 || "$NLIST_REM
     NLIST_TEXT_OFFSET=0
     NLIST_IS_UNIQ_MODE=0
     NLIST_IS_F_MODE=0
+    NLIST_CURRENT_ORDER="section"
 
     # Zero - because it isn't known, unless we
     # confirm that first element is selectable
@@ -1070,7 +997,13 @@ while (( 1 )); do
         NLIST_BUTTON_BUFFER="${button[contents]}"
 
         if [ "$current_button" = $BUTTON_ORDER ]; then
+            local -a options
+            options=( "${(@s:|:)button[list]}" )
             integer current="${button[current]}"
+            (( current = ( (current-1)%${#options} ) + 1 ))
+            local c="${b}[current]"
+            : ${(P)c::=$current}
+
             if [ "$current" = "1" ]; then
                 NLIST_CURRENT_ORDER="section"
             elif [ "$current" = "2" ]; then
@@ -1153,20 +1086,10 @@ while (( 1 )); do
                 list=( "$@" )
             done
 
-            local -a elements
-            integer beg_tidx end_tidx
             if [ "$NLIST_CURRENT_ORDER" = "zekyll" ]; then
-                for idx in "${(@k)NLIST_INDEX_TO_BEG_FIDX}"; do
-                    beg_fidx="${NLIST_INDEX_TO_BEG_FIDX[$idx]}"
-                    end_fidx="${NLIST_INDEX_TO_END_FIDX[$idx]}"
-                    elements=( "${(@)list[beg_fidx,end_fidx]}" )
-                    elements=( "${(@on)elements}" )
-                    list[beg_fidx,end_fidx]=( "${elements[@]}" )
-                done
+                switch-to-zekyll
             elif [ "$NLIST_CURRENT_ORDER" = "section" ]; then
-                for i in "${(@k)NLIST_INDEX_TO_BEG_TIDX}"; do
-                    elements=()
-                done
+                switch-to-section
             fi
 
             # Remove non-selectable elements
@@ -1277,20 +1200,10 @@ while (( 1 )); do
                 list=( "$@" )
             done
 
-            local -a elements
-            integer beg_tidx end_tidx
             if [ "$NLIST_CURRENT_ORDER" = "zekyll" ]; then
-                for idx in "${(@k)NLIST_INDEX_TO_BEG_FIDX}"; do
-                    beg_fidx="${NLIST_INDEX_TO_BEG_FIDX[$idx]}"
-                    end_fidx="${NLIST_INDEX_TO_END_FIDX[$idx]}"
-                    elements=( "${(@)list[beg_fidx,end_fidx]}" )
-                    elements=( "${(@on)elements}" )
-                    list[beg_fidx,end_fidx]=( "${elements[@]}" )
-                done
+                switch-to-zekyll
             elif [ "$NLIST_CURRENT_ORDER" = "section" ]; then
-                for i in "${(@k)NLIST_INDEX_TO_BEG_TIDX}"; do
-                    elements=()
-                done
+                switch-to-section
             fi
 
             # Remove non-selectable elements only when in uniq mode
@@ -1491,9 +1404,9 @@ draw-buttons() {
             local -a options
             options=( "${(@s:|:)button[list]}" )
             integer current="${button[current]}"
-            (( current = ( (current-1)%${#options} ) + 1 ))
+
             local value="<${options[current]}>"
-            local c="${b}[contents]"
+            c="${b}[contents]"
             : ${(P)c::=$value};
             button[contents]="$value"
         fi
@@ -1532,9 +1445,40 @@ draw-buttons() {
     fi
 }
 # }}}
+# FUNCTION: switch-to-zekyll {{{
+switch-to-zekyll() {
+    local -a elements sections
+    integer beg_tidx end_tidx idx
+    for idx in "${(@k)NLIST_INDEX_TO_BEG_FIDX}"; do
+        beg_fidx="${NLIST_INDEX_TO_BEG_FIDX[$idx]}"
+        end_fidx="${NLIST_INDEX_TO_END_FIDX[$idx]}"
+        elements=( "${(@)list[beg_fidx,end_fidx]}" )
+        elements=( "${(@on)elements}" )
+        list[beg_fidx,end_fidx]=( "${elements[@]}" )
+    done
+}
+# }}}
+# FUNCTION: switch-to-section {{{
+switch-to-section() {
+    local -a elements sections
+    integer beg_tidx end_tidx idx
+    for idx in "${(@k)NLIST_INDEX_TO_BEG_TIDX}"; do
+        beg_fidx="${NLIST_INDEX_TO_BEG_FIDX[$idx]}"
+        end_fidx="${NLIST_INDEX_TO_END_FIDX[$idx]}"
+        elements=( "${(@)list[beg_fidx,end_fidx]}" )
+        elements=( "${(@on)elements}" )
+        sections=( "${elements[@]/(#b)(#s)[0-9]##_[a-z0-9][a-z0-9][a-z0-9].([A-Z])*/${match[1]}}" )
+        two_to_section_order "${#elements}" "${elements[@]}" "${sections[@]}"
+        elements=( "${reply[@]}" )
+        list[beg_fidx,end_fidx]=( "${elements[@]}" )
+    done
+}
+# }}}
+# FUNCTION: SetMessage {{{
 SetMessage() {
     echo "$1"
 }
+# }}}
 # Bits functions {{{1
 # FUNCTION: BitsCompareSuffix {{{2
 # Compares suffix of the longer "$1" with whole "$2"
@@ -1852,6 +1796,86 @@ for i in "${(oun)indices[@]}"; do
 
     NLIST_INDEX_TO_END_FIDX[$i]="${#full_list}"
 done
+
+#
+# Prepare buttons
+#
+
+readonly BUTTON_ZCODE=1 BUTTON_REV=2 BUTTON_FILE=3 BUTTON_REPO=4 BUTTON_SITE=5 BUTTON_ORDER=6
+typeset -A btZcode btRev btFile btRepo btSite btOrder
+
+btZcode=(
+    x       3
+    y       1
+    w       80
+    h       1
+    label   "Zcode:"
+    state   "inactive"
+    type    "text"
+    contents "$ZEKYLL_ZCODE"
+)
+
+btRev=(
+    x       3
+    y       2
+    w       20
+    h       1
+    label   "Rev:"
+    state   "inactive"
+    type    "text"
+    contents "$ZEKYLL_REV"
+)
+
+btFile=(
+    x       $(( btRev[x] + btRev[w] + 1 ))
+    y       2
+    w       21
+    h       1
+    label   "File:"
+    state   "inactive"
+    type    "text"
+    contents "$ZEKYLL_FILE"
+)
+
+btRepo=(
+    x       $(( btFile[x] + btFile[w] + 1 ))
+    y       2
+    w       20
+    h       1
+    label   "Repo:"
+    state   "inactive"
+    type    "text"
+    contents "$ZEKYLL_REPO"
+)
+
+btSite=(
+    x       $(( btRepo[x] + btRepo[w] + 1 ))
+    y       2
+    w       16
+    h       1
+    label   "Site:"
+    state   "inactive"
+    type    "list"
+    contents "$ZEKYLL_SITE"
+    list    "gh|gl|bb"
+    current 1
+)
+
+btOrder=(
+    x       3
+    y       3
+    w       20
+    h       1
+    label   "Order:"
+    state   "inactive"
+    type    "list"
+    contents ""
+    list    "section|zekyll"
+    current 1
+)
+
+local -a buttons
+buttons=( btZcode btRev btFile btRepo btSite btOrder )
 
 #
 # Finally call sel-list
