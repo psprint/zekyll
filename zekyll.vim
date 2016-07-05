@@ -2336,7 +2336,7 @@ fun! s:IndexChangeSize()
     end
 
     let cmd = "zkiresize -p " . shellescape(s:cur_repo_path) . " -i " . s:cur_index .
-                \ " -q -w -n -s " . s:index_size_new . " --desc 'New Zekyll' --section A"
+                \ " -q -w -n -s " . s:index_size_new . " --desc 'New Zekyll' --section Z"
     let cmd_output = system( cmd )
     let arr = split( cmd_output, '\n\+' )
 
