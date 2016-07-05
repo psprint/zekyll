@@ -996,7 +996,7 @@ while (( 1 )); do
         NLIST_IS_BUTTON_MODE="1"
         NLIST_BUTTON_BUFFER="${button[contents]}"
 
-        if [ "$current_button" = $BUTTON_ORDER ]; then
+        if [ "${button[type]}" = "list" ]; then
             local -a options
             options=( "${(@s:|:)button[list]}" )
             integer current="${button[current]}"
@@ -1004,10 +1004,12 @@ while (( 1 )); do
             local c="${b}[current]"
             : ${(P)c::=$current}
 
-            if [ "$current" = "1" ]; then
-                NLIST_CURRENT_ORDER="section"
-            elif [ "$current" = "2" ]; then
-                NLIST_CURRENT_ORDER="zekyll"
+            if [ "$current_button" = $BUTTON_ORDER ]; then
+                if [ "$current" = "1" ]; then
+                    NLIST_CURRENT_ORDER="section"
+                elif [ "$current" = "2" ]; then
+                    NLIST_CURRENT_ORDER="zekyll"
+                fi
             fi
         fi
     else
