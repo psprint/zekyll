@@ -1360,7 +1360,7 @@ status-msg() {
 
     if [ "$border" = "1" ]; then
         if [[ "$current_button" -eq "$(( ${#buttons} + 1 ))" ]]; then
-            zcurses attr inner "$selectioncolor/$background"
+            zcurses attr inner "yellow/$background"
         fi
         zcurses border inner
         if [[ "$current_button" -eq "$(( ${#buttons} + 1 ))" ]]; then
