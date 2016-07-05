@@ -46,8 +46,8 @@ noansi
 if [ "$ZKL_HELP" = "1" ]; then
     pinfo "Usage: zkl-regenerate [options]"
     print "Translates files from given source zekylls to given destination zekylls."
-    print "Moves the files. If you ask to translate zekylls \"abcd\" to \"efgh\", it"
-    print "will move ab -> ef and cd -> gh, preserving descriptions of files."
+    print "Moves the files. If you ask to translate zekylls \"abcdef\" to \"ghijkl\","
+    print "it will move abc -> ghi and def -> jkl, preserving descriptions of files."
     print
     help-opts
     help-quiet
