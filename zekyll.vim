@@ -2704,16 +2704,10 @@ fun! s:BitsFile( file )
     let file = deepcopy( a:file )
 
     for lt in split( file, '\zs' )
-        if lt == "."
-            call extend( bits, s:bits["/"] )
-        elseif lt == "/"
-            call s:AppendMessageT( "Incorrect character in file name: `" . lt . "'" )
+        if has_key( s:bits, lt )
+            call extend( bits, s:bits[lt] )
         else
-            if has_key( s:bits, lt )
-                call extend( bits, s:bits[lt] )
-            else
-                call s:AppendMessageT( "Incorrect character in file name: `" . lt . "'" )
-            end
+            call s:AppendMessageT( "Incorrect character in file name: `" . lt . "'" )
         end
     endfor
 
@@ -3123,11 +3117,6 @@ fun! s:process_meta_data( bits )
             elseif mat == "unused1" || mat == "unused2" || mat == "unused3"
                 let current_selector = mat
             else
-                " File names use "/" to encode "." character. "/" itself is unavailable
-                if mat == "/" && current_selector == "file"
-                    let mat = "."
-                end
-
                 let decoded[ current_selector ] = decoded[ current_selector ] . mat
             end
         endwhile

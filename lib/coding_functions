@@ -189,8 +189,6 @@ process_meta_data() {
                     current_selector="$mat"
                     ;;
                 (*)
-                    # File names use "/" to encode "." character. "/" itself is unavailable
-                    [[ "$mat" = "/" && "$current_selector" = "file" ]] && mat="."
                     decoded[$current_selector]+="$mat"
                     ;;
             esac
