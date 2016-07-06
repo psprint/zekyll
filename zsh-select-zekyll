@@ -1566,16 +1566,10 @@ BitsFile() {
     local file="$1"
 
     for lt in "${(@s::)file}"; do
-        if [ "$lt" = "." ]; then
-            bits+=( "${(@s::)codes[/]}" )
-        elif [ "$lt" = "/" ]; then
-             SetMessage "Incorrect character in file name: '$lt'"
-        else
-            if [ -n "${codes[$lt]}" ];then
-                bits+=( "${(@s::)codes[$lt]}" )
-            elif [ -n "$lt" ]; then
-                SetMessage "Incorrect character in file name: '$lt', trying to continue"
-            fi
+        if [ -n "${codes[$lt]}" ];then
+            bits+=( "${(@s::)codes[$lt]}" )
+        elif [ -n "$lt" ]; then
+            SetMessage "Incorrect character in file name: '$lt', trying to continue"
         fi
     done
 
