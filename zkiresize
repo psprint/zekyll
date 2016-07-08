@@ -29,9 +29,10 @@ ZKL_SECTION=""
 ZKL_CONSISTENT=""
 ZKL_LIST=""
 ZKL_REPO=""
+ZKL_REQ=""
 zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: \
             s: -size: v -verbose w -write n -noansi -section: -desc: -consistent \
-            l -list r: -repo: || exit 1
+            l -list r: -repo: -req || exit 1
 
 (( ${+opthash[-w]} + ${+opthash[--write]} )) && ZKL_PERFORM_WRITE="1"
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
@@ -51,6 +52,7 @@ zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: \
 (( ${+opthash[-l]} + ${+opthash[--list]} )) && ZKL_LIST="1"
 (( ${+opthash[-r]} )) && ZKL_REPO="${opthash[-r]}"
 (( ${+opthash[--repo]} )) && ZKL_REPO="${opthash[--repo]}"
+(( ${+opthash[--req]} )) && ZKL_REQ="1"
 
 noansi
 
@@ -72,6 +74,7 @@ if [ "$ZKL_HELP" = "1" ]; then
     help-cons
     help-sect
     help-desc
+    help-req
 
     exit 0
 fi

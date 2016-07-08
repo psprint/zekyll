@@ -39,6 +39,7 @@ help-sect()  { print -- "--section           -- use given section name when e.g.
 help-desc()  { print -- "--desc              -- use given description when e.g. creating zekylls"; }
 help-cons()  { print -- "--consistent        -- check if index is consistent, output inconsistent files/zekylls"; }
 help-list()  { print -- "-l/--list           -- list files belonging to index, even when it's inconsistent"; }
+help-req()   { print -- "--req               -- require correct path (-p), repo (-r) or default repo (-d)"; }
 # }}}
 # FUNCTION: quiet {{{
 # Returns if quiet mode
@@ -170,6 +171,8 @@ resolve_path() {
     [[ -z "$ZEKYLL_DEFAULT_REPO" || -n "$ZKL_PATH" ]] && ask=1
 
     [[ -n "$ZEKYLL_DEFAULT_REPO" && -z "$ZKL_PATH" ]] && { get_path_from_repo "$ZEKYLL_DEFAULT_REPO"; ZKL_PATH="$REPLY"; }
+
+    [ "$ZKL_REQ" = 1 ] && ask=0
 
     (( ask )) && { read_destination_path "$ZKL_PATH" || return 1 }
 
