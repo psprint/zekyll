@@ -202,7 +202,7 @@ resolve_repo() {
 # FUNCTION: cd_will_work_on {{{
 # CD to path and show files there
 cd_will_work_on() {
-    [ -d "$1" ] || { perror "Error: path '$1' doesn't exist"; return 1 }
+    [ -d "$1" ] || { qerror "Error: path '$1' doesn't exist"; return 1 }
 
     cd "$1"
 
