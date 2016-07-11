@@ -2359,7 +2359,7 @@ fun! s:RemoveLZSD(lzsd)
         let entry[3] = substitute( entry[3], " ", "_", "g" )
         let file_name = entry[1] . "." . entry[2] . "--" . entry[3]
 
-        let cmd = "git -C ".shellescape( s:cur_repo_path ). " rm -f " . shellescape(file_name)
+        let cmd = "git -C ".shellescape( s:cur_repo_path ). " rm -f " . shellescape( entry[0] )
         let cmd_output = system( cmd )
         let arr = split( cmd_output, '\n\+' )
 
