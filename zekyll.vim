@@ -1120,6 +1120,8 @@ fun! s:ResetControlLines( )
     call setline( s:line_btops, btops_line )
     let save_line = s:GenerateSaveIndexSizeLine()
     call setline( s:line_save, save_line )
+    let code_line = s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo, s:c_site )
+    call setline( s:line_code, code_line )
 endfun
 " 2}}}
 " FUNCTION: IsEditAllowed() {{{2
@@ -1778,12 +1780,13 @@ fun! s:Space()
         end
         call setline( linenr, s:GenerateRule( 0 ) )
     elseif linenr < s:working_area_beg
-        " At reset line, or at save line?
+        " At which line: save, commit, index, status, BTOps, code?
         let s_result = matchlist( line, s:pat_Save_IndexSize )          " Save line
         let r_result = matchlist( line, s:pat_Commit_Reset_Checkout )   " Commit line
         let i_result = matchlist( line, s:pat_Index )                   " Index line
         let p_result = matchlist( line, s:pat_Status_Push_Pull )        " Status line
         let bt_result = matchlist( line, s:pat_BTOps )                  " BTOps line
+        let st_result = matchlist( line, s:pat_Code )                   " Code line
 
         " Index line (1)
         if len( i_result ) > 0
@@ -2050,6 +2053,23 @@ fun! s:Space()
             else
                 return 0
             end
+        " Code line? (6)
+        elseif len( st_result ) > 0
+                let line2 = substitute( line, '[^[]', "x", "g" )
+                let pos1 = stridx( line2, "[" ) + 1
+                let pos2 = pos1 + stridx( line2[pos1 :], "[" ) + 1
+                let pos3 = pos2 + stridx( line2[pos2 :], "[" ) + 1
+                let pos4 = pos3 + stridx( line2[pos3 :], "[" ) + 1
+                let pos5 = pos4 + stridx( line2[pos4 :], "[" ) + 1
+                let col = col( "." )
+
+                if col > pos5
+                    let choices = [ "gh", "bb", "gl" ]
+                    let s:c_site = s:IterateOver( choices, st_result[5] )
+
+                    " Redraw Control Lines
+                    call s:ResetControlLines()
+                end
         end
     elseif linenr > s:working_area_beg
         let entrynr = linenr - s:working_area_beg - 1
