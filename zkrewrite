@@ -298,6 +298,8 @@ done
 # Now move files from names starting with
 # "_" into names without underscore
 
+integer save_error=0 cmd_error=0
+
 size="${#destination_files}"
 for (( i=1; i<=size; i++ )); do
     local file="${destination_files[i]}"
@@ -306,6 +308,8 @@ for (( i=1; i<=size; i++ )); do
         if [ "$USE_GIT" = "1" ]; then
             qprint git mv "_$file" "$file"
             git mv "_$file" "$file"
+            save_error="$?"
+            [[ "$save_error" -gt 0 ]] && cmd_error="$save_error"
         else
             qprint mv "_$file1" "$file2"
             mv "_$file1" "$file2"
@@ -319,5 +323,6 @@ for (( i=1; i<=size; i++ )); do
     fi
 done
 
+return $cmd_error
 
 # vim:ft=zsh
