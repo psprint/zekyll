@@ -1030,7 +1030,8 @@ while (( 1 )); do
             integer beg_tidx="${NLIST_INDEX_TO_BEG_TIDX[$index]}"
             integer end_tidx="${NLIST_INDEX_TO_END_TIDX[$index]}"
             local -a bits
-            bits=( "${(@)NLIST_IS_SELECTED[beg_tidx,end_tidx]}" )
+            # Include version bits
+            bits=( 0 0 "${(@)NLIST_IS_SELECTED[beg_tidx,end_tidx]}" )
             bits=( "${(Oa)bits[@]}" )
 
             # Now create the appendix

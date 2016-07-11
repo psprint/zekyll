@@ -1475,7 +1475,8 @@ fun! s:GenerateCodeFromState()
     call extend( appendix, s:BitsStop() )
     let appendix = s:BitsRemoveIfStartStop( appendix )
 
-    let code_bits = reverse( copy( s:code_selectors ) )
+    " Include version bits
+    let code_bits = reverse( s:BitsVersion() + copy( s:code_selectors ) )
 
     if len( appendix ) == 0
         " There is no appendix, we should check if data is
@@ -2772,6 +2773,12 @@ fun! s:BitsStop()
     return s:bits['ss']
 endfun
 " 2}}}
+" FUNCTION: BitsVersion() {{{2
+fun! s:BitsVersion()
+    " Version 1
+    return [ 0, 0 ]
+endfun
+" 2}}}
 " FUNCTION: BitsRev() {{{2
 fun! s:BitsRev( rev )
     let bits = []
@@ -3289,6 +3296,9 @@ fun! s:get_zekyll_bits_for_code( zcode )
                 let bits = bits[ 0 : -1*to_skip-1 ]
                 let error = 0
             end
+
+            " Two last bits here are version
+            let bits = bits[ 0 : -3 ]
         end
     else
         " Empty Zcode, signal no error, return empty data structures

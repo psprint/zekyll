@@ -227,6 +227,12 @@ get_zekylls_for_code() {
 
     # Skip bits that were processed as meta data
     bits=( "${(@)bits[1,-1*REPLY-1]}" )
+
+    # Two last bits here are version
+    version=( "${(@)bits[-2,-1]}" )
+    bits[-1]=()
+    bits[-1]=()
+
     integer size="${#bits}"
 
     # Last zekyll from $reply is first zekyll
