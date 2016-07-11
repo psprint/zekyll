@@ -1053,8 +1053,8 @@ while (( 1 )); do
             appendix+=( "${reply[@]}" )
             BitsRepo "${btRepo[contents]}"
             appendix+=( "${reply[@]}" )
-            #BitsSite
-            #appendix+=( "${reply[@]}" )
+            BitsSite "${${${btSite[contents]}%?}#?}"
+            appendix+=( "${reply[@]}" )
             BitsStop
             appendix+=( "${reply[@]}" )
             BitsRemoveIfStartStop "${appendix[@]}"
@@ -1608,6 +1608,25 @@ BitsRepo() {
     if [[ "${#bits}" -gt "0" ]]; then
         bits=( "${(@s::)codes[repo]}" "${bits[@]}" )
     fi
+
+    reply=( "${bits[@]}" )
+    return 0
+}
+# 2}}}
+# FUNCTION: BitsSite() {{{2
+BitsSite() {
+    local -a bits
+    local site="$1"
+
+    reply=()
+
+    local site_lt="${sites[$1]}"
+    [ -z "$site_lt" ] && return
+
+    bits+=( "${(@s::)codes[$site_lt]}" )
+
+    # Site preamble
+    bits=( "${(@s::)codes[site]}" "${bits[@]}" )
 
     reply=( "${bits[@]}" )
     return 0
