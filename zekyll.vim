@@ -247,8 +247,20 @@ fun! s:NormalRender( ... )
 
         let @l = text
         silent put l
-
+    else
+        " To display information on error also in shallow renders
+        if s:consistent ==? "no" || s:are_errors ==? "yes"
+            call setline( s:line_welcome+1, ">" )
+            let s:prefix = " "
+        else
+            call setline( s:line_welcome+1, "" )
+            let s:prefix = ""
+        end
+        call setline( s:line_consistent, s:GenerateIndexLine() )
     end
+
+    " Error mark is short-lived
+    call s:MarkErrorsDuringGeneration(0)
 
     if depth >= 0
         call s:MarkGenerateCodeFromState()
@@ -1348,7 +1360,11 @@ fun! s:ComputeCodingState( op )
     if a:op == "regenerate"
         let [ correct_generation, s:c_code ] = s:GenerateCodeFromBuffer()
         if correct_generation
-            let msg = "Succesfully created code"
+            if s:are_errors ==? "yes"
+                let msg = "Erroneously created code"
+            else
+                let msg = "Succesfully created code"
+            end
 
             " Enumerate used fields
             if s:c_rev != "" || s:c_file != "" || s:c_repo != "" || s:c_site != ""
@@ -1585,6 +1601,21 @@ fun! s:MarkGenerateCodeFromState( ... )
     " Count
     else
         let s:called_GenerateCodeFromState = s:called_GenerateCodeFromState + 1
+    end
+    return 1
+endfun
+"1}}}
+" FUNCTION: MarkErrorsDuringGeneration() {{{2
+fun! s:MarkErrorsDuringGeneration( ... )
+    " Reset?
+    if a:0 && a:1 == 0
+        let s:are_errors = "no"
+    " Check?
+    elseif a:0 && a:1 == 1
+        return s:are_errors ==? "yes"
+    " Mark
+    else
+        let s:are_errors = "YES"
     end
     return 1
 endfun
@@ -2753,6 +2784,7 @@ fun! s:BitsRev( rev )
         else
             " Avoid double messages
             if s:MarkGenerateCodeFromState(1)
+                call s:MarkErrorsDuringGeneration()
                 call s:AppendMessageT( "Incorrect character in rev name: `" . lt . "'" )
             end
         end
@@ -2778,6 +2810,7 @@ fun! s:BitsFile( file )
         else
             " Avoid double messages
             if s:MarkGenerateCodeFromState(1)
+                call s:MarkErrorsDuringGeneration()
                 call s:AppendMessageT( "Incorrect character in file name: `" . lt . "'" )
             end
         end
@@ -2803,6 +2836,7 @@ fun! s:BitsRepo( repo )
         else
             " Avoid double messages
             if s:MarkGenerateCodeFromState(1)
+                call s:MarkErrorsDuringGeneration()
                 call s:AppendMessageT( "Incorrect character in repo name: `" . lt . "'" )
             end
         end
@@ -2828,6 +2862,7 @@ fun! s:BitsSite( site )
     else
         " Avoid double messages
         if s:MarkGenerateCodeFromState(1)
+            call s:MarkErrorsDuringGeneration()
             call s:AppendMessageT( "Incorrect site: `" . site . "'" )
         end
     end
