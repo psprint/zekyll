@@ -164,3 +164,17 @@ rcodes=(
 "1100101"       "D"
 "1100100"       "C"
 )
+
+local -A sites
+sites=(
+    gh  1
+    bb  2
+    gl  3
+)
+
+local -A rsites
+rsites=(
+    1   gh
+    2   bb
+    3   gl
+)

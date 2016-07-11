@@ -117,6 +117,7 @@ if [ -n "$ZKL_CODE" ]; then
             [ -n "${mdata[rev]}" ] && print "Meta-data/rev: ${mdata[rev]}"
             [ -n "${mdata[file]}" ] && print "Meta-data/file: ${mdata[file]}"
             [ -n "${mdata[repo]}" ] && print "Meta-data/repo: ${mdata[repo]}"
+            [ -n "${mdata[site]}" ] && print "Meta-data/site: ${mdata[site]}"
         fi
     fi
 fi

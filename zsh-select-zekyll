@@ -1841,9 +1841,12 @@ btSite=(
     state   "inactive"
     type    "list"
     contents "$ZEKYLL_SITE"
-    list    "gh|gl|bb"
+    list    "gh|bb|gl"
     current 1
 )
+
+btSite[current]="${sites[$ZEKYLL_SITE]}"
+[[ "${btSite[current]}" != <-> ]] && btSite[current]=1
 
 btOrder=(
     x       3
