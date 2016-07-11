@@ -1349,7 +1349,7 @@ fun! s:ComputeCodingState( op )
             let msg = "Succesfully created code"
 
             " Enumerate used fields
-            if s:c_rev != "" || s:c_file != "" || s:c_repo != ""
+            if s:c_rev != "" || s:c_file != "" || s:c_repo != "" || s:c_site != ""
                 let msg = msg . " for"
             end
             let was = 0
@@ -1363,6 +1363,10 @@ fun! s:ComputeCodingState( op )
             if s:c_repo != ""
                 let msg = msg . (was ? "," : "")
                 let [ was, msg ] = [ 1, msg . " repo: '" . s:c_repo ."'" ]
+            end
+            if s:c_site != ""
+                let msg = msg . (was ? "," : "")
+                let [ was, msg ] = [ 1, msg . " site: '" . s:c_site."'" ]
             end
 
             " How many selections message
@@ -1535,7 +1539,7 @@ fun! s:UpdateStateForZcode( zcode )
     end
 
     " Enumerate decoded fields
-    if s:c_rev != "" || s:c_file != "" || s:c_repo != ""
+    if s:c_rev != "" || s:c_file != "" || s:c_repo != "" || s:c_site != ""
         let msg = msg . " with"
     end
     let was = 0
@@ -1549,6 +1553,10 @@ fun! s:UpdateStateForZcode( zcode )
     if s:c_repo != ""
         let msg = msg . (was ? "," : "")
         let [ was, msg ] = [ 1, msg . " repo: '" . s:c_repo ."'" ]
+    end
+    if s:c_site != ""
+        let msg = msg . (was ? "," : "")
+        let [ was, msg ] = [ 1, msg . " site: '" . s:c_site."'" ]
     end
 
     " How many selections message
