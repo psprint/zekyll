@@ -2723,7 +2723,10 @@ fun! s:BitsRev( rev )
         if has_key( s:bits, lt )
             call extend( bits, s:bits[lt] )
         else
-            call s:AppendMessageT( "Incorrect character in rev name: `" . lt . "'" )
+            " Avoid double messages
+            if s:MarkGenerateCodeFromState(1)
+                call s:AppendMessageT( "Incorrect character in rev name: `" . lt . "'" )
+            end
         end
     endfor
 
@@ -2745,7 +2748,10 @@ fun! s:BitsFile( file )
         if has_key( s:bits, lt )
             call extend( bits, s:bits[lt] )
         else
-            call s:AppendMessageT( "Incorrect character in file name: `" . lt . "'" )
+            " Avoid double messages
+            if s:MarkGenerateCodeFromState(1)
+                call s:AppendMessageT( "Incorrect character in file name: `" . lt . "'" )
+            end
         end
     endfor
 
@@ -2767,7 +2773,10 @@ fun! s:BitsRepo( repo )
         if has_key( s:bits, lt )
             call extend( bits, s:bits[lt] )
         else
-            call s:AppendMessageT( "Incorrect character in repo name: `" . lt . "'" )
+            " Avoid double messages
+            if s:MarkGenerateCodeFromState(1)
+                call s:AppendMessageT( "Incorrect character in repo name: `" . lt . "'" )
+            end
         end
     endfor
 
