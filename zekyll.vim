@@ -1566,11 +1566,17 @@ endfun
 " 2}}}
 " FUNCTION: MarkGenerateCodeFromState() {{{2
 fun! s:MarkGenerateCodeFromState( ... )
+    " Reset?
     if a:0 && a:1 == 0
         let s:called_GenerateCodeFromState = 0
+    " Check?
+    elseif a:0 && a:1 == 1
+        return s:called_GenerateCodeFromState <= 1
+    " Count
     else
         let s:called_GenerateCodeFromState = s:called_GenerateCodeFromState + 1
     end
+    return 1
 endfun
 "1}}}
 " Utility functions {{{1
@@ -2784,7 +2790,7 @@ fun! s:BitsSite( site )
         call extend( bits, s:bits[lt] )
     else
         " Avoid double messages
-        if s:called_GenerateCodeFromState <= 1
+        if s:MarkGenerateCodeFromState(1)
             call s:AppendMessageT( "Incorrect site: `" . site . "'" )
         end
     end
