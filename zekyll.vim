@@ -2863,6 +2863,11 @@ fun! s:BitsSite( site )
 
     let site = deepcopy( a:site )
 
+    " Github is the default site
+    if site == "gh"
+        return bits
+    end
+
     if has_key( s:sites, site )
         let lt = s:sites[site]
         call extend( bits, s:bits[lt] )

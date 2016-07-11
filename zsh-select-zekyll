@@ -1620,6 +1620,9 @@ BitsSite() {
 
     reply=()
 
+    # Github is the default site
+    [ "$site" = "gh" ] && return
+
     local site_lt="${sites[$1]}"
     [ -z "$site_lt" ] && return
 
