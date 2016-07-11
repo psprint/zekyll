@@ -2391,7 +2391,7 @@ fun! s:Rename2LZSD(lzsd_lzsd)
     let renarr = []
     for entry in a:lzsd_lzsd 
         let entry[0][3] = substitute( entry[0][3], " ", "_", "g" )
-        let old_file_name = entry[0][1] . "." . entry[0][2] . "--" . entry[0][3]
+        let old_file_name = entry[0][0]
         let new_file_name = entry[1][1] . "." . entry[1][2] . "--" . entry[1][3]
         let cmd = "git -C " . shellescape( s:cur_repo_path ) . " mv " . shellescape(old_file_name) . " " . shellescape(new_file_name)
 
