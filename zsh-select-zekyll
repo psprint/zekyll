@@ -995,16 +995,21 @@ while (( 1 )); do
         local -A button
         button=( "${(@Pkv)b}" )
 
-        NLIST_IS_BUTTON_MODE="1"
-        NLIST_BUTTON_BUFFER="${button[contents]}"
-
         if [ "${button[type]}" = "list" ]; then
             local -a options
             options=( "${(@s:|:)button[list]}" )
             integer current="${button[current]}"
+            # This limits current to #options
             (( current = ( (current-1)%${#options} ) + 1 ))
             local c="${b}[current]"
             : ${(P)c::=$current}
+
+            c="${b}[contents]"
+            local opt="<${options[current]}>"
+            : ${(P)c::=$opt}
+
+            button[current]="$current"
+            button[contents]="$opt"
 
             if [ "$current_button" = $BUTTON_ORDER ]; then
                 if [ "$current" = "1" ]; then
@@ -1014,6 +1019,9 @@ while (( 1 )); do
                 fi
             fi
         fi
+
+        NLIST_IS_BUTTON_MODE="1"
+        NLIST_BUTTON_BUFFER="${button[contents]}"
     else
         NLIST_IS_BUTTON_MODE="0"
         NLIST_BUTTON_BUFFER=""
