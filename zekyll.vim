@@ -54,6 +54,7 @@ let s:c_code = ""
 let s:c_rev = ""
 let s:c_file = ""
 let s:c_repo = ""
+let s:c_site = "gh"
 
 let s:working_area_beg = 1
 let s:working_area_end = 1
@@ -139,7 +140,8 @@ let s:pat_Save_IndexSize  = 'Save[[:space:]]\+(\?<\?\([a-zA-Z]\{-1,}\)>\?)\?[[:s
 let s:pat_Code            = '\[[[:space:]]\+Code:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
                           \ '\[[[:space:]]\+Rev:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
                           \ '\[[[:space:]]\+File Name:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
-                          \ '\[[[:space:]]\+Repo:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*'
+                          \ '\[[[:space:]]\+Repo:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
+                          \ '\[[[:space:]]\+Site:[[:space:]]*<\?\(.\{-2}\)>\?[[:space:]]*\][[:space:]]*'
 
 let s:ACTIVE_NONE = 0
 let s:ACTIVE_CURRENT_INDEX = 1
@@ -159,6 +161,8 @@ let s:ACTIVE_CODE = 14
 let s:ACTIVE_REF = 15
 let s:ACTIVE_FILE = 16
 let s:ACTIVE_REPO = 17
+
+let s:called_GenerateCodeFromState = 0
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -228,7 +232,7 @@ fun! s:NormalRender( ... )
         call setline( s:line_commit,     s:GenerateCommitResetLine() )
         call setline( s:line_gitops2,    s:GenerateStatusPushPullLine() )
         call setline( s:line_btops,      s:GenerateBTOpsLine() )
-        call setline( s:line_code,       s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo ) )
+        call setline( s:line_code,       s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo, s:c_site ) )
         call setline( s:line_save,       s:GenerateSaveIndexSizeLine() )
         call setline( s:line_rule,       s:GenerateRule( 1 ) )
         call cursor(s:last_line+1,1)
@@ -247,8 +251,11 @@ fun! s:NormalRender( ... )
     end
 
     if depth >= 0
+        call s:MarkGenerateCodeFromState()
         let [ correct_generation, s:c_code ] = s:GenerateCodeFromState()
-        call setline( s:line_code, s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo ) )
+        " Restore mark that tells if GenerateCodeFromState was already called in this run
+        call s:MarkGenerateCodeFromState(0)
+        call setline( s:line_code, s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo, s:c_site ) )
 
         if !correct_generation
             call s:AppendMessageT( "Error: couldn't generate code for current index, selections and meta-data" )
@@ -1075,11 +1082,12 @@ fun! s:GenerateIndexLine()
 endfun
 " 2}}}
 " FUNCTION: GenerateCodeLine() {{{2
-fun! s:GenerateCodeLine( index, code, rev, file_name, repo )
-    let line = "[ Code: " . a:index . "/" . s:RPad( a:code, 15, " " ) . " ] "
-    let line = line . "[ Rev: " . s:RPad( a:rev, 15, " " ) . " ] "
-    let line = line . "[ File Name: " . s:RPad( a:file_name, 15, " " ) . " ] "
-    let line = line . "[ Repo: " . s:RPad( a:repo, 15, " " ) . " ] ~"
+fun! s:GenerateCodeLine( index, code, rev, file_name, repo, site )
+    let line = "[ Code: " . a:index . "/" . s:RPad( a:code, 10, " " ) . " ] "
+    let line = line . "[ Rev: " . s:RPad( a:rev, 7, " " ) . " ] "
+    let line = line . "[ File Name: " . s:RPad( a:file_name, 7, " " ) . " ] "
+    let line = line . "[ Repo: " . s:RPad( a:repo, 7, " " ) . " ] "
+    let line = line . "[ Site: <" . a:site . "> ] ~"
     return line
 endfun
 " 2}}}
@@ -1420,9 +1428,11 @@ fun! s:GenerateCodeFromBuffer()
         let s:c_rev = result[2]
         let s:c_file = result[3]
         let s:c_repo = result[4]
+        let s:c_site = result[5]
 
-        let [ s:c_rev, s:c_file, s:c_repo ] = s:TrimBlanks( s:c_rev, s:c_file, s:c_repo )
+        let [ s:c_rev, s:c_file, s:c_repo, s:c_site ] = s:TrimBlanks( s:c_rev, s:c_file, s:c_repo, s:c_site )
 
+        call s:MarkGenerateCodeFromState()
         return s:GenerateCodeFromState()
     else
         return [0, s:c_code ]
@@ -1439,6 +1449,7 @@ fun! s:GenerateCodeFromState()
     call extend( appendix, s:BitsRev(s:c_rev) )
     call extend( appendix, s:BitsFile(s:c_file) )
     call extend( appendix, s:BitsRepo(s:c_repo) )
+    call extend( appendix, s:BitsSite(s:c_site) )
     call extend( appendix, s:BitsStop() )
     let appendix = s:BitsRemoveIfStartStop( appendix )
 
@@ -1481,6 +1492,18 @@ fun! s:UpdateStateForZcode( zcode )
     let s:c_rev = has_key( meta_data, 'rev' ) ? meta_data['rev'] : ""
     let s:c_file = has_key( meta_data, 'file' ) ? meta_data['file'] : ""
     let s:c_repo = has_key( meta_data, 'repo' ) ? meta_data['repo'] : ""
+    if has_key( meta_data, 'site' )
+        let site_id = meta_data['site']
+        if has_key( s:rsites, site_id )
+            let s:c_site = s:rsites[site_id]
+        else
+            if site_id == ""
+                s:c_site = ""
+            else
+                call s:AppendMessageT( "Incorrect decoded site: " . site_id . " (should be number 1..3)" )
+            end
+        end
+    end
 
     if new_len > cur_len
         let problems = 1
@@ -1489,6 +1512,7 @@ fun! s:UpdateStateForZcode( zcode )
         let s:code_selectors = s:code_selectors[0:cur_len-1]
 
         " Regenerate
+        call s:MarkGenerateCodeFromState()
         let [ correct_generation, s:c_code ] = s:GenerateCodeFromState()
 
         if correct_generation
@@ -1540,6 +1564,14 @@ fun! s:UpdateStateForZcode( zcode )
     return 1
 endfun
 " 2}}}
+" FUNCTION: MarkGenerateCodeFromState() {{{2
+fun! s:MarkGenerateCodeFromState( ... )
+    if a:0 && a:1 == 0
+        let s:called_GenerateCodeFromState = 0
+    else
+        let s:called_GenerateCodeFromState = s:called_GenerateCodeFromState + 1
+    end
+endfun
 "1}}}
 " Utility functions {{{1
 " FUNCTION: DiscoverWorkArea() {{{2
@@ -2741,6 +2773,30 @@ fun! s:BitsRepo( repo )
     return bits
 endfun
 " 2}}}
+" FUNCTION: BitsSite() {{{2
+fun! s:BitsSite( site )
+    let bits = []
+
+    let site = deepcopy( a:site )
+
+    if has_key( s:sites, site )
+        let lt = s:sites[site]
+        call extend( bits, s:bits[lt] )
+    else
+        " Avoid double messages
+        if s:called_GenerateCodeFromState <= 1
+            call s:AppendMessageT( "Incorrect site: `" . site . "'" )
+        end
+    end
+
+    " Site preamble
+    if len( bits ) > 0
+        let bits = s:bits['site'] + bits
+    end
+
+    return bits
+endfun
+" 2}}}
 " FUNCTION: BitsRemoveIfStartStop() {{{2
 " This function removes any SS bits if meta-data is empty
 fun! s:BitsRemoveIfStartStop( appendix )
@@ -2788,6 +2844,7 @@ fun! s:BitsCompareSuffix( long_bits, short_bits )
     return equal
 endfun
 " 2}}}
+" 1}}}
 " Coding functions {{{1
 " FUNCTION: LettersToNumbers() {{{2
 fun! s:LettersToNumbers( letters )
@@ -3166,6 +3223,18 @@ endfun
 " 1}}}
 " 1}}}
 " ------------------------------------------------------------------------------
+
+let s:sites = {
+\ "gh" : "1",
+\ "bb" : "2",
+\ "gl" : "3",
+\ }
+
+let s:rsites = {
+\ "1" : "gh",
+\ "2" : "bb",
+\ "3" : "gl",
+\ }
 
 let s:bits = {
 \ "ss"         :  [ 1,0,1,0,0,0 ],
