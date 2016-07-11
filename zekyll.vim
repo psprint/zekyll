@@ -1520,7 +1520,7 @@ fun! s:UpdateStateForZcode( zcode )
             let s:c_site = s:rsites[site_id]
         else
             if site_id == ""
-                s:c_site = ""
+                let s:c_site = ""
             else
                 call s:AppendMessageT( "Incorrect decoded site: " . site_id . " (should be number 1..3)" )
             end
