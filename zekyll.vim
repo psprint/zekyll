@@ -2314,6 +2314,32 @@ fun! s:SetupSyntaxHighlighting()
     syn match helpUnderlined      "\d\+/[a-z0-9]\+"
 endfun
 " 2}}}
+" FUNCTION: PathToRepo() {{{2
+fun! s:PathToRepo( path )
+    let result = matchlist( a:path, '\([a-z0-9][a-z0-9]\)---\([a-zA-Z0-9][a-zA-Z0-9-]*\)---\([a-zA-Z0-9_-]\+\)---\([a-zA-Z0-9_/.~-]\+\)$' )
+    if len( result ) > 0
+        let repo = ""
+        if result[1] !=? "gh"
+            let repo = result[1] . "@"
+        end
+        let repo = repo . result[2]
+
+        " Repo is appended when it is not "zkl"
+        " or when branch is not "master"
+        if result[3] !=? "zkl" || result[4] !=? "master"
+            let repo = repo . "/" . result[3]
+        end
+
+        if result[4] !=? "master"
+            let repo = repo . "/" . result[4]
+        end
+    else
+        let repo = "(non-standard)"
+    end
+
+    return repo
+endfun
+" 2}}}
 " 1}}}
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
@@ -3585,6 +3611,8 @@ unlet s:keepcpo
 "        File browsing using vim-dirvish code, which is GPL licensed
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+" Dirvish {{{
+
 " Plugin
 
 command! -bar -nargs=? -complete=dir ZMDirvish call <SID>ZMDirvish_open(<q-args>)
@@ -4027,5 +4055,25 @@ function! s:ZMLoad(...) abort
     if a:0 == 0
         execute ":ZMDirvish"
     end
-    echom "My arguments: " . string( a:000 )
+
+    let path = a:1
+    if isdirectory( path )
+        let s:cur_repo_path = path
+    else
+        if filereadable(path)
+            let path = fnamemodify(path, ':p:h')
+            let s:cur_repo_path = path
+        else
+            let path = substitute( path, '/[^/]\+$', "", "" )
+            let s:cur_repo_path = path
+        end
+
+    end
+
+    let s:cur_repo = s:PathToRepo( s:cur_repo_path )
+    set lz
+    call <SID>StartZekyll()
+    set nolz
 endfunction
+
+" }}}
