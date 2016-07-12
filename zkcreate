@@ -81,8 +81,8 @@ if [[ -n "$ZKL_SECTION" && "$ZKL_SECTION" != [A-Z] ]]; then
     exit 25
 fi
 
-if [[ "$ZKL_DESCRIPTION" != "[]" && "$ZKL_DESCRIPTION" != [[:blank:]a-zA-Z0-9_-]# ]]; then
-    qerror "Improper description given. Allowed are letters, digits, underscores, spaces and hyphens"
+if [[ "$ZKL_DESCRIPTION" != "[]" && "$ZKL_DESCRIPTION" != [[:space:][:alpha:]0-9_-]# ]]; then
+    qerror "Improper description given ($ZKL_DESCRIPTION). Allowed are letters (unicode), digits, underscores, spaces and hyphens"
     exit 26
 fi
 
