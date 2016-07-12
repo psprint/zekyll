@@ -3582,31 +3582,14 @@ unlet s:keepcpo
 
 " Plugin
 
-if exists('g:loaded_dirvish') || &cp || version < 700 || &cpo =~# 'C'
-  finish
-endif
-let g:loaded_dirvish = 1
-
-command! -bar -nargs=? -complete=dir Dirvish call dirvish#open(<q-args>)
-command! -bar -nargs=* -complete=file -range Shdo call dirvish#shdo(<line1>, <line2>, <q-args>)
+command! -bar -nargs=? -complete=dir ZMDirvish call dirvish#open(<q-args>)
 
 function! s:isdir(dir)
   return !empty(a:dir) && (isdirectory(a:dir) ||
     \ (!empty($SYSTEMDRIVE) && isdirectory('/'.tolower($SYSTEMDRIVE[0]).a:dir)))
 endfunction
 
-augroup dirvish_ftdetect
-  autocmd!
-  " nuke netrw brain damage
-  autocmd VimEnter * silent! au! FileExplorer *
-  autocmd BufEnter * if !exists('b:dirvish') && <SID>isdir(expand('%'))
-    \ | redraw | echo ''
-    \ | exe 'Dirvish %' | endif
-augroup END
-
-highlight! link DirvishPathTail Directory
-
-nnoremap <silent> <Plug>(dirvish_up) :<C-U>exe 'Dirvish %:p'.repeat(':h',v:count1)<CR>
+nnoremap <silent> <Plug>(dirvish_up) :<C-U>exe 'ZMDirvish %:p'.repeat(':h',v:count1)<CR>
 
 if mapcheck('-', 'n') ==# '' && !hasmapto('<Plug>(dirvish_up)', 'n')
   nmap - <Plug>(dirvish_up)
@@ -3614,16 +3597,12 @@ endif
 
 " Syntax
 
-if exists("b:current_syntax")
-  finish
-endif
-
 let s:sep = exists('+shellslash') && !&shellslash ? '\\' : '\/'
 
-exe 'syntax match DirvishPathHead ''\v.*'.s:sep.'\ze[^'.s:sep.']+'.s:sep.'?$'' conceal'
-exe 'syntax match DirvishPathTail ''\v[^'.s:sep.']+'.s:sep.'$'''
+exe 'syntax match ZMDirvishPathHead ''\v.*'.s:sep.'\ze[^'.s:sep.']+'.s:sep.'?$'' conceal'
+exe 'syntax match ZMDirvishPathTail ''\v[^'.s:sep.']+'.s:sep.'$'''
 
-let b:current_syntax = "dirvish"
+highlight! link ZMDirvishPathTail Directory
 
 " Autoload
 
@@ -3632,7 +3611,7 @@ let s:noswapfile = (2 == exists(':noswapfile')) ? 'noswapfile' : ''
 let s:noau       = 'silent noautocmd keepjumps'
 
 function! s:msg_error(msg) abort
-  redraw | echohl ErrorMsg | echomsg 'dirvish:' a:msg | echohl None
+  redraw | echohl WarningMsg | echomsg 'dirvish:' a:msg | echohl None
 endfunction
 
 " Normalize slashes for safe use of fnameescape(), isdirectory(). Vim bug #541.
@@ -3678,53 +3657,11 @@ function! s:list_dir(dir) abort
   "Append dot-prefixed files. glob() cannot do both in 1 pass.
   let paths = paths + s:globlist(dir_esc.'.[^.]*')
 
-  if get(g:, 'dirvish_relative_paths', 0)
+  if get(g:, 'zekyll_relative_paths', 0)
       \ && a:dir != s:parent_dir(getcwd()) "avoid blank CWD
     return sort(map(paths, "fnamemodify(v:val, ':p:.')"))
   else
     return sort(map(paths, "fnamemodify(v:val, ':p')"))
-  endif
-endfunction
-
-function! dirvish#shdo(l1, l2, cmd)
-  let lines = filter(getline(a:l1, a:l2), '-1!=match(v:val,"\\S")') "find non-empty
-  if empty(lines) | call s:msg_error('empty path') | return | endif
-
-  let dirvish_bufnr = bufnr('%')
-  let cmd = a:cmd =~# '\V{}' ? a:cmd : (empty(a:cmd)?'{}':(a:cmd.' {}')) "DWIM
-  "Paths coming from non-dirvish buffers may be jagged; assume CWD instead of narrowing.
-  let should_narrow = exists('b:dirvish')
-  let dir = should_narrow ? b:dirvish._dir : getcwd()
-  let tmpfile = tempname().(&sh=~?'cmd.exe'?'.bat':(&sh=~'powershell'?'.ps1':'.sh'))
-
-  for i in range(0, len(lines)-1)
-    let f = substitute(lines[i], escape(s:sep,'\').'$', '', 'g') "trim slash
-    if !filereadable(f) && !isdirectory(f)
-      let lines[i] = '#invalid path: '.shellescape(f)
-      continue
-    endif
-    let f = should_narrow && 2==exists(':lcd') ? fnamemodify(f, ':t') : lines[i]
-    let lines[i] = substitute(cmd, '\V{}', escape(shellescape(f),'\'), 'g')
-  endfor
-  execute 'split' tmpfile '|' (2==exists(':lcd')?('lcd '.dir):'')
-  setlocal nobuflisted
-  silent keepmarks keepjumps call setline(1, lines)
-  write
-  if executable('chmod')
-    call system('chmod u+x '.tmpfile)
-  endif
-
-  augroup dirvish_shcmd
-    autocmd! * <buffer>
-    " Refresh after executing the command.
-    exe 'autocmd ShellCmdPost <buffer> if bufexists('.dirvish_bufnr.')|buffer '.dirvish_bufnr
-          \ .'|silent! Dirvish %|buffer '.bufnr('%')
-  augroup END
-
-  if exists(':terminal')
-    nnoremap <buffer><silent> Z! :write<Bar>te %<CR>
-  else
-    nnoremap <buffer><silent> Z! :write<Bar>!%<CR>
   endif
 endfunction
 
@@ -3749,7 +3686,7 @@ function! s:on_bufenter() abort
   let w:dirvish = extend(get(w:, 'dirvish', {}), b:dirvish, 'keep')
 
   if empty(getline(1)) && 1 == line('$')
-    Dirvish %
+    ZMDirvish %
     return
   endif
   if 0 == &l:cole
@@ -3832,7 +3769,7 @@ function! s:open_selected(split_cmd, bg, line1, line2) abort
     endif
 
     if isdirectory(path)
-      exe (splitcmd ==# 'edit' ? '' : splitcmd.'|') 'Dirvish' fnameescape(path)
+      exe (splitcmd ==# 'edit' ? '' : splitcmd.'|') 'ZMDirvish' fnameescape(path)
     else
       exe splitcmd fnameescape(path)
     endif
@@ -3978,7 +3915,7 @@ function! s:do_open(d, reload) abort
   endif
 
   if s:sl(bufname('%')) !=# d._dir  "We have a bug or Vim has a regression.
-    echoerr 'expected buffer name: "'.d._dir.'" (actual: "'.bufname('%').'")'
+    echohl WarningMsg | echo 'expected buffer name: "'.d._dir.'" (actual: "'.bufname('%').'")' | echohl None
     return
   endif
 
