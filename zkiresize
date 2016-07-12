@@ -38,10 +38,10 @@ zparseopts -E -D -A opthash h -help q -quiet p: -path: d -default i: -index: \
 (( ${+opthash[-h]} + ${+opthash[--help]} )) && ZKL_HELP="1"
 (( ${+opthash[-p]} )) && ZKL_PATH="${opthash[-p]}"
 (( ${+opthash[--path]} )) && ZKL_PATH="${opthash[--path]}"
-(( ${+opthash[-i]} )) && ZKL_INDEX="${opthash[-i]}"
-(( ${+opthash[--index]} )) && ZKL_INDEX="${opthash[--index]}"
-(( ${+opthash[-s]} )) && ZKL_SIZE="${opthash[-s]}"
-(( ${+opthash[--size]} )) && ZKL_SIZE="${opthash[--size]}"
+(( ${+opthash[-i]} )) && { ZKL_INDEX="${opthash[-i]}"; [ -z "$ZKL_INDEX" ] && ZKL_INDEX="0"; }
+(( ${+opthash[--index]} )) && { ZKL_INDEX="${opthash[--index]}"; [ -z "$ZKL_INDEX" ] && ZKL_INDEX="0"; }
+(( ${+opthash[-s]} )) && { ZKL_SIZE="${opthash[-s]}"; [ -z "$ZKL_SIZE" ] && ZKL_SIZE="0"; }
+(( ${+opthash[--size]} )) && { ZKL_SIZE="${opthash[--size]}"; [ -z "$ZKL_SIZE" ] && ZKL_SIZE="0"; }
 (( ${+opthash[-d]} + ${+opthash[--default]} )) && ZKL_DEFAULT="1"
 (( ${+opthash[-v]} + ${+opthash[--verbose]} )) && ZKL_VERBOSE=""
 (( ${+opthash[-q]} + ${+opthash[--quiet]} )) && ZKL_QUIET="1"
@@ -95,6 +95,21 @@ if [[ "$ZKL_SIZE" -gt "150" ]]; then
     exit 3
 fi
 
+if [[ -n "$ZKL_SIZE" && "$ZKL_SIZE" != <-> ]]; then
+    qerror "Given index size (-s/--size) is not a number (given: $ZKL_SIZE)"
+    exit 14
+fi
+
+if [[ -n "$ZKL_INDEX" && "$ZKL_INDEX" != <-> ]]; then
+    qerror "Given index (-i/--index) is not a number (given: $ZKL_INDEX)"
+    exit 15
+fi
+
+if [[ "$ZKL_INDEX" -eq "0" ]]; then
+    qerror "Index (-i/--index) cannot be 0"
+    exit 16
+fi
+
 if [[ -n "$ZKL_SECTION" && "$ZKL_SECTION" != [A-Z] ]]; then
     qerror "Improper section given, it must be single letter A-Z"
     exit 9
@@ -124,7 +139,7 @@ if [ -n "$ZKL_REPO" ]; then
         elif [[ "$ZKL_DEFAULT" = "1" && -n "$ZEKYLL_DEFAULT_REPO" ]]; then
             qerror "Trying with ZEKYLL_DEFAULT_REPO: $ZEKYLL_DEFAULT_REPO"
         else
-            exit 27
+            exit 13
         fi
     fi
 fi
