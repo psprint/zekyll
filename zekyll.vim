@@ -2458,11 +2458,11 @@ endfun
 " Backend functions {{{1
 " FUNCTION: ReadRepo {{{2
 fun! s:ReadRepo()
-    let listing_text = system( "zkiresize -p " . shellescape(s:cur_repo_path) . " -i " . s:cur_index . " -q --consistent")
+    let listing_text = system( "zkiresize --req -p " . shellescape(s:cur_repo_path) . " -i " . s:cur_index . " -q --consistent")
     if v:shell_error == 11
         let s:inconsistent_listing = split(listing_text, '\n\+')
         let s:inconsistent_listing= s:inconsistent_listing[1:]
-        let listing_text = system( "zkiresize -p " . shellescape(s:cur_repo_path) . " -i " . s:cur_index . " -q -l")
+        let listing_text = system( "zkiresize --req -p " . shellescape(s:cur_repo_path) . " -i " . s:cur_index . " -q -l")
         let s:listing = split(listing_text, '\n\+')
         call s:AppendMessageT( " Inconsistent Listing: >", map(copy(s:inconsistent_listing), '" " . v:val') )
         call s:DebugMsgT( 0, " All Listing: ", s:listing )
