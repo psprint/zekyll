@@ -10,7 +10,7 @@ set cpo&vim
 
 " Public Interface:
 if !hasmapto('<Plug>StartZekyll')
-    map <unique> <Leader>c <Plug>StartZekyll
+    map <unique> <Leader>z <Plug>StartZekyll
 endif
 
 " Global Maps:
@@ -18,9 +18,10 @@ endif
 map <silent> <unique> <script> <Plug>StartZekyll :set lz<CR>:call <SID>StartZekyll()<CR>:set nolz<CR>
 
 " Script Variables:
+let s:home = fnameescape( $HOME )
 let s:cur_repo = "psprint/zkl"
-let s:cur_repo_path = fnameescape( $HOME )."/.zekyll/repos/gh---psprint---zkl---master"
-let s:repos_paths = [ fnameescape( $HOME )."/.zekyll/repos" ]
+let s:cur_repo_path = s:home . "/.zekyll/repos/gh---psprint---zkl---master"
+let s:repos_paths = [ s:home . "/.zekyll/repos" ]
 
 let s:lzsd = []
 let s:listing = []
@@ -1161,10 +1162,10 @@ fun! s:Opener()
     let retval = 0
     if !exists("g:_zekyll_bufnr") || g:_zekyll_bufnr == -1
         tabnew
-        if isdirectory( fnameescape( $HOME ) . "/.zekyll/repos" )
-            exec "lcd " . fnameescape( $HOME ) . "/.zekyll/repos"
-        elseif isdirectory( fnameescape( $HOME ) . "/.zekyll" )
-            exec "lcd " . fnameescape( $HOME ) . "/.zekyll"
+        if isdirectory( s:home . "/.zekyll/repos" )
+            exec "lcd " . s:home . "/.zekyll/repos"
+        elseif isdirectory( s:home . "/.zekyll" )
+            exec "lcd " . s:home . "/.zekyll"
         end
         exec "file Zekyll\\ Manager"
         let g:_zekyll_bufname = bufname("%")
