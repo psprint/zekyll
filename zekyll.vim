@@ -398,9 +398,21 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_PATH
         let result = matchlist( getline( s:line_repo_data ), s:pat_Repo_Data )
         if len( result ) > 0
-            let s:cur_repo_path = fnamemodify( result[1], ':p' )
-            let s:cur_repo = s:PathToRepo( s:cur_repo_path )
-            call s:DeepRender()
+            let result[1] = fnamemodify( result[1], ':p' )
+            if isdirectory( result[1] )
+                let s:cur_repo_path = result[1]
+                let s:cur_repo = s:PathToRepo( s:cur_repo_path )
+                if s:cur_repo == "(non-standard)"
+                    let path = substitute( s:cur_repo_path, '[\\/]\+$', '', 'g' )
+                    call s:AppendMessageT( "Loading repository from: " . fnamemodify( path, ':t' ) )
+                else
+                    call s:AppendMessageT( "Loading repository: " . s:cur_repo )
+                end
+                call s:DeepRender()
+            else
+                call s:AppendMessageT("Error: provided path to repository doesn't exist")
+                call s:ShallowRender()
+            end
         else
             call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (13)" )
             call s:NormalRender()
@@ -415,9 +427,20 @@ fun! s:ProcessBuffer( active )
     if a:active == s:ACTIVE_REPO_SPEC
         let result = matchlist( getline( s:line_repo_data ), s:pat_Repo_Data )
         if len( result ) > 0
-            let s:cur_repo = result[2]
-            let s:cur_repo_path = s:RepoToPath( s:cur_repo )
-            call s:DeepRender()
+            let cur_repo = result[2]
+            let cur_repo_path = s:RepoToPath( cur_repo )
+            if cur_repo_path == ""
+                call s:AppendMessageT("Error: incorrect repo spec given")
+                call s:ShallowRender()
+            elseif !isdirectory( cur_repo_path )
+                call s:AppendMessageT("Error: repo spec correct, but path it points to doesn't exist")
+                call s:ShallowRender()
+            else
+                let s:cur_repo = cur_repo
+                let s:cur_repo_path = cur_repo_path
+                call s:AppendMessageT( "Loading repository: " . s:cur_repo )
+                call s:DeepRender()
+            end
         else
             call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (13)" )
             call s:NormalRender()
