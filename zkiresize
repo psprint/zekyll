@@ -24,7 +24,7 @@ ZKL_SIZE=""
 ZKL_VERBOSE="-s"
 ZKL_QUIET="0"
 ZKL_NOANSI="0"
-ZKL_DESCRIPTION="[]"
+ZKL_DESCRIPTION="[[]]"
 ZKL_SECTION=""
 ZKL_CONSISTENT=""
 ZKL_LIST=""
@@ -111,12 +111,12 @@ if [[ "$ZKL_INDEX" -eq "0" ]]; then
 fi
 
 if [[ -n "$ZKL_SECTION" && "$ZKL_SECTION" != [A-Z] ]]; then
-    qerror "Improper section given, it must be single letter A-Z"
+    qerror "Improper section given ($ZKL_SECTION), it must be single letter A-Z"
     exit 9
 fi
 
-if [[ "$ZKL_DESCRIPTION" != "[]" && "$ZKL_DESCRIPTION" != [[:blank:]a-zA-Z0-9_-]# ]]; then
-    qerror "Improper description given. Allowed are letters, digits, underscores, spaces and hyphens"
+if [[ "$ZKL_DESCRIPTION" != "[[]]" && "$ZKL_DESCRIPTION" != [[:blank:]a-zA-Z0-9_-]# ]]; then
+    qerror "Improper description given ($ZKL_DESCRIPTION). Allowed are letters, digits, underscores, spaces and hyphens"
     exit 10
 fi
 
@@ -240,7 +240,7 @@ if [[ "$ZKL_SIZE" -gt "$size" ]]; then
 
     local -a sec desc
     [ -n "$ZKL_SECTION" ] && sec=( "--section" "$ZKL_SECTION" )
-    [ "$ZKL_DESCRIPTION" != "[]" ] && desc=( "--desc" "$ZKL_DESCRIPTION" )
+    [ "$ZKL_DESCRIPTION" != "[[]]" ] && desc=( "--desc" "$ZKL_DESCRIPTION" )
 
     zkcreate -p "$ZKL_PATH" $write $git $quiet $noansi -z "${(j::)new_zekylls}" "${sec[@]}" "${desc[@]}"
 else
