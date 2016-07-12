@@ -3588,6 +3588,7 @@ unlet s:keepcpo
 " Plugin
 
 command! -bar -nargs=? -complete=dir ZMDirvish call <SID>ZMDirvish_open(<q-args>)
+command! -bar -nargs=? -complete=dir ZMLoad call <SID>ZMLoad(<q-args>)
 
 function! s:isdir(dir)
     return !empty(a:dir) && (isdirectory(a:dir) ||
@@ -3763,7 +3764,11 @@ function! s:open_selected(split_cmd, bg, line1, line2) abort
         endif
 
         if isdirectory(path)
-            exe (splitcmd ==# 'edit' ? '' : splitcmd.'|') 'ZMDirvish' fnameescape(path)
+            if splitcmd ==# "ZMLoad"
+                exe 'ZMLoad' fnameescape(path)
+            else
+                exe (splitcmd ==# 'edit' ? '' : splitcmd.'|') 'ZMDirvish' fnameescape(path)
+            end
         else
             exe splitcmd fnameescape(path)
         endif
@@ -3946,6 +3951,9 @@ function! s:do_open(d, reload) abort
     execute 'nnoremap '.s:nowait.'<buffer><silent> o    :<C-U>.call <SID>ZMDirvish_open("split", 1)<CR>'
     execute 'nnoremap '.s:nowait.'<buffer><silent> <2-LeftMouse> :<C-U>.call <SID>ZMDirvish_open("edit", 0)<CR>'
 
+    execute 'nnoremap '.s:nowait.'<buffer><silent> A :<C-U>.call <SID>ZMDirvish_open("ZMLoad", 0)<CR>'
+    execute 'nnoremap '.s:nowait.'<buffer><silent> <C-A> :<C-U>.call <SID>ZMDirvish_open("ZMLoad", 0)<CR>'
+
     nnoremap <buffer><silent> R :ZMDirvish %<CR>
 
     " Buffer-local / and ? mappings to skip the concealed path fragment.
@@ -4013,4 +4021,11 @@ function! s:ZMDirvish_open(...) range abort
 
     call s:save_state(d)
     call s:do_open(d, reloading)
+endfunction
+
+function! s:ZMLoad(...) abort
+    if a:0 == 0
+        execute ":ZMDirvish"
+    end
+    echom "My arguments: " . string( a:000 )
 endfunction
