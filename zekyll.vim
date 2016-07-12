@@ -3611,7 +3611,7 @@ let s:noswapfile = (2 == exists(':noswapfile')) ? 'noswapfile' : ''
 let s:noau       = 'silent noautocmd keepjumps'
 
 function! s:msg_error(msg) abort
-    redraw | echohl WarningMsg | echomsg 'dirvish:' a:msg | echohl None
+    redraw | echohl WarningMsg | echomsg a:msg | echohl None
 endfunction
 
 " Normalize slashes for safe use of fnameescape(), isdirectory(). Vim bug #541.
@@ -3843,7 +3843,7 @@ function! s:buf_render(dir, lastpath) abort
     let isnew = empty(getline(1))
 
     if !isdirectory(s:sl(bname))
-        echoerr 'dirvish: fatal: buffer name is not a directory:' bufname('%')
+        echoerr 'fatal: buffer name is not a directory:' bufname('%')
         return
     endif
 
@@ -3933,7 +3933,11 @@ function! s:do_open(d, reload) abort
         call s:buf_render(b:dirvish._dir, get(b:dirvish, 'lastpath', ''))
     endif
 
-    setlocal filetype=dirvish
+    " Setup syntax highlighting
+    exe 'syntax match ZMDirvishPathHead ''\v.*'.s:sep.'\ze[^'.s:sep.']+'.s:sep.'?$'' conceal'
+    exe 'syntax match ZMDirvishPathTail ''\v[^'.s:sep.']+'.s:sep.'$'''
+    highlight! link ZMDirvishPathTail Directory
+
 endfunction
 
 function! s:should_reload() abort
