@@ -1161,7 +1161,7 @@ fun! s:Opener()
     let retval = 0
     if !exists("g:_zekyll_bufnr") || g:_zekyll_bufnr == -1
         tabnew
-        exec "lcd " . fnameescape( $HOME ) . "/.zekyll"
+        exec "lcd " . fnameescape( $HOME ) . "/.zekyll/repos"
         exec "file Zekyll\\ Manager"
         let g:_zekyll_bufname = bufname("%")
         let g:_zekyll_bufnr = bufnr("%")
