@@ -173,6 +173,7 @@ let s:ACTIVE_REPO_SPEC = 19
 let s:ACTIVE_BROWSE = 20
 
 let s:called_GenerateCodeFromState = 0
+let s:last_message_count = 0
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -291,6 +292,10 @@ fun! s:NormalRender( ... )
             call cursor(s:working_area_end+1,1)
         end
         normal! dG
+        if len( s:messages ) - s:last_message_count >= 3
+            call s:AppendMessageT("------------ 3 or more messages generated ------------")
+        end
+        let s:last_message_count = len( s:messages )
         call s:OutputMessages(1)
     end
 
@@ -2412,6 +2417,7 @@ fun! s:SetupSyntaxHighlighting()
     syn match helpHyperTextJump   "(err:-\?[1-9]\d*)"
     syn match helpHyperTextJump   "Error:"
     syn match helpUnderlined      "\d\+/[a-z0-9]\+"
+    syn match helpOption          '--\+ 3 or more .* --\+'
 endfun
 " 2}}}
 " FUNCTION: PathToRepo() {{{2
