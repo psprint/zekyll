@@ -77,34 +77,37 @@ let s:end_of_warea_char = '-'
 " Welcome line
 let s:line_welcome = 2
 
+" First line: repo and its path
+let s:line_repo_data = 4
+
 " First line, current index
-let s:line_consistent   = 4
-let s:line_errors       = 4
-let s:line_index        = 4
+let s:line_consistent   = 5
+let s:line_errors       = 5
+let s:line_index        = 5
 
 " Git operations 1
-let s:line_commit       = 5
-let s:line_reset        = 5
-let s:line_checkout     = 5
-let s:line_gitops1      = 5
+let s:line_commit       = 6
+let s:line_reset        = 6
+let s:line_checkout     = 6
+let s:line_gitops1      = 6
 
 " Git operations 2, Status, Push, Pull
-let s:line_status       = 6
-let s:line_push         = 6
-let s:line_pull         = 6
-let s:line_gitops2      = 6
+let s:line_status       = 7
+let s:line_push         = 7
+let s:line_pull         = 7
+let s:line_gitops2      = 7
 
 " Branch/Tag operations
-let s:line_btops        = 7
+let s:line_btops        = 8
 
 " Code line
-let s:line_code         = 8
+let s:line_code         = 9
 
 " Save line
-let s:line_save         = 9
-let s:line_index_size   = 9
+let s:line_save         = 10
+let s:line_index_size   = 10
 
-let s:line_rule         = 10
+let s:line_rule         = 11
 let s:last_line = s:line_rule
 
 let s:messages = [ ]
@@ -144,6 +147,9 @@ let s:pat_Code            = '\[[[:space:]]\+Code:[[:space:]]*\(.\{-1,}\)[[:space
                           \ '\[[[:space:]]\+Repo:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
                           \ '\[[[:space:]]\+Site:[[:space:]]*<\?\(.\{-2}\)>\?[[:space:]]*\][[:space:]]*'
 
+let s:pat_Repo_Data       = '\[[[:space:]]\+Path:[[:space:]]*\(.\{-1,}\)[[:space:]]*\][[:space:]]*' .
+                          \ '\[[[:space:]]\+Repo spec:[[:space:]]*\(.\{-1,}\)[[:space:]]*\]'
+
 let s:ACTIVE_NONE = 0
 let s:ACTIVE_CURRENT_INDEX = 1
 let s:ACTIVE_CODE = 2
@@ -162,6 +168,9 @@ let s:ACTIVE_CODE = 14
 let s:ACTIVE_REF = 15
 let s:ACTIVE_FILE = 16
 let s:ACTIVE_REPO = 17
+let s:ACTIVE_PATH = 18
+let s:ACTIVE_REPO_SPEC = 19
+let s:ACTIVE_BROWSE = 20
 
 let s:called_GenerateCodeFromState = 0
 
@@ -229,6 +238,7 @@ fun! s:NormalRender( ... )
             call setline( s:line_welcome+1, "" )
             let s:prefix = ""
         end
+        call setline( s:line_repo_data,  s:GenerateRepoDataLine() )
         call setline( s:line_consistent, s:GenerateIndexLine() )
         call setline( s:line_commit,     s:GenerateCommitResetLine() )
         call setline( s:line_gitops2,    s:GenerateStatusPushPullLine() )
@@ -308,7 +318,7 @@ fun! s:ParseListingIntoArrays()
         let descriptions_entry = ""
 
         " Clear any path
-        let path = substitute( s:cur_repo_path, '/$', "", "" )
+        let path = substitute( s:cur_repo_path, '[\\/]\+$', "", "" )
         let line = substitute( line, '^' . s:cur_repo_path, "", "" )
         
         " Listing entry
@@ -380,6 +390,49 @@ fun! s:ProcessBuffer( active )
     call s:SaveView()
     let [ s:working_area_beg, s:working_area_end ] = s:DiscoverWorkArea()
     call s:RestoreView()
+
+    "
+    " New repository path?
+    "
+
+    if a:active == s:ACTIVE_PATH
+        let result = matchlist( getline( s:line_repo_data ), s:pat_Repo_Data )
+        if len( result ) > 0
+            let s:cur_repo_path = fnamemodify( result[1], ':p' )
+            let s:cur_repo = s:PathToRepo( s:cur_repo_path )
+            call s:DeepRender()
+        else
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (13)" )
+            call s:NormalRender()
+        end
+        return
+    end
+
+    "
+    " New repository spec?
+    "
+
+    if a:active == s:ACTIVE_REPO_SPEC
+        let result = matchlist( getline( s:line_repo_data ), s:pat_Repo_Data )
+        if len( result ) > 0
+            let s:cur_repo = result[2]
+            let s:cur_repo_path = s:RepoToPath( s:cur_repo )
+            call s:DeepRender()
+        else
+            call s:AppendMessageT( "Error: control lines modified, cannot use document - will regenerate (13)" )
+            call s:NormalRender()
+        end
+        return
+    end
+
+    "
+    " Browse?
+    "
+
+    if a:active == s:ACTIVE_BROWSE
+        execute ":ZMDirvish"
+        return
+    end
 
     "
     " New Branch?
@@ -1121,8 +1174,17 @@ fun! s:GenerateBTOpsLine( )
     return line
 endfun
 " 2}}}
+" FUNCTION: GenerateRepoDataLine() {{{2
+fun! s:GenerateRepoDataLine()
+    let path = fnamemodify( s:cur_repo_path, ':~' )
+    let path = substitute( path, '[\\/]\+$', '', 'g' )
+    return s:RPad( "[ Path: " . path . " ]", 20 ) . s:RPad( " [ Repo spec: " . s:cur_repo . " ]", 15 ) . " [ Browse ] ~"
+endfun
+" 2}}}
 " FUNCTION: ResetControlLines() {{{2
 fun! s:ResetControlLines( )
+    let index_rdata = s:GenerateRepoDataLine()
+    call setline( s:line_repo_data, index_rdata )
     let index_line = s:GenerateIndexLine()
     call setline( s:line_index, index_line )
     let commit_line = s:GenerateCommitResetLine()
@@ -1140,7 +1202,7 @@ endfun
 " FUNCTION: IsEditAllowed() {{{2
 fun! s:IsEditAllowed()
     let line = line( "." )
-    if line == s:line_index || line == s:line_index_size || line == s:line_code || line == s:line_btops || line == s:line_gitops2
+    if line == s:line_index || line == s:line_index_size || line == s:line_code || line == s:line_btops || line == s:line_gitops2 || line == s:line_repo_data
         return 1
     end
 
@@ -1238,6 +1300,7 @@ fun! s:DoMappings()
     endfor
 
     inoremap <buffer> <expr> } <SID>IsEditAllowed() ? "}" : ""
+    inoremap <buffer> <expr> / <SID>IsEditAllowed() ? "/" : ""
 
     " Greek and Coptic 0x370 0x3FF
     for i in range( 880, 1023 )
@@ -1350,6 +1413,20 @@ fun! s:Enter()
         elseif linenr == s:line_save
             call s:ProcessBuffer( s:ACTIVE_SAVE_INDEXSIZE )
             return 1
+
+        elseif linenr == s:line_repo_data
+            let line2 = substitute( line, '[^]]', "x", "g" )
+            let pos1 = stridx( line2, "]" ) + 1
+            let pos2 = pos1 + stridx( line2[pos1 :], "]" ) + 1
+            let pos3 = pos2 + stridx( line2[pos2 :], "]" ) + 1
+
+            if col <= pos1
+                call s:ProcessBuffer( s:ACTIVE_PATH )
+            elseif col > (pos1 + 1) && col <= pos2
+                call s:ProcessBuffer( s:ACTIVE_REPO_SPEC )
+            elseif col > (pos2 + 1) && col <= pos3
+                call s:ProcessBuffer( s:ACTIVE_BROWSE )
+            end
         end
 
         return 0
@@ -2316,7 +2393,8 @@ endfun
 " 2}}}
 " FUNCTION: PathToRepo() {{{2
 fun! s:PathToRepo( path )
-    let result = matchlist( a:path, '\([a-z0-9][a-z0-9]\)---\([a-zA-Z0-9][a-zA-Z0-9-]*\)---\([a-zA-Z0-9_-]\+\)---\([a-zA-Z0-9_/.~-]\+\)$' )
+    let path = substitute( a:path, '[\\/]\+$', '', 'g' )
+    let result = matchlist( path, '\([a-z0-9][a-z0-9]\)---\([a-zA-Z0-9][a-zA-Z0-9-]*\)---\([a-zA-Z0-9_-]\+\)---\([a-zA-Z0-9_/.~-]\+\)$' )
     if len( result ) > 0
         let repo = ""
         if result[1] !=? "gh"
@@ -2338,6 +2416,42 @@ fun! s:PathToRepo( path )
     end
 
     return repo
+endfun
+" 2}}}
+" FUNCTION: RepoToPath() {{{2
+fun! s:RepoToPath( repo )
+    let last_node = ""
+    let path = ""
+
+    " xy@user/repo/rev
+    let result = matchlist( a:repo, '^\([a-zA-Z][a-zA-Z]\)@\([a-zA-Z0-9][a-zA-Z0-9-]*\)[/]\([a-zA-Z0-9_-]\+\)[/]\([a-zA-Z0-9_-]\+\)$' )
+    if len( result ) > 0
+        let last_node = result[1] . "---" . result[2] . "---" . result[3] . "---" . result[4]
+    else
+        " user/repo/rev
+        let result = matchlist( a:repo, '^\([a-zA-Z0-9][a-zA-Z0-9-]*\)[/]\([a-zA-Z0-9_-]\+\)[/]\([a-zA-Z0-9_-]\+\)$' )
+        if len( result ) > 0
+            let last_node = "gh---" . result[1] . "---" . result[2] . "---" . result[3]
+        else
+            " xy@user/repo
+            let result = matchlist( a:repo, '^\([a-zA-Z][a-zA-Z]\)@\([a-zA-Z0-9][a-zA-Z0-9-]*\)[/]\([a-zA-Z0-9_-]\+\)/$' )
+            if len( result ) > 0
+                let last_node = result[1] . "---" . result[2] . "---" . result[3] . "---master"
+            else
+                " user/repo
+                let result = matchlist( a:repo, '^\([a-zA-Z0-9][a-zA-Z0-9-]*\)[/]\([a-zA-Z0-9_-]\+\)$' )
+                if len( result ) > 0
+                    let last_node = "gh---" . result[1] . "---" . result[2] . "---master"
+                end
+            end
+        end
+    end
+
+    if last_node != ""
+        let path = fnamemodify( s:repos_paths[0], ':p' ) . last_node
+    end
+
+    return path
 endfun
 " 2}}}
 " 1}}}
