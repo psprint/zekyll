@@ -3586,27 +3586,16 @@ unlet s:keepcpo
 
 " Plugin
 
-command! -bar -nargs=? -complete=dir ZMDirvish call dirvish#open(<q-args>)
+command! -bar -nargs=? -complete=dir ZMDirvish call <SID>ZMDirvish_open(<q-args>)
 
 function! s:isdir(dir)
     return !empty(a:dir) && (isdirectory(a:dir) ||
                 \ (!empty($SYSTEMDRIVE) && isdirectory('/'.tolower($SYSTEMDRIVE[0]).a:dir)))
 endfunction
 
-nnoremap <silent> <Plug>(dirvish_up) :<C-U>exe 'ZMDirvish %:p'.repeat(':h',v:count1)<CR>
-
-if mapcheck('-', 'n') ==# '' && !hasmapto('<Plug>(dirvish_up)', 'n')
-    nmap - <Plug>(dirvish_up)
-endif
-
 " Syntax
 
 let s:sep = exists('+shellslash') && !&shellslash ? '\\' : '\/'
-
-exe 'syntax match ZMDirvishPathHead ''\v.*'.s:sep.'\ze[^'.s:sep.']+'.s:sep.'?$'' conceal'
-exe 'syntax match ZMDirvishPathTail ''\v[^'.s:sep.']+'.s:sep.'$'''
-
-highlight! link ZMDirvishPathTail Directory
 
 " Autoload
 
@@ -3670,7 +3659,7 @@ function! s:list_dir(dir) abort
 endfunction
 
 function! s:buf_init() abort
-    augroup dirvish_buflocal
+    augroup zmdirvish_buflocal
         autocmd! * <buffer>
         autocmd BufEnter,WinEnter <buffer> call <SID>on_bufenter()
 
@@ -3686,8 +3675,8 @@ function! s:buf_init() abort
 endfunction
 
 function! s:on_bufenter() abort
-    " Ensure w:dirvish for window splits, `:b <nr>`, etc.
-    let w:dirvish = extend(get(w:, 'dirvish', {}), b:dirvish, 'keep')
+    " Ensure w:zmdirvish for window splits, `:b <nr>`, etc.
+    let w:zmdirvish = extend(get(w:, 'zmdirvish', {}), b:zmdirvish, 'keep')
 
     if empty(getline(1)) && 1 == line('$')
         ZMDirvish %
@@ -3700,31 +3689,31 @@ endfunction
 
 function! s:save_state(d) abort
     " Remember previous ('original') buffer.
-    let a:d.prevbuf = s:buf_isvalid(bufnr('%')) || !exists('w:dirvish')
-                \ ? 0+bufnr('%') : w:dirvish.prevbuf
+    let a:d.prevbuf = s:buf_isvalid(bufnr('%')) || !exists('w:zmdirvish')
+                \ ? 0+bufnr('%') : w:zmdirvish.prevbuf
     if !s:buf_isvalid(a:d.prevbuf)
         "If reached via :edit/:buffer/etc. we cannot get the (former) altbuf.
-        let a:d.prevbuf = exists('b:dirvish') && s:buf_isvalid(b:dirvish.prevbuf)
-                    \ ? b:dirvish.prevbuf : bufnr('#')
+        let a:d.prevbuf = exists('b:zmdirvish') && s:buf_isvalid(b:zmdirvish.prevbuf)
+                    \ ? b:zmdirvish.prevbuf : bufnr('#')
     endif
 
     " Remember alternate buffer.
-    let a:d.altbuf = s:buf_isvalid(bufnr('#')) || !exists('w:dirvish')
-                \ ? 0+bufnr('#') : w:dirvish.altbuf
-    if exists('b:dirvish') && (a:d.altbuf == a:d.prevbuf || !s:buf_isvalid(a:d.altbuf))
-        let a:d.altbuf = b:dirvish.altbuf
+    let a:d.altbuf = s:buf_isvalid(bufnr('#')) || !exists('w:zmdirvish')
+                \ ? 0+bufnr('#') : w:zmdirvish.altbuf
+    if exists('b:zmdirvish') && (a:d.altbuf == a:d.prevbuf || !s:buf_isvalid(a:d.altbuf))
+        let a:d.altbuf = b:zmdirvish.altbuf
     endif
 
     " Save window-local settings.
-    let w:dirvish = extend(get(w:, 'dirvish', {}), a:d, 'force')
-    let [w:dirvish._w_wrap, w:dirvish._w_cul] = [&l:wrap, &l:cul]
-    if has('conceal') && !exists('b:dirvish')
-        let [w:dirvish._w_cocu, w:dirvish._w_cole] = [&l:concealcursor, &l:conceallevel]
+    let w:zmdirvish = extend(get(w:, 'zmdirvish', {}), a:d, 'force')
+    let [w:zmdirvish._w_wrap, w:zmdirvish._w_cul] = [&l:wrap, &l:cul]
+    if has('conceal') && !exists('b:zmdirvish')
+        let [w:zmdirvish._w_cocu, w:zmdirvish._w_cole] = [&l:concealcursor, &l:conceallevel]
     endif
 endfunction
 
 function! s:win_init() abort
-    let w:dirvish = get(w:, 'dirvish', copy(b:dirvish))
+    let w:zmdirvish = get(w:, 'zmdirvish', copy(b:zmdirvish))
     setlocal nowrap cursorline
 
     if has('conceal')
@@ -3737,7 +3726,7 @@ function! s:on_bufclosed() abort
 endfunction
 
 function! s:buf_close() abort
-    let d = get(w:, 'dirvish', {})
+    let d = get(w:, 'zmdirvish', {})
     if empty(d)
         return
     endif
@@ -3751,11 +3740,11 @@ function! s:buf_close() abort
 endfunction
 
 function! s:restore_winlocal_settings() abort
-    if !exists('w:dirvish') " can happen during VimLeave, etc.
+    if !exists('w:zmdirvish') " can happen during VimLeave, etc.
         return
     endif
-    if has('conceal') && has_key(w:dirvish, '_w_cocu')
-        let [&l:cocu, &l:cole] = [w:dirvish._w_cocu, w:dirvish._w_cole]
+    if has('conceal') && has_key(w:zmdirvish, '_w_cocu')
+        let [&l:cocu, &l:cole] = [w:zmdirvish._w_cocu, w:zmdirvish._w_cole]
     endif
 endfunction
 
@@ -3784,14 +3773,14 @@ function! s:open_selected(split_cmd, bg, line1, line2) abort
         endif
     endfor
 
-    if a:bg "return to dirvish buffer
+    if a:bg "return to zmdirvish buffer
         if a:split_cmd ==# 'tabedit'
             exe 'tabnext' curtab '|' curwin.'wincmd w'
         elseif a:split_cmd ==# 'edit'
             execute 'silent keepalt keepjumps buffer' curbuf
         endif
-    elseif !exists('b:dirvish') && exists('w:dirvish')
-        call s:set_altbuf(w:dirvish.prevbuf)
+    elseif !exists('b:zmdirvish') && exists('w:zmdirvish')
+        call s:set_altbuf(w:zmdirvish.prevbuf)
     endif
 endfunction
 
@@ -3805,7 +3794,7 @@ endfunction
 
 function! s:try_visit(bnr) abort
     if a:bnr != bufnr('%') && bufexists(a:bnr)
-                \ && empty(getbufvar(a:bnr, 'dirvish'))
+                \ && empty(getbufvar(a:bnr, 'zmdirvish'))
         " If _previous_ buffer is _not_ loaded (because of 'nohidden'), we must
         " allow autocmds (else no syntax highlighting; #13).
         let noau = bufloaded(a:bnr) ? 'noau' : ''
@@ -3852,7 +3841,7 @@ function! s:buf_render(dir, lastpath) abort
     endif
 
     if !isnew
-        call s:bufwin_do('let w:dirvish["_view"] = winsaveview()', bname)
+        call s:bufwin_do('let w:zmdirvish["_view"] = winsaveview()', bname)
     endif
 
     if v:version > 704 || v:version == 704 && has("patch73")
@@ -3865,7 +3854,7 @@ function! s:buf_render(dir, lastpath) abort
     endif
 
     if !isnew
-        call s:bufwin_do('call winrestview(w:dirvish["_view"])', bname)
+        call s:bufwin_do('call winrestview(w:zmdirvish["_view"])', bname)
     endif
 
     if !empty(a:lastpath)
@@ -3929,13 +3918,44 @@ function! s:do_open(d, reload) abort
 
     call s:set_altbuf(d.prevbuf) "in case of :bd, :read#, etc.
 
-    let b:dirvish = exists('b:dirvish') ? extend(b:dirvish, d, 'force') : d
+    let b:zmdirvish = exists('b:zmdirvish') ? extend(b:zmdirvish, d, 'force') : d
 
     call s:buf_init()
     call s:win_init()
     if a:reload || s:should_reload()
-        call s:buf_render(b:dirvish._dir, get(b:dirvish, 'lastpath', ''))
+        call s:buf_render(b:zmdirvish._dir, get(b:zmdirvish, 'lastpath', ''))
     endif
+
+    let s:nowait = (v:version > 703 ? '<nowait>' : '')
+
+    " Setup mappings
+    nnoremap <buffer><silent> <Plug>(zmdirvish_up) :<C-U>exe "ZMDirvish %:h".repeat(":h",v:count1)<CR>
+    if !hasmapto('<Plug>(zmdirvish_up)', 'n')
+        execute 'nmap '.s:nowait.'<buffer> - <Plug>(zmdirvish_up)'
+    endif
+
+    nnoremap <silent> <Plug>(zmdirvish_quit) :<C-U>call <SID>buf_close()<CR>
+    if !hasmapto('<Plug>(zmdirvish_quit)', 'n')
+        execute 'nmap '.s:nowait.'<buffer> q <Plug>(zmdirvish_quit)'
+    endif
+
+    execute 'nnoremap '.s:nowait.'<buffer><silent> i    :<C-U>.call <SID>ZMDirvish_open("edit", 0)<CR>'
+    execute 'nnoremap '.s:nowait.'<buffer><silent> <CR> :<C-U>.call <SID>ZMDirvish_open("edit", 0)<CR>'
+    execute 'nnoremap '.s:nowait.'<buffer><silent> a    :<C-U>.call <SID>ZMDirvish_open("vsplit", 1)<CR>'
+    execute 'nnoremap '.s:nowait.'<buffer><silent> o    :<C-U>.call <SID>ZMDirvish_open("split", 1)<CR>'
+    execute 'nnoremap '.s:nowait.'<buffer><silent> <2-LeftMouse> :<C-U>.call <SID>ZMDirvish_open("edit", 0)<CR>'
+
+    nnoremap <buffer><silent> R :ZMDirvish %<CR>
+
+    " Buffer-local / and ? mappings to skip the concealed path fragment.
+    nnoremap <buffer> / /\ze[^\/]*[\/]\=$<Home>
+    nnoremap <buffer> ? ?\ze[^\/]*[\/]\=$<Home>
+
+    " Blocking mappings
+    nmap <buffer> <silent> v <Nop>
+    nmap <buffer> <silent> D <Nop>
+    nmap <buffer> <silent> y <Nop>
+    nmap <buffer> <silent> Y <Nop>
 
     " Setup syntax highlighting
     exe 'syntax match ZMDirvishPathHead ''\v.*'.s:sep.'\ze[^'.s:sep.']+'.s:sep.'?$'' conceal'
@@ -3948,7 +3968,7 @@ function! s:should_reload() abort
     if line('$') < 1000 || '' ==# glob(getline('$'),1)
         return 1
     endif
-    redraw | echo 'dirvish: too many files; showing cached listing'
+    redraw | echo 'too many files; showing cached listing'
     return 0
 endfunction
 
@@ -3956,7 +3976,7 @@ function! s:buf_isvalid(bnr) abort
     return bufexists(a:bnr) && !isdirectory(s:sl(bufname(a:bnr)))
 endfunction
 
-function! dirvish#open(...) range abort
+function! s:ZMDirvish_open(...) range abort
     if &autochdir
         call s:msg_error("'autochdir' is not supported")
         return
@@ -3982,7 +4002,7 @@ function! dirvish#open(...) range abort
         return
     endif
 
-    let reloading = exists('b:dirvish') && d._dir ==# b:dirvish._dir
+    let reloading = exists('b:zmdirvish') && d._dir ==# b:zmdirvish._dir
 
     if reloading
         let d.lastpath = ''         " Do not place cursor when reloading.
@@ -3993,5 +4013,3 @@ function! dirvish#open(...) range abort
     call s:save_state(d)
     call s:do_open(d, reloading)
 endfunction
-
-nnoremap <silent> <Plug>(dirvish_quit) :<C-U>call <SID>buf_close()<CR>
