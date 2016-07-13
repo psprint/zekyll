@@ -12,7 +12,7 @@ letters_to_numbers() {
     reply=( )
 
     if [[ "$letters" != [a-z0-9]## ]]; then
-        print "Incorrect character detected in: '$letters'. Zekylls should consist only from a-z 0-9 characters, and have #/ prefix"
+        print "Incorrect character detected in: '$letters'. Zekylls should consist only from a-z 0-9 characters"
         return 1
     fi
 
