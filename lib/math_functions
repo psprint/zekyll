@@ -133,20 +133,26 @@ encode_zcode_24-bit_pack_numbers() {
     local -a nums_base36 workingvar
     workingvar=( "${numbers[@]}" )
 
-    integer sum=0 i
+    integer all_zero=1 i
     for i in "${workingvar[@]}"; do
-        sum+=i
+        if [[ "$i" -ne 0 ]]; then
+            all_zero=0
+            break
+        fi
     done
 
-    while (( sum != 0 )); do
+    while (( all_zero != 1 )); do
         div_24-bit_pack_numbers_36 "${workingvar[@]}"
         workingvar=( "${reply[@]}" )
         nums_base36=( "$REPLY" "${nums_base36[@]}" )
 
         # Check if workingvar is all zero
-        sum=0
+        all_zero=1
         for i in "${workingvar[@]}"; do
-            sum+=i
+            if [[ "$i" -ne 0 ]]; then
+                all_zero=0
+                break
+            fi
         done
     done
 
