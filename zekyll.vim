@@ -4123,10 +4123,10 @@ function! s:do_open(d, reload) abort
 
     execute 'nnoremap '.s:nowait.'<buffer><silent> i    :<C-U>.call <SID>ZMDirvish_open("edit", 0)<CR>'
     execute 'nnoremap '.s:nowait.'<buffer><silent> <CR> :<C-U>.call <SID>ZMDirvish_open("edit", 0)<CR>'
-    execute 'nnoremap '.s:nowait.'<buffer><silent> a    :<C-U>.call <SID>ZMDirvish_open("vsplit", 1)<CR>'
     execute 'nnoremap '.s:nowait.'<buffer><silent> o    :<C-U>.call <SID>ZMDirvish_open("split", 1)<CR>'
     execute 'nnoremap '.s:nowait.'<buffer><silent> <2-LeftMouse> :<C-U>.call <SID>ZMDirvish_open("edit", 0)<CR>'
 
+    execute 'nnoremap '.s:nowait.'<buffer><silent> a :<C-U>.call <SID>ZMDirvish_open("ZMLoad", 0)<CR>'
     execute 'nnoremap '.s:nowait.'<buffer><silent> A :<C-U>.call <SID>ZMDirvish_open("ZMLoad", 0)<CR>'
     execute 'nnoremap '.s:nowait.'<buffer><silent> <C-A> :<C-U>.call <SID>ZMDirvish_open("ZMLoad", 0)<CR>'
 
