@@ -1705,6 +1705,10 @@ fun! s:UpdateStateForZcode( zcode )
 
     call s:AppendMessageT( msg )
 
+    " Update site to default value when needed
+    if s:c_site == ""
+        let s:c_site = "gh"
+    end
     return 1
 endfun
 " 2}}}
