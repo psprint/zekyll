@@ -4145,7 +4145,7 @@ function! s:do_open(d, reload) abort
     nmap <buffer> <silent> Y <Nop>
 
     " Setup syntax highlighting
-    exe 'syntax match ZMDirvishPathHead ''\v.*'.s:sep.'\ze[^'.s:sep.']+'.s:sep.'?$'' conceal'
+    exe 'syntax match ZMDirvishPathHead ''\v.*'.s:sep.'\ze[^'.s:sep.']+'.s:sep.'?$'''
     exe 'syntax match ZMDirvishPathTail ''\v[^'.s:sep.']+'.s:sep.'$'''
     exe 'syntax match ZMDirvishMenu1     ''a/A/Ctrl-a.*'''
     exe 'syntax match ZMDirvishMenu2     ''---\+'''
