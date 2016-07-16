@@ -1499,7 +1499,7 @@ fun! s:ComputeCodingState( op )
                 let msg = msg . (was ? "," : "")
                 let [ was, msg ] = [ 1, msg . " repo: '" . s:c_repo ."'" ]
             end
-            if s:c_site != ""
+            if s:c_site != "" && s:c_site != "gh"
                 let msg = msg . (was ? "," : "")
                 let [ was, msg ] = [ 1, msg . " site: '" . s:c_site."'" ]
             end
