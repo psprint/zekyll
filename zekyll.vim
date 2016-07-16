@@ -4032,7 +4032,9 @@ function! s:buf_render(dir, lastpath) abort
         setlocal undolevels=-1
     endif
     silent keepmarks keepjumps %delete _
-    silent keepmarks keepjumps call setline(1, s:list_dir(a:dir))
+    call setline( 1, 'a/A/Ctrl-a – accept dir, - – parent dir, q – quit, o/i – (split) enter file or dir' )
+    call setline( 2, '----------------------------------------------------------------------------------' )
+    silent keepmarks keepjumps call setline(3, s:list_dir(a:dir))
     if v:version > 704 || v:version == 704 && has("patch73")
         setlocal undolevels<
     endif
@@ -4145,7 +4147,11 @@ function! s:do_open(d, reload) abort
     " Setup syntax highlighting
     exe 'syntax match ZMDirvishPathHead ''\v.*'.s:sep.'\ze[^'.s:sep.']+'.s:sep.'?$'' conceal'
     exe 'syntax match ZMDirvishPathTail ''\v[^'.s:sep.']+'.s:sep.'$'''
+    exe 'syntax match ZMDirvishMenu1     ''a/A/Ctrl-a.*'''
+    exe 'syntax match ZMDirvishMenu2     ''---\+'''
     highlight! link ZMDirvishPathTail Directory
+    highlight! link ZMDirvishMenu1 Title
+    highlight! link ZMDirvishMenu2 Directory
 
 endfunction
 
@@ -4172,7 +4178,9 @@ function! s:ZMDirvish_open(...) range abort
     endif
 
     if a:0 > 1
-        call s:open_selected(a:1, a:2, a:firstline, a:lastline)
+        if line(".") > 2
+            call s:open_selected(a:1, a:2, a:firstline, a:lastline)
+        end
         return
     endif
 
