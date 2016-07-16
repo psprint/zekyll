@@ -1040,6 +1040,8 @@ while (( 1 )); do
             local -a bits
             # Include version bits
             bits=( 0 0 "${(@)NLIST_IS_SELECTED[beg_tidx,end_tidx]}" )
+            # Reverse so that during division the later zekylls are
+            # discarded from Zcode if they are sequence of 0
             bits=( "${(Oa)bits[@]}" )
 
             # Now create the appendix
@@ -1061,6 +1063,7 @@ while (( 1 )); do
             appendix=( "${reply[@]}" )
 
             if [ "${#appendix}" = "0" ]; then
+                # This cannot happen with current version bits
                 local -a rev_bits 
                 rev_bits=( "${(@s::)codes['ss']}" )
                 rev_bits=( "${(Oa)rev_bits[@]}" )
