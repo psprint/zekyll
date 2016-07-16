@@ -18,6 +18,7 @@ endif
 map <silent> <unique> <script> <Plug>StartZekyll :set lz<CR>:call <SID>StartZekyll()<CR>:set nolz<CR>
 
 " Script Variables:
+let s:nowait = (v:version > 703 ? '<nowait>' : '')
 let s:home = fnameescape( $HOME )
 let s:cur_repo = "psprint/zkl"
 let s:cur_repo_path = s:home . "/.zekyll/repos/gh---psprint---zkl---master"
@@ -1368,6 +1369,12 @@ fun! s:DoMappings()
     end
 
     exec 'inoremap <buffer> <expr> ' . nr2char(8211) . ' <SID>IsEditAllowed() ? "' . nr2char(8211) . '" : ""'
+
+    " File manager, ZMDirvish
+    nnoremap <buffer><silent> <Plug>(zmdirvish_up) :<C-U>exe "ZMDirvish %:h".repeat(":h",v:count1)<CR>
+    if !hasmapto('<Plug>(zmdirvish_up)', 'n')
+        execute 'nmap '.s:nowait.'<buffer> - <Plug>(zmdirvish_up)'
+    endif
 endfun
 " 2}}}
 " FUNCTION: Enter() {{{2
@@ -4102,8 +4109,6 @@ function! s:do_open(d, reload) abort
     if a:reload || s:should_reload()
         call s:buf_render(b:zmdirvish._dir, get(b:zmdirvish, 'lastpath', ''))
     endif
-
-    let s:nowait = (v:version > 703 ? '<nowait>' : '')
 
     " Setup mappings
     nnoremap <buffer><silent> <Plug>(zmdirvish_up) :<C-U>exe "ZMDirvish %:h".repeat(":h",v:count1)<CR>
