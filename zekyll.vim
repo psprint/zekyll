@@ -2474,7 +2474,7 @@ fun! s:RepoToPath( repo )
             let last_node = "gh---" . result[1] . "---" . result[2] . "---" . result[3]
         else
             " xy@user/repo
-            let result = matchlist( a:repo, '^\([a-zA-Z][a-zA-Z]\)@\([a-zA-Z0-9][a-zA-Z0-9-]*\)[/]\([a-zA-Z0-9_-]\+\)/$' )
+            let result = matchlist( a:repo, '^\([a-zA-Z][a-zA-Z]\)@\([a-zA-Z0-9][a-zA-Z0-9-]*\)[/]\([a-zA-Z0-9_-]\+\)$' )
             if len( result ) > 0
                 let last_node = result[1] . "---" . result[2] . "---" . result[3] . "---master"
             else
