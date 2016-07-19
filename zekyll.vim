@@ -175,6 +175,7 @@ let s:ACTIVE_BROWSE = 20
 
 let s:called_GenerateCodeFromState = 0
 let s:last_message_count = 0
+let s:decode_message = ""
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -287,13 +288,21 @@ fun! s:NormalRender( ... )
         " Restore mark that tells if GenerateCodeFromState was already called in this run
         call s:GenerateCodeWasCalled(0)
 
+        let zcode1 = s:cur_index . "/" . formsg_old_code
+        let zcode2 = s:cur_index . "/" . s:c_code
+
         " Message about misadapted Zcode
         if len( s:code_selectors ) < formsg_old_len
-            let zcode1 = s:cur_index . "/" . formsg_old_code
-            let zcode2 = s:cur_index . "/" . s:c_code
-            let msg = "Warning: the Zcode " . zcode1 . " is for index of size|" . formsg_old_len . "|, current index is of size|" . len( s:code_selectors ) . "|."
-            let msg = msg . (correct_generation ? " The Zcode truncated: " . zcode2 : " Error: could not truncate the Zcode")
+            let msg = "Warning: the Zcode " . zcode1 . " is for index of size|" . formsg_old_len . "|or more, current index is of size|" . len( s:code_selectors ) . "|"
+            let msg = msg . (correct_generation ? "– truncated Zcode to: " . zcode2 : '. Error: could not truncate the Zcode')
             call s:AppendMessageT( msg )
+        end
+
+        " Message about Zcode decoding
+        if s:decode_message != ""
+            let msg = ( formsg_old_len > len( s:code_selectors ) ? "Decoded the misadapted Zcode " : "Successfully decoded Zcode " ) . zcode1 . s:decode_message
+            call s:AppendMessageT( msg )
+            let s:decode_message = ""
         end
 
         call setline( s:line_code, s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo, s:c_site ) )
@@ -1676,15 +1685,8 @@ fun! s:UpdateStateForZcode( new_index, zcode )
         end
     end
 
-    if new_len > cur_len
-        let problems = 1
-    end
-
-    if problems
-        let msg = "Decoded the misadapted Zcode " . a:zcode
-    else
-        let msg = "Succesfully decoded Zcode " . a:zcode
-    end
+    " Beginning of message will be set in NormalRender
+    let msg = ""
 
     " Enumerate decoded fields
     if s:c_rev != "" || s:c_file != "" || s:c_repo != "" || s:c_site != ""
@@ -1708,14 +1710,15 @@ fun! s:UpdateStateForZcode( new_index, zcode )
     end
 
     " How many selections message
-    let msg = msg . (was ? " and with " : ". It is having ")
+    let msg = msg . (was ? " and with " : ". It contained ")
     let cnt = 0
     for i in range(0, len( s:code_selectors ) - 1)
         let cnt = s:code_selectors[i] ? cnt + 1 : cnt
     endfor
-    let msg = msg . cnt . " selection(s)."
+    let msg = msg . cnt . " selection(s)"
 
-    call s:AppendMessageT( msg )
+    " Store the message, it will be displayed in NormalRender
+    let s:decode_message = msg
 
     " Update site to default value when needed
     if s:c_site == ""
