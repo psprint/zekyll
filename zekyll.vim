@@ -229,6 +229,10 @@ fun! s:NormalRender( ... )
         let s:index_size_new = s:index_size
     end
 
+    " Remember len of code selectors before truncation/expand
+    " (in SetupSelectionCodes)
+    let formsg_old_len = len( s:code_selectors )
+
     if depth >= 1
         silent %d_
         call setline( s:line_welcome-1, ">" )
@@ -276,10 +280,22 @@ fun! s:NormalRender( ... )
     call s:MarkErrorsDuringGeneration(0)
 
     if depth >= 0
+        let formsg_old_code = s:c_code
+
         call s:GenerateCodeWasCalled()
         let [ correct_generation, s:c_code ] = s:GenerateCodeFromState()
         " Restore mark that tells if GenerateCodeFromState was already called in this run
         call s:GenerateCodeWasCalled(0)
+
+        " Message about misadapted Zcode
+        if len( s:code_selectors ) < formsg_old_len
+            let zcode1 = s:cur_index . "/" . formsg_old_code
+            let zcode2 = s:cur_index . "/" . s:c_code
+            let msg = "Warning: the Zcode " . zcode1 . " is for index of size|" . formsg_old_len . "|, current index is of size|" . len( s:code_selectors ) . "|."
+            let msg = msg . (correct_generation ? " The Zcode truncated: " . zcode2 : " Error: could not truncate the Zcode")
+            call s:AppendMessageT( msg )
+        end
+
         call setline( s:line_code, s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo, s:c_site ) )
 
         if !correct_generation
@@ -1662,25 +1678,6 @@ fun! s:UpdateStateForZcode( new_index, zcode )
 
     if new_len > cur_len
         let problems = 1
-
-        " Truncate
-        let s:code_selectors = s:code_selectors[0:cur_len-1]
-
-        " Regenerate
-        call s:GenerateCodeWasCalled()
-        let [ correct_generation, s:c_code ] = s:GenerateCodeFromState()
-
-        if correct_generation
-            call s:AppendMessageT("Error: the Zcode " . a:zcode . " is for index of size |" . new_len . "|, current index is of size |" . cur_len .
-                        \ "|. The Zcode truncated: " . a:new_index . "/" . s:c_code )
-        else
-            let s:c_code = ""
-            call s:AppendMessageT("Error: the Zcode " . a:zcode . " is for index of size |" . new_len . "|, current index is of size |" . cur_len .
-                        \ "|. Error: couldn't truncate the Zcode" )
-        end
-    elseif new_len < cur_len
-        " Extend with 0s, i.e. values stating unselection
-        call extend( s:code_selectors, repeat( [ 0 ], cur_len - new_len ) )
     end
 
     if problems
@@ -1852,8 +1849,11 @@ endfun
 " Here we have LZSD that is from buffer recreated after disk operations
 fun! s:SetupSelectionCodes( text )
     if s:prev_index != s:cur_index
-        call s:ResetCodeSelectors()
-    elseif len( s:code_selectors ) > len( s:lzsd )
+        if len( s:code_selectors ) == 0
+            call s:ResetCodeSelectors()
+        end
+    end
+    if len( s:code_selectors ) > len( s:lzsd )
         let s:code_selectors = s:code_selectors[0:len(s:lzsd)-1]
     elseif len( s:code_selectors ) < len( s:lzsd )
         let diff = len( s:lzsd ) - len( s:code_selectors )
