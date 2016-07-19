@@ -1857,7 +1857,7 @@ fun! s:SetupSelectionCodes( text )
         end
     end
     if len( s:code_selectors ) > len( s:lzsd )
-        let s:code_selectors = s:code_selectors[0:len(s:lzsd)-1]
+        let s:code_selectors = ( len( s:lzsd ) == 0 ) ? [] : s:code_selectors[0:len(s:lzsd)-1]
     elseif len( s:code_selectors ) < len( s:lzsd )
         let diff = len( s:lzsd ) - len( s:code_selectors )
         call extend( s:code_selectors, repeat( [ 1 ], diff ) )
