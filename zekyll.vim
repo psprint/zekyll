@@ -1689,7 +1689,7 @@ fun! s:UpdateStateForZcode( new_index, zcode )
     let msg = ""
 
     " Enumerate decoded fields
-    if s:c_rev != "" || s:c_file != "" || s:c_repo != "" || s:c_site != ""
+    if s:c_rev != "" || s:c_file != "" || s:c_repo != "" || (s:c_site != "" && s:c_site != "gh")
         let msg = msg . " with"
     end
     let was = 0
@@ -1704,7 +1704,7 @@ fun! s:UpdateStateForZcode( new_index, zcode )
         let msg = msg . (was ? "," : "")
         let [ was, msg ] = [ 1, msg . " repo: '" . s:c_repo ."'" ]
     end
-    if s:c_site != ""
+    if s:c_site != "" && s:c_site != "gh"
         let msg = msg . (was ? "," : "")
         let [ was, msg ] = [ 1, msg . " site: '" . s:c_site."'" ]
     end
