@@ -276,10 +276,10 @@ fun! s:NormalRender( ... )
     call s:MarkErrorsDuringGeneration(0)
 
     if depth >= 0
-        call s:MarkGenerateCodeFromState()
+        call s:GenerateCodeWasCalled()
         let [ correct_generation, s:c_code ] = s:GenerateCodeFromState()
         " Restore mark that tells if GenerateCodeFromState was already called in this run
-        call s:MarkGenerateCodeFromState(0)
+        call s:GenerateCodeWasCalled(0)
         call setline( s:line_code, s:GenerateCodeLine( s:cur_index, s:c_code, s:c_rev, s:c_file, s:c_repo, s:c_site ) )
 
         if !correct_generation
@@ -1586,7 +1586,7 @@ fun! s:GenerateCodeFromBuffer()
 
         let [ s:c_rev, s:c_file, s:c_repo, s:c_site ] = s:TrimBlanks( s:c_rev, s:c_file, s:c_repo, s:c_site )
 
-        call s:MarkGenerateCodeFromState()
+        call s:GenerateCodeWasCalled()
         return s:GenerateCodeFromState()
     else
         return [0, s:c_code ]
@@ -1667,7 +1667,7 @@ fun! s:UpdateStateForZcode( new_index, zcode )
         let s:code_selectors = s:code_selectors[0:cur_len-1]
 
         " Regenerate
-        call s:MarkGenerateCodeFromState()
+        call s:GenerateCodeWasCalled()
         let [ correct_generation, s:c_code ] = s:GenerateCodeFromState()
 
         if correct_generation
@@ -1727,8 +1727,8 @@ fun! s:UpdateStateForZcode( new_index, zcode )
     return 1
 endfun
 " 2}}}
-" FUNCTION: MarkGenerateCodeFromState() {{{2
-fun! s:MarkGenerateCodeFromState( ... )
+" FUNCTION: GenerateCodeWasCalled() {{{2
+fun! s:GenerateCodeWasCalled( ... )
     " Reset?
     if a:0 && a:1 == 0
         let s:called_GenerateCodeFromState = 0
@@ -2990,7 +2990,7 @@ fun! s:BitsRev( rev )
             call extend( bits, s:bits[lt] )
         else
             " Avoid double messages
-            if s:MarkGenerateCodeFromState(1)
+            if s:GenerateCodeWasCalled(1)
                 call s:MarkErrorsDuringGeneration()
                 call s:AppendMessageT( "Incorrect character in rev name: `" . lt . "'" )
             end
@@ -3016,7 +3016,7 @@ fun! s:BitsFile( file )
             call extend( bits, s:bits[lt] )
         else
             " Avoid double messages
-            if s:MarkGenerateCodeFromState(1)
+            if s:GenerateCodeWasCalled(1)
                 call s:MarkErrorsDuringGeneration()
                 call s:AppendMessageT( "Incorrect character in file name: `" . lt . "'" )
             end
@@ -3042,7 +3042,7 @@ fun! s:BitsRepo( repo )
             call extend( bits, s:bits[lt] )
         else
             " Avoid double messages
-            if s:MarkGenerateCodeFromState(1)
+            if s:GenerateCodeWasCalled(1)
                 call s:MarkErrorsDuringGeneration()
                 call s:AppendMessageT( "Incorrect character in repo name: `" . lt . "'" )
             end
@@ -3073,7 +3073,7 @@ fun! s:BitsSite( site )
         call extend( bits, s:bits[lt] )
     else
         " Avoid double messages
-        if s:MarkGenerateCodeFromState(1)
+        if s:GenerateCodeWasCalled(1)
             call s:MarkErrorsDuringGeneration()
             call s:AppendMessageT( "Incorrect site: `" . site . "'" )
         end
