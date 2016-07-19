@@ -2522,8 +2522,8 @@ fun! s:ReadRepo()
         let s:inconsistent_listing= s:inconsistent_listing[1:]
         let listing_text = system( "zkiresize --req -p " . shellescape(s:cur_repo_path) . " -i " . s:cur_index . " -q -l")
         let s:listing = split(listing_text, '\n\+')
-        call s:AppendMessageT( " Inconsistent Listing: >", map(copy(s:inconsistent_listing), '" " . v:val') )
-        call s:DebugMsgT( 0, " All Listing: ", s:listing )
+        call s:AppendMessageT( "Inconsistent Listing: >", map(copy(s:inconsistent_listing), '" " . v:val') )
+        call s:DebugMsgT( 0, "All Listing: ", s:listing )
         let s:consistent = "NO"
     else
         let s:listing = split(listing_text, '\n\+')
