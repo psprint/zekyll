@@ -1522,28 +1522,33 @@ fun! s:ComputeCodingState( op )
     elseif a:op == "decode"
         let result = matchlist( getline( s:line_code ), s:pat_Code )
         if len( result ) > 0
+            let new_index = s:cur_index
             let split_result = split( result[1], "/" )
             if len( split_result ) == 1
                 " Code, i.e. no index - or index alone
-                if result[1] =~ "/$"
+                if result[1] =~ "/[[:space:]]*$"
+                    let new_index = split_result[0]
                     let s:c_code = ""
                 else
                     let s:c_code = split_result[0]
                 end
             elseif len( split_result ) == 2
                 " Zcode, i.e. code with index
+                let new_index = split_result[0]
                 let s:c_code = split_result[1]
             else
                 let correct_buffer = 0
             end
 
             if correct_buffer
-                call s:UpdateStateForZcode( s:cur_index . "/" . s:c_code )
+                call s:UpdateStateForZcode( new_index, new_index . "/" . s:c_code )
             end
         else
             let correct_buffer = 0
         end
     end
+
+    let call_render = 1
 
     if !correct_buffer
         if a:op == "decode"
@@ -1551,10 +1556,20 @@ fun! s:ComputeCodingState( op )
         elseif a:op == "regenerate"
             call s:AppendMessageT( "Error: control lines modified, cannot use document and create Zcode - will regenerate the document (14)" )
         end
+
+        let call_render = 0
         call s:NormalRender()
+    else
+        " Load new index
+        if s:cur_index != new_index
+            let s:cur_index = new_index
+
+            let call_render = 0
+            call s:DeepRender()
+        end
     end
 
-    return correct_buffer
+    return call_render
 endfun
 " 2}}}
 " FUNCTION: GenerateCodeFromBuffer() {{{2
@@ -1616,7 +1631,7 @@ fun! s:GenerateCodeFromState()
 endfun
 " 2}}}
 " FUNCTION: UpdateStateForZcode() {{{2
-fun! s:UpdateStateForZcode( zcode )
+fun! s:UpdateStateForZcode( new_index, zcode )
     let [ error, bits, meta_data ] = s:get_zekyll_bits_for_code( a:zcode )
     if error
         call s:AppendMessageT( "Error when decoding Zcode '" . a:zcode . "', it is probably mistyped and thus inconsistent" )
@@ -1657,7 +1672,7 @@ fun! s:UpdateStateForZcode( zcode )
 
         if correct_generation
             call s:AppendMessageT("Error: the Zcode " . a:zcode . " is for index of size |" . new_len . "|, current index is of size |" . cur_len .
-                        \ "|. The Zcode truncated: " . s:cur_index . "/" . s:c_code )
+                        \ "|. The Zcode truncated: " . a:new_index . "/" . s:c_code )
         else
             let s:c_code = ""
             call s:AppendMessageT("Error: the Zcode " . a:zcode . " is for index of size |" . new_len . "|, current index is of size |" . cur_len .
