@@ -1931,6 +1931,17 @@ fun! s:ReadCodes()
     return sel_count
 endfun
 " 2}}}
+" FUNCTION: FindMaxZekyllInLZ() {{{2
+fun! s:FindMaxZekyllInLZ( lzcsde )
+    let max_zekyll = ""
+    for i in range( 0, len( a:lzcsde ) - 1 )
+        if max_zekyll < a:lzcsde[i][1]
+            let max_zekyll = a:lzcsde[i][1]
+        end
+    endfor
+    return max_zekyll
+endfun
+" 2}}}
 " FUNCTION: Space() {{{2
 fun! s:Space()
     call s:SaveView()
