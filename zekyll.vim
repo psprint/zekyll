@@ -1902,7 +1902,7 @@ fun! s:SetupSelectionCodes( text )
         let selection = 0
         let idx = index( s:index_zekylls, ZCSD[0] )
         if idx == -1
-            call s:AppendMessageT( 'Warning: found malformed zekyll ("' . ZCSD[0] . '"), cannot include it in Zcode, will deselect it' )
+            call s:AppendMessageT( 'Warning: found malformed zekyll ("' . ZCSD[0] . '"), cannot include it in Zcode, will also deselect it' )
         else
             " We now have a mapping of zekyll into its location
             " in s:code_selectors - use it
@@ -2317,7 +2317,6 @@ fun! s:Space()
                 end
         end
     elseif linenr > s:working_area_beg
-        let entrynr = linenr - s:working_area_beg - 1
         let ZCSD = s:BufferLineToZCSD( line )
 
         if len( ZCSD ) == 0
@@ -2330,10 +2329,19 @@ fun! s:Space()
             let selector = 1
         end
 
+        " Find this line's location in s:code_selectors
+        let idx = index( s:index_zekylls, ZCSD[0] )
+        if idx == -1
+            call s:AppendMessageT( 'Warning: found malformed zekyll ("' . ZCSD[0] . '"), cannot include it in Zcode, will also deselect it' )
+            let selector = 0
+        else
+            " We now have a mapping of zekyll into its location
+            " in s:code_selectors - use it
+            let s:code_selectors[ idx ] = selector
+        end
+
         let listing = s:ZSDToListing( s:ZcsdToZsd( ZCSD ) )
         let line = s:BuildLineFromFullEntry( s:ZcsdToLzds( ZCSD, listing ), selector )
-        let prev = s:code_selectors[entrynr]
-        let s:code_selectors[entrynr] = selector
 
         let line = substitute( line, '\n$', "", "" )
         call setline( linenr, line )
