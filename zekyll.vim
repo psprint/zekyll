@@ -27,6 +27,7 @@ let s:repos_paths = [ s:home . "/.zekyll/repos" ]
 let s:lzsd = []
 let s:listing = []
 let s:inconsistent_listing = []
+let s:index_zekylls = []
 " Current rev, is detached, all revs, branches, tags
 let s:revs = [ "master", 0, [], [], [] ]
 let s:srcdst = [ "origin" ]
@@ -212,6 +213,13 @@ fun! s:NormalRender( ... )
 
     call s:ResetState( depth )
 
+    " Read buffer and build data structure s:code_selectors
+    " - only when there is any index set, otherwise there's
+    " also no contents in buffer (first load)
+    if len( s:index_zekylls ) > 0
+        call s:ReadCodes()
+    end
+
     if depth >= 1
         let s:revs = s:ListAllRevs()
     end
@@ -223,9 +231,6 @@ fun! s:NormalRender( ... )
         call s:ParseListingIntoArrays()
         let s:longest_lzsd = s:LongestLZSD( s:lzsd )
     end
-
-    " Read buffer building data structure s:code_selectors
-    call s:ReadCodes()
 
     " s:index_size_new holds value that corresponds to buffer
     " When first creating buffer we predict what the value will
@@ -1861,11 +1866,27 @@ fun! s:SetupSelectionCodes( text )
             call s:ResetCodeSelectors()
         end
     end
-    if len( s:code_selectors ) > len( s:lzsd )
-        let s:code_selectors = ( len( s:lzsd ) == 0 ) ? [] : s:code_selectors[0:len(s:lzsd)-1]
-    elseif len( s:code_selectors ) < len( s:lzsd )
-        let diff = len( s:lzsd ) - len( s:code_selectors )
-        call extend( s:code_selectors, repeat( [ 1 ], diff ) )
+
+    " What's needed is finding maximum zekyll in s:lzsd and
+    " then altering s:code_selectors - s:lzsd may be newer
+    " than buffer that s:ReadCodes() read, but here it can
+    " be compensated - s:code_selectors will be in general
+    " inherited, however s:lzsd length will be taken into
+    " account (that's the compensation)
+
+    let max_zekyll = s:FindMaxZekyllInLZ( s:lzsd )
+    let new_size = ( max_zekyll == "" ) ? 0 : index( s:index_zekylls, max_zekyll )
+    if new_size == -1
+        call s:AppendMessageT( 'Warning: incorrect zekyll read ("' . max_zekyll . '"), cannot correctly map which zekylls are selected, please reload' )
+    else
+        let new_size = new_size + 1
+
+        if len( s:code_selectors ) > new_size
+            let s:code_selectors = ( new_size == 0 ) ? [] : s:code_selectors[ 0 : new_size-1 ]
+        elseif len( s:code_selectors ) < new_size
+            let diff = new_size - len( s:code_selectors )
+            call extend( s:code_selectors, repeat( [ 0 ], diff ) )
+        end
     end
 
     let s:prev_index = s:cur_index
