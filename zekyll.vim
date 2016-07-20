@@ -211,6 +211,9 @@ fun! s:NormalRender( ... )
 
     call s:ResetState( depth )
 
+    " Read buffer building data structure s:code_selectors
+    call s:ReadCodes()
+
     if depth >= 1
         let s:revs = s:ListAllRevs()
     end
