@@ -1558,6 +1558,7 @@ fun! s:ComputeCodingState( op )
     elseif a:op == "decode"
         let result = matchlist( getline( s:line_code ), s:pat_Code )
         if len( result ) > 0
+            let correct_zcode = 1
             let split_result = split( result[1], "/" )
             if len( split_result ) == 1
                 " Code, i.e. no index - or index alone
@@ -1572,11 +1573,13 @@ fun! s:ComputeCodingState( op )
                 let new_index = split_result[0]
                 let s:c_code = split_result[1]
             else
-                let correct_buffer = 0
+                let correct_zcode = 0
             end
 
-            if correct_buffer
+            if correct_zcode
                 call s:UpdateStateForZcode( new_index, new_index . "/" . s:c_code )
+            else
+                call s:AppendMessageT( "Incorrectly formatted Zcode enterred" )
             end
         else
             let correct_buffer = 0
