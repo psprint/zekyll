@@ -1897,8 +1897,20 @@ fun! s:SetupSelectionCodes( text )
     let i = 0
     while i < size
         let ZCSD = s:BufferLineToZCSD( arr[i] )
+
+        " Get knowledge whether this zekyll is selected
+        let selection = 0
+        let idx = index( s:index_zekylls, ZCSD[0] )
+        if idx == -1
+            call s:AppendMessageT( 'Warning: found malformed zekyll ("' . ZCSD[0] . '"), cannot include it in Zcode, will deselect it' )
+        else
+            " We now have a mapping of zekyll into its location
+            " in s:code_selectors - use it
+            let selection = s:code_selectors[ idx ]
+        end
+
         let listing = s:ZSDToListing( s:ZcsdToZsd( ZCSD ) )
-        let line = s:BuildLineFromFullEntry( s:ZcsdToLzds( ZCSD, listing ), s:code_selectors[i] )
+        let line = s:BuildLineFromFullEntry( s:ZcsdToLzds( ZCSD, listing ), selection )
         let text2 = text2 . line
         let i = i + 1
     endwhile
