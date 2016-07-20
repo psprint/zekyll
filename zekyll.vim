@@ -176,6 +176,7 @@ let s:ACTIVE_BROWSE = 20
 let s:called_GenerateCodeFromState = 0
 let s:last_message_count = 0
 let s:decode_message = ""
+let s:reported_duplicate_zekylls = []
 
 " ------------------------------------------------------------------------------
 " s:StartZekyll: this function is available via the <Plug>/<script> interface above
@@ -211,9 +212,6 @@ fun! s:NormalRender( ... )
 
     call s:ResetState( depth )
 
-    " Read buffer building data structure s:code_selectors
-    call s:ReadCodes()
-
     if depth >= 1
         let s:revs = s:ListAllRevs()
     end
@@ -225,6 +223,9 @@ fun! s:NormalRender( ... )
         call s:ParseListingIntoArrays()
         let s:longest_lzsd = s:LongestLZSD( s:lzsd )
     end
+
+    " Read buffer building data structure s:code_selectors
+    call s:ReadCodes()
 
     " s:index_size_new holds value that corresponds to buffer
     " When first creating buffer we predict what the value will
@@ -1914,19 +1915,44 @@ fun! s:ReadCodes()
     let new_lzcsd = s:BufferToLZCSD()
     let s:code_selectors = []
 
+    let max_zekyll = s:FindMaxZekyllInLZ( new_lzcsd )
+    " Will hold selection state of each occurred zekyll
+    " to be read in order as are zekylls in s:index_zekylls
+    let selectionMap = {}
+
     let sel_count = 0
     let size = len(new_lzcsd)
     let i = 0
     while i < size
+        let zekyll = new_lzcsd[i][1]
         if new_lzcsd[i][2] == " "
             let selection = 0
         else
             let selection = 1
             let sel_count = sel_count + 1
         end
-        call add( s:code_selectors, selection )
+        if has_key( selectionMap, zekyll )
+            " Report once per session
+            if index( s:reported_duplicate_zekylls, zekyll ) == -1
+                call add( s:reported_duplicate_zekylls, zekyll )
+                call s:AppendMessageT( "Warning: duplicate zekyll found (" . zekyll . "), Zcode will take into account only last duplicate zekyll" )
+            end
+        end
+        let selectionMap[ zekyll ] = selection
         let i = i + 1
     endwhile
+
+    " Read selectionMap in order as are zekylls in s:index_zekylls
+    if max_zekyll != ""
+        for i in range( 0, len( s:index_zekylls ) - 1 )
+            let zekyll = s:index_zekylls[ i ]
+            let selection = get( selectionMap, zekyll, 0 )
+            call add( s:code_selectors, selection )
+            if zekyll == max_zekyll
+                break
+            end
+        endfor
+    end
 
     return sel_count
 endfun
