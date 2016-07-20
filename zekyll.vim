@@ -65,6 +65,7 @@ let s:working_area_end = 1
 let s:longest_lzsd = 0
 
 let s:code_selectors = []
+let s:code_selectors_updated = 0
 let s:characters = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h",
                 \  "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" ]
 
@@ -216,9 +217,10 @@ fun! s:NormalRender( ... )
     " Read buffer and build data structure s:code_selectors
     " - only when there is any index set, otherwise there's
     " also no contents in buffer (first load)
-    if len( s:index_zekylls ) > 0
+    if len( s:index_zekylls ) > 0 && s:code_selectors_updated != 1
         call s:ReadCodes()
     end
+    let s:code_selectors_updated = 0
 
     if depth >= 1
         let s:revs = s:ListAllRevs()
@@ -1682,6 +1684,8 @@ fun! s:UpdateStateForZcode( new_index, zcode )
     let cur_len = len( s:code_selectors )
 
     let s:code_selectors = bits
+    let s:code_selectors_updated = 1
+
     let s:c_rev = has_key( meta_data, 'rev' ) ? meta_data['rev'] : ""
     let s:c_file = has_key( meta_data, 'file' ) ? meta_data['file'] : ""
     let s:c_repo = has_key( meta_data, 'repo' ) ? meta_data['repo'] : ""
