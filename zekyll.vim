@@ -1499,6 +1499,8 @@ endfun
 fun! s:ComputeCodingState( op )
     let correct_buffer = 1
 
+    let new_index = s:cur_index
+
     if a:op == "regenerate"
         let [ correct_generation, s:c_code ] = s:GenerateCodeFromBuffer()
         if correct_generation
@@ -1547,7 +1549,6 @@ fun! s:ComputeCodingState( op )
     elseif a:op == "decode"
         let result = matchlist( getline( s:line_code ), s:pat_Code )
         if len( result ) > 0
-            let new_index = s:cur_index
             let split_result = split( result[1], "/" )
             if len( split_result ) == 1
                 " Code, i.e. no index - or index alone
