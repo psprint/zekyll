@@ -1758,8 +1758,10 @@ done
 unset i
 integer i j tidx=0 p=0
 local -a files full_list sub_list section_list NLIST_IS_SELECTED
-local -A NLIST_TIDX_TO_INDEX NLIST_INDEX_TO_BEG_TIDX NLIST_INDEX_TO_END_TIDX
-# Full list pointers
+# T(able) index - index in NLIST_IS_SELECTED
+local -A NLIST_TIDX_TO_INDEX
+local -A NLIST_INDEX_TO_BEG_TIDX NLIST_INDEX_TO_END_TIDX
+# F(ull) list indexes - indexes in full_list
 local -A NLIST_INDEX_TO_BEG_FIDX NLIST_INDEX_TO_END_FIDX
 local zekyll section
 for i in "${(oun)indices[@]}"; do
@@ -1769,14 +1771,16 @@ for i in "${(oun)indices[@]}"; do
     integer count="${#files}"
 
     full_list+=( "x_${fg_bold[red]}Index $i, size $REPLY${reset_color}" )
-    p=${#full_list}
+    p="${#full_list}"
     NLIST_NONSELECTABLE_ELEMENTS+=( $p )
     NLIST_HOP_INDEXES+=( $p )
 
+    # T(able) index (in NLIST_IS_SELECTED)
     NLIST_INDEX_TO_BEG_TIDX[$i]=$(( tidx+1 ))
 
     sub_list=()
     section_list=()
+
     for (( j=1; j<=count; j++ )); do
         if [[ "${files[j]}" = (#b)(#s)([a-z0-9][a-z0-9][a-z0-9]).([A-Z])* ]]; then
             zekyll="${match[1]}"
@@ -1786,17 +1790,9 @@ for i in "${(oun)indices[@]}"; do
             continue
         fi
 
-        get_integer_from_base_36 "$zekyll"
-        [ "$?" -gt 0 ] && print "Malformed zekyll ($zekyll) or zcode given, trying to continue (2)" && continue
-
-        # Num counts from zero
-        integer num="$REPLY"
-        num=num+150
-        integer quotient=num/150
-
         tidx=tidx+1
 
-        NLIST_TIDX_TO_INDEX[$tidx]="$quotient"
+        NLIST_TIDX_TO_INDEX[$tidx]="$i"
         sub_list+=( "${tidx}_${files[j]}" )
         section_list+=( "$section" )
 
@@ -1808,7 +1804,9 @@ for i in "${(oun)indices[@]}"; do
         fi
     done
 
+    # T(able) index
     NLIST_INDEX_TO_END_TIDX[$i]="$tidx"
+    # F(ull) list index
     NLIST_INDEX_TO_BEG_FIDX[$i]=$(( ${#full_list} + 1 ))
 
     two_to_section_order "${#sub_list}" "${sub_list[@]}" "${section_list[@]}"
@@ -1816,6 +1814,7 @@ for i in "${(oun)indices[@]}"; do
 
     full_list+=( "${sub_list[@]}" )
 
+    # F(ull) list index
     NLIST_INDEX_TO_END_FIDX[$i]="${#full_list}"
 done
 
