@@ -1030,16 +1030,34 @@ while (( 1 )); do
     recompute_zcode="1"
 
     if [ "$recompute_zcode" = "1" ]; then
-        # Find at which index user is
+        # Find at which T(able) Index user is
         element="${list[NLIST_CURRENT_IDX]}"
         tidx="${element//(#b)([0-9x]#)*/${match[1]}}"
         if [[ "$tidx" = <-> ]]; then
-            index="${NLIST_TIDX_TO_INDEX[$tidx]}"
-            integer beg_tidx="${NLIST_INDEX_TO_BEG_TIDX[$index]}"
-            integer end_tidx="${NLIST_INDEX_TO_END_TIDX[$index]}"
+            local index="${NLIST_TIDX_TO_INDEX[$tidx]}"
+
             local -a bits
             # Include version bits
-            bits=( 0 0 "${(@)NLIST_IS_SELECTED[beg_tidx,end_tidx]}" )
+            bits=( 0 0 )
+
+            # Get selection bits according to ZKL_INDEX_ZEKYLLS
+            set_index "$index"
+            integer size="${#ZKL_INDEX_ZEKYLLS}" i
+            local tidx zekyll max_zekyll
+            for (( i = 1; i <= size; i ++ )); do
+                zekyll="${ZKL_INDEX_ZEKYLLS[$i]}"
+                [ -z "$zekyll" ] && break # should not happen, if it does then interrupt
+                tidx="${NLIST_ZEKYLL_TO_TIDX[$zekyll]}"
+
+                if [ -n "$tidx" ]; then
+                    bits+=( "${NLIST_IS_SELECTED[$tidx]}" )
+                else
+                    bits+=( "0" )
+                fi
+
+                [ "$zekyll" = "${NLIST_INDEX_TO_MAX_ZEKYLL[$index]}" ] && break
+            done
+
             # Reverse so that during division the later zekylls are
             # discarded from Zcode if they are sequence of 0
             bits=( "${(Oa)bits[@]}" )
@@ -1761,6 +1779,7 @@ local -a files full_list sub_list section_list NLIST_IS_SELECTED
 # T(able) index - index in NLIST_IS_SELECTED
 local -A NLIST_TIDX_TO_INDEX
 local -A NLIST_INDEX_TO_BEG_TIDX NLIST_INDEX_TO_END_TIDX
+local -A NLIST_ZEKYLL_TO_TIDX NLIST_INDEX_TO_MAX_ZEKYLL
 # F(ull) list indexes - indexes in full_list
 local -A NLIST_INDEX_TO_BEG_FIDX NLIST_INDEX_TO_END_FIDX
 local zekyll section
@@ -1795,6 +1814,7 @@ for i in "${(oun)indices[@]}"; do
         NLIST_TIDX_TO_INDEX[$tidx]="$i"
         sub_list+=( "${tidx}_${files[j]}" )
         section_list+=( "$section" )
+        NLIST_ZEKYLL_TO_TIDX[$zekyll]="$tidx"
 
         # Store if the zekyll is active
         if [ "${zekylls1[(r)$zekyll]}" = "$zekyll" ];then
@@ -1804,9 +1824,11 @@ for i in "${(oun)indices[@]}"; do
         fi
     done
 
-    # T(able) index
+    # Maximal zekyll
+    NLIST_INDEX_TO_MAX_ZEKYLL[$i]="$zekyll"
+    # T(able) index - the last one for this index
     NLIST_INDEX_TO_END_TIDX[$i]="$tidx"
-    # F(ull) list index
+    # F(ull) list index - the first one for this index
     NLIST_INDEX_TO_BEG_FIDX[$i]=$(( ${#full_list} + 1 ))
 
     two_to_section_order "${#sub_list}" "${sub_list[@]}" "${section_list[@]}"
@@ -1814,7 +1836,7 @@ for i in "${(oun)indices[@]}"; do
 
     full_list+=( "${sub_list[@]}" )
 
-    # F(ull) list index
+    # F(ull) list index - the last one for this index
     NLIST_INDEX_TO_END_FIDX[$i]="${#full_list}"
 done
 
