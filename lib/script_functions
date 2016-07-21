@@ -170,9 +170,14 @@ resolve_path() {
     [ "$ZKL_DEFAULT" = 1 ] && ask=0
     [[ -z "$ZEKYLL_DEFAULT_REPO" || -n "$ZKL_PATH" ]] && ask=1
 
-    [[ -n "$ZEKYLL_DEFAULT_REPO" && -z "$ZKL_PATH" ]] && { get_path_from_repo "$ZEKYLL_DEFAULT_REPO"; ZKL_PATH="$REPLY"; }
-
     [ "$ZKL_REQ" = 1 ] && ask=0
+
+    # Get default repo when:
+    # - we do not have ZKL_PATH already, but we should ask (i.e. no
+    #   ZKL_DEFAULT, no ZKL_REQ) - this is the query only for prompt
+    # - we do not have ZKL_PATH and we're ordered to use ZEKYLL_DEFAULT_REPO
+    [[ ( -n "$ZEKYLL_DEFAULT_REPO" && -z "$ZKL_PATH" && "$ask" = "1" ) ||
+        ( -n "$ZEKYLL_DEFAULT_REPO" && -z "$ZKL_PATH" && "$ZKL_DEFAULT" = "1" ) ]] && { get_path_from_repo "$ZEKYLL_DEFAULT_REPO"; ZKL_PATH="$REPLY"; }
 
     (( ask )) && { read_destination_path "$ZKL_PATH" || return 1 }
 
