@@ -1109,6 +1109,8 @@ while (( 1 )); do
             fi
 
             # Remove non-selectable elements
+            unset i
+            local i
             [ "$#NLIST_NONSELECTABLE_ELEMENTS" -gt 0 ] && for i in "${(nO)NLIST_NONSELECTABLE_ELEMENTS[@]}"; do
                 if [[ "$i" = <-> ]]; then
                     list[$i]=()
@@ -1209,6 +1211,8 @@ while (( 1 )); do
             fi
 
             # Remove non-selectable elements only when in uniq mode
+            unset i
+            local i
             [ "$NLIST_IS_UNIQ_MODE" -eq 1 ] && [ "$#NLIST_NONSELECTABLE_ELEMENTS" -gt 0 ] &&
             for i in "${(nO)NLIST_NONSELECTABLE_ELEMENTS[@]}"; do
                 if [[ "$i" = <-> ]]; then
